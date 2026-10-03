@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/mail"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -19,17 +18,18 @@ import (
 var defaults embed.FS
 
 type Config struct {
-	Addr            string   `json:"addr"`
-	DataDir         string   `json:"data_dir"`
-	DeepSeekAPIKey  string   `json:"deepseek_api_key"`
-	DeepSeekBaseURL string   `json:"deepseek_base_url"`
-	DeepSeekModel   string   `json:"deepseek_model"`
-	SMTPHost        string   `json:"smtp_host"`
-	SMTPUser        string   `json:"smtp_user"`
-	SMTPPassword    string   `json:"smtp_password"`
-	SMTPPort        int      `json:"smtp_port"`
-	AllowedEmails   []string `json:"allowed_emails"`
-	PublicURL       string   `json:"public_url"`
+	Addr            string `json:"addr"`
+	DataDir         string `json:"data_dir"`
+	DeepSeekAPIKey  string `json:"deepseek_api_key"`
+	DeepSeekBaseURL string `json:"deepseek_base_url"`
+	DeepSeekModel   string `json:"deepseek_model"`
+	SMTPHost        string `json:"smtp_host"`
+	SMTPUser        string `json:"smtp_user"`
+	SMTPPassword    string `json:"smtp_password"`
+	SMTPPort        int    `json:"smtp_port"`
+	// Deprecated: accepted only for old configuration compatibility, never enforced.
+	AllowedEmails []string `json:"allowed_emails,omitempty"`
+	PublicURL     string   `json:"public_url"`
 }
 
 func EmbeddedDefaults() []byte {
@@ -42,7 +42,7 @@ func EmbeddedDefaults() []byte {
 }
 
 func Load(embedded []byte) (Config, error) {
-	c := Config{Addr: ":56507", DataDir: "data", DeepSeekBaseURL: "https://api.deepseek.com", DeepSeekModel: "deepseek-flash", SMTPHost: "hwsmtp.qiye.163.com", SMTPPort: 465, AllowedEmails: []string{"yirc99@163.com"}}
+	c := Config{Addr: ":56507", DataDir: "data", DeepSeekBaseURL: "https://api.deepseek.com", DeepSeekModel: "deepseek-flash", SMTPHost: "hwsmtp.qiye.163.com", SMTPPort: 465}
 	apply := func(data []byte) error {
 		if len(bytes.TrimSpace(data)) == 0 {
 			return nil
@@ -86,18 +86,9 @@ func Load(embedded []byte) (Config, error) {
 		}
 		c.SMTPPort = n
 	}
-	if s, ok := os.LookupEnv("NIANNIAN_ALLOWED_EMAILS"); ok {
-		c.AllowedEmails = strings.Split(s, ",")
-	}
-	for i, email := range c.AllowedEmails {
-		c.AllowedEmails[i] = strings.ToLower(strings.TrimSpace(email))
-		if _, err := mail.ParseAddress(c.AllowedEmails[i]); err != nil {
-			return c, errors.New("允许登录的邮箱格式不正确")
-		}
-	}
-	if len(c.AllowedEmails) == 0 {
-		return c, errors.New("至少配置一个允许登录的邮箱")
-	}
+	// Registration is open to any verified email, including when upgrading
+	// a deployment that still contains the former allowlist configuration.
+	c.AllowedEmails = nil
 	if c.SMTPPort < 1 || c.SMTPPort > 65535 {
 		return c, errors.New("SMTP 端口超出范围")
 	}

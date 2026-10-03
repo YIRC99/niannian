@@ -91,11 +91,8 @@ func createTask(t *testing.T, a *App, token, mode string) string {
 	}
 	return out["id"].(string)
 }
-func TestAuthAllowlistRateLimitsAndPersistence(t *testing.T) {
+func TestAuthRateLimitsAndPersistence(t *testing.T) {
 	a, m, _ := setup(t)
-	if c, _ := request(t, a, "POST", "/api/v1/auth/code", "", map[string]string{"email": "unknown@example.com"}); c != 403 {
-		t.Fatalf("unknown email = %d", c)
-	}
 	token := login(t, a, m, "one@example.com")
 	if len(m.messages) != 1 {
 		t.Fatal("unexpected mail")
@@ -291,12 +288,39 @@ func TestCreateRejectsOnlyPastDates(t *testing.T) {
 		t.Fatalf("past date should reject: %d %+v", c, out)
 	}
 }
-func TestAllowlistRevokesExistingSession(t *testing.T) {
+func TestLegacyAllowlistDoesNotRevokeExistingSession(t *testing.T) {
 	a, m, _ := setup(t)
 	token := login(t, a, m, "one@example.com")
 	a.cfg.AllowedEmails = []string{"two@example.com"}
-	if c, _ := request(t, a, "GET", "/api/v1/me", token, nil); c != 401 {
-		t.Fatalf("revoked user still authorized: %d", c)
+	if c, _ := request(t, a, "GET", "/api/v1/me", token, nil); c != 200 {
+		t.Fatalf("legacy allowlist blocked an authenticated user: %d", c)
+	}
+}
+
+func TestAnyEmailCanRegisterLoginAgainAndReceiveReminder(t *testing.T) {
+	a, m, now := setup(t) // Legacy config deliberately lists other addresses.
+	*now = now.Add(-20 * time.Minute)
+	token := login(t, a, m, "new-person@example.org")
+	if c, out := request(t, a, "GET", "/api/v1/me", token, nil); c != 200 || out["email"] != "new-person@example.org" {
+		t.Fatalf("new account not accessible: %d %+v", c, out)
+	}
+	createTask(t, a, token, "until_done")
+	*now = now.Add(2 * time.Minute)
+	login(t, a, m, "new-person@example.org")
+	var users int
+	if err := a.db.QueryRow(`SELECT COUNT(*) FROM users WHERE email=?`, "new-person@example.org").Scan(&users); err != nil || users != 1 {
+		t.Fatalf("repeat login duplicated account: count=%d err=%v", users, err)
+	}
+	m.messages = nil
+	*now = now.Add(18 * time.Minute)
+	if err := a.tick(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(m.messages) != 1 || !strings.HasPrefix(m.messages[0], "new-person@example.org\n") {
+		t.Fatal("registered email did not receive its scheduled reminder")
+	}
+	if c, _ := request(t, a, "POST", "/api/v1/auth/code", "", map[string]string{"email": "not an email"}); c != 400 {
+		t.Fatalf("invalid email accepted: %d", c)
 	}
 }
 func TestSnoozeSendsExactlyOnceAndSupersedesEarlierSlot(t *testing.T) {

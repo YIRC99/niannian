@@ -16,11 +16,22 @@ func TestLoadEmbeddedOverridesAndFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.SMTPUser != "file@example.com" || c.Addr != "127.0.0.1:9090" || c.DeepSeekAPIKey != "private" || len(c.AllowedEmails) != 1 {
+	if c.SMTPUser != "file@example.com" || c.Addr != "127.0.0.1:9090" || c.DeepSeekAPIKey != "private" || len(c.AllowedEmails) != 0 {
 		t.Fatal("configuration precedence incorrect")
 	}
 	if !filepath.IsAbs(c.DataDir) {
 		t.Fatal("data folder should resolve absolute")
+	}
+}
+
+func TestOpenRegistrationIgnoresLegacyAllowlist(t *testing.T) {
+	t.Chdir(t.TempDir())
+	t.Setenv("NIANNIAN_ALLOWED_EMAILS", "old@example.com")
+	for _, raw := range []string{`{}`, `{"allowed_emails":[]}`, `{"allowed_emails":["old@example.com"]}`} {
+		c, err := Load([]byte(raw))
+		if err != nil || len(c.AllowedEmails) != 0 {
+			t.Fatalf("legacy whitelist still active: err=%v", err)
+		}
 	}
 }
 

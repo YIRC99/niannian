@@ -5,6 +5,7 @@ Base URL entered in Android is origin e.g. http://192.168.1.10:56507. All paths 
 GET /health -> {"status":"ok","version":"1.0.0"}
 POST /api/v1/auth/code {"email":"..."} -> {"message":"验证码已发送"}
 POST /api/v1/auth/verify {"email":"...","code":"123456"} -> {"token":"...","user":{"id":"...","email":"..."}}
+Registration is open: any syntactically valid email can request a code, and the first successful verification creates its account. Repeat verification reuses the same account. Legacy allowed_emails configuration is ignored across login, sessions, and reminder delivery. OTP expiry/rate limits and user-data isolation still apply.
 GET /api/v1/me -> {"id":"...","email":"..."}
 POST /api/v1/auth/logout -> {"ok":true}
 

@@ -185,12 +185,6 @@ func (a *App) tick(ctx context.Context) error {
 		if e = a.db.QueryRowContext(ctx, `SELECT email FROM users WHERE id=?`, t.UserID).Scan(&email); e != nil {
 			return e
 		}
-		if !a.allowed(email) {
-			if e = cancel(q.id, "账号已移出允许名单"); e != nil {
-				return e
-			}
-			continue
-		}
 		claim, e := a.db.ExecContext(ctx, `UPDATE notifications SET status='sending',attempts=attempts+1 WHERE id=? AND status IN ('pending','failed') AND attempts<?`, q.id, maxSendAttempts)
 		if e != nil {
 			return e

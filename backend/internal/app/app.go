@@ -191,7 +191,7 @@ func (a *App) authorize(next http.Handler) http.Handler {
 		}
 		var u User
 		err := a.db.QueryRowContext(r.Context(), `SELECT u.id,u.email FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.hash=? AND s.expires_at>?`, digest(token), stamp(a.now())).Scan(&u.ID, &u.Email)
-		if err != nil || !a.allowed(u.Email) {
+		if err != nil {
 			writeError(w, 401, "登录已过期，请重新登录")
 			return
 		}

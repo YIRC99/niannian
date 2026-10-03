@@ -20,14 +20,6 @@ func normalizedEmail(s string) (string, bool) {
 	m, err := stdmail.ParseAddress(s)
 	return s, err == nil && m.Address == s
 }
-func (a *App) allowed(email string) bool {
-	for _, allowed := range a.cfg.AllowedEmails {
-		if strings.EqualFold(strings.TrimSpace(allowed), email) {
-			return true
-		}
-	}
-	return false
-}
 func (a *App) requestCode(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Email string `json:"email"`
@@ -38,10 +30,6 @@ func (a *App) requestCode(w http.ResponseWriter, r *http.Request) {
 	email, valid := normalizedEmail(in.Email)
 	if !valid {
 		writeError(w, 400, "请输入有效邮箱")
-		return
-	}
-	if !a.allowed(email) {
-		writeError(w, 403, "此邮箱尚未加入服务端允许名单")
 		return
 	}
 	a.authMu.Lock()
@@ -105,7 +93,7 @@ func (a *App) verifyCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email, valid := normalizedEmail(in.Email)
-	if !valid || !a.allowed(email) || len(in.Code) != 6 {
+	if !valid || len(in.Code) != 6 {
 		writeError(w, 400, "验证码无效或已过期")
 		return
 	}

@@ -6,7 +6,7 @@
 
 1. 将对应架构的 Linux 发布包上传并解压，运行 `chmod +x niannian && ./niannian`。默认监听 56507。
 2. 安装 APK，在初始页面填服务器地址，例如 `http://192.168.1.10:56507`。手机上的 `localhost` 是手机自身；局域网调试要填电脑的局域网 IP。
-3. 使用 `yirc99@163.com` 接收验证码并登录。登录会自动记住 90 天，退出登录会在服务端撤销令牌。
+3. 输入自己的邮箱，接收验证码并登录。任意有效邮箱均可使用，首次验证成功自动创建账号，再次登录进入原账号。登录会自动记住 90 天，退出登录会在服务端撤销令牌。
 4. 点击新建，用一句话描述事情；检查生成的规则后保存。也可以完整手动创建。
 5. 在任务中点完成，可直接完成或附加文字、拍照/相册图片。在“记录”中回看。
 
@@ -34,7 +34,7 @@
 - SQLite 与媒体默认放在运行目录的 `data/`。不需要安装数据库服务。
 - 任务归档不会删除完成记录；编辑任务也保留原来的记录。
 - 图片只允许登录的所有者读取；最大 10MB，支持 JPEG、PNG、WebP。
-- 邮箱验证码 10 分钟有效，有发送频率与尝试次数限制；默认只允许配置列表中的邮箱。
+- 邮箱验证码 10 分钟有效，有发送频率与尝试次数限制；无需邮箱白名单，每个账号的数据独立。
 - 成功发送的提醒会持久化去重；失败会有限次重试，可在应用中查看发送记录。
 - 重启后只补发当天最近一个有效时间点，不集中补发过往所有邮件。新建任务不会补发创建前的时间点。
 - SMTP 无法与本地数据库进行同一个事务。若服务器在“邮件已被 SMTP 接收，但发送记录尚未落盘”的瞬间断电，重试可能重复一封；普通重启与重复扫描已做去重。
@@ -44,17 +44,16 @@
 
 可在程序旁放 `config.local.json`，仅填写要覆盖的字段。参考 `backend/config.example.json`。配置优先级：内置默认 → 本地文件 → `NIANNIAN_*` 环境变量。
 
-例如允许家人使用：
+例如更改监听地址或数据目录：
 
 ```json
 {
-  "allowed_emails": ["yirc99@163.com", "family@example.com"],
   "addr": ":56507",
   "data_dir": "data"
 }
 ```
 
-配置文件必须是合法 JSON，未知字段会报错。可用 `NIANNIAN_CONFIG` 指定文件路径。环境变量包含 `NIANNIAN_ADDR`、`NIANNIAN_DATA_DIR`、`NIANNIAN_ALLOWED_EMAILS`（逗号分隔）、`NIANNIAN_DEEPSEEK_API_KEY`、`NIANNIAN_SMTP_USER`、`NIANNIAN_SMTP_PASSWORD` 等。
+配置文件必须是合法 JSON，未知字段会报错。可用 `NIANNIAN_CONFIG` 指定文件路径。环境变量包含 `NIANNIAN_ADDR`、`NIANNIAN_DATA_DIR`、`NIANNIAN_DEEPSEEK_API_KEY`、`NIANNIAN_SMTP_USER`、`NIANNIAN_SMTP_PASSWORD` 等。旧配置中的 `allowed_emails` 和 `NIANNIAN_ALLOWED_EMAILS` 已停用，保留旧配置也不会限制登录。
 
 公网使用建议通过 Caddy/Nginx 的 HTTPS 反向代理访问；应用也允许局域网 HTTP，方便本地与线上切换。切换地址会清除当前页面与登录态，旧连接的返回结果不会进入新页面，需要在新服务器重新登录。已经提交给旧服务器的操作仍可能完成。
 
