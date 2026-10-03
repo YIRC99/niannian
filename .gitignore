@@ -1,0 +1,14 @@
+**/build/
+**/.gradle/
+**/local.properties
+**/data/
+**/*.db*
+**/config.local.json
+**/secrets.local.json
+**/secrets.local.go
+**/*.jks
+**/*.keystore
+release/
+*.log
+*.exe
+work/

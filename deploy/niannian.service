@@ -1,0 +1,23 @@
+[Unit]
+Description=Niannian email reminder
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=niannian
+Group=niannian
+WorkingDirectory=/opt/niannian
+ExecStart=/opt/niannian/niannian
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/niannian/data
+
+[Install]
+WantedBy=multi-user.target
