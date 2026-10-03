@@ -29,6 +29,17 @@ public final class GardenPlotView extends FrameLayout {
     }
 
     private static final int CAPACITY = 12;
+    // Roots follow the open lawn in the courtyard artwork, four across and three deep.
+    private static final float[] ROOT_X = {
+            .165f, .390f, .615f, .840f,
+            .185f, .410f, .635f, .855f,
+            .160f, .385f, .610f, .835f
+    };
+    private static final float[] ROOT_Y = {
+            .514f, .504f, .520f, .509f,
+            .650f, .647f, .657f, .646f,
+            .785f, .780f, .790f, .781f
+    };
     private final Paint sceneryPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final RectF scene = new RectF();
     private final Rect visible = new Rect();
@@ -40,13 +51,15 @@ public final class GardenPlotView extends FrameLayout {
     private final ViewTreeObserver.OnGlobalLayoutListener layoutListener = this::updateMotion;
     private OnPlantClickListener plantClickListener;
     private String selectedPlantId = "";
+    private int headerClearance;
     private boolean hostActive = true;
     private float breezePhase;
 
     public GardenPlotView(Context context) {
         super(context);
         density = getResources().getDisplayMetrics().density;
-        backdrop = GardenArtCache.backdrop(getResources(), R.drawable.garden_backdrop_v2);
+        headerClearance = dp(112);
+        backdrop = GardenArtCache.backdrop(getResources(), R.drawable.garden_courtyard_v3);
         setWillNotDraw(false);
         setClipChildren(false);
         setClipToPadding(false);
@@ -70,6 +83,12 @@ public final class GardenPlotView extends FrameLayout {
         plantClickListener = listener;
     }
 
+    /** Space, in dp, reserved for the host's title and sow button above the planting area. */
+    public void setHeaderClearance(int clearanceDp) {
+        headerClearance = dp(Math.max(0, clearanceDp));
+        requestLayout();
+    }
+
     public void setPlants(JSONArray plants) {
         ArrayList<JSONObject> records = new ArrayList<>();
         if (plants != null) {
@@ -87,8 +106,10 @@ public final class GardenPlotView extends FrameLayout {
         removeAllViews();
         planted.clear();
         if (plants != null) {
-            for (JSONObject record : plants) {
-                if (record == null) continue;
+            ArrayList<JSONObject> ordered = new ArrayList<>();
+            for (JSONObject record : plants) if (record != null) ordered.add(record);
+            ordered.sort((first, second) -> first.optString("task_id").compareTo(second.optString("task_id")));
+            for (JSONObject record : ordered) {
                 if (planted.size() == CAPACITY) break;
                 PlantView plant = new PlantView(getContext(), record, planted.size());
                 plant.setSelected(!selectedPlantId.isEmpty() && selectedPlantId.equals(plant.taskId));
@@ -114,25 +135,26 @@ public final class GardenPlotView extends FrameLayout {
 
     @Override protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int width = resolveSize(dp(360), widthMeasureSpec);
-        int preferredHeight = Math.max(dp(460), Math.min(dp(530), Math.round(width * 4f / 3f)));
+        int preferredHeight = Math.max(dp(460), Math.min(dp(620), Math.round(width * 1.5f)));
         int height = resolveSize(preferredHeight, heightMeasureSpec);
         setMeasuredDimension(width, height);
         updateSceneBounds(width, height);
-        // Each row owns its entire touch area. The visible illustration is smaller than that area.
-        int cellHeight = Math.max(dp(48), Math.round(scene.height() * .153f));
+        // Label space is reserved even when unselected, so selecting a plant never moves its roots.
+        boolean sparse = planted.size() <= 4;
+        int cellHeight = Math.max(dp(48), Math.round(sparse ? Math.min(height, scene.height()) * .226f
+                : Math.min(height * .145f, scene.height() * .126f)));
+        int cellWidth = Math.max(dp(48), Math.round(width * (sparse ? .285f : .218f)));
         for (PlantView plant : planted) {
-            // The front corners belong to the watering can and empty pot in the scenery.
-            float widthFraction = plant.position / 3 == 3 ? .215f : .285f;
-            int cellWidth = Math.max(dp(48), Math.round(scene.width() * widthFraction));
             plant.measure(MeasureSpec.makeMeasureSpec(cellWidth, MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(cellHeight, MeasureSpec.EXACTLY));
+            plant.updateLabelMetrics(cellWidth, cellHeight);
         }
     }
 
     private void updateSceneBounds(int width, int height) {
-        float artWidth = backdrop == null ? 3f : backdrop.getWidth();
-        float artHeight = backdrop == null ? 4f : backdrop.getHeight();
-        float scale = Math.min(width / artWidth, height / artHeight);
+        float artWidth = backdrop == null ? 2f : backdrop.getWidth();
+        float artHeight = backdrop == null ? 3f : backdrop.getHeight();
+        float scale = Math.max(width / artWidth, height / artHeight);
         float sceneWidth = artWidth * scale, sceneHeight = artHeight * scale;
         scene.set((width - sceneWidth) / 2f, (height - sceneHeight) / 2f,
                 (width + sceneWidth) / 2f, (height + sceneHeight) / 2f);
@@ -142,11 +164,11 @@ public final class GardenPlotView extends FrameLayout {
         updateSceneBounds(right - left, bottom - top);
         for (int i = 0; i < planted.size(); i++) {
             PlantView plant = planted.get(i);
-            int row = i / 3, column = i % 3;
-            float stagger = row % 2 == 0 ? -.014f : .014f;
-            float xFraction = row == 3 ? .28f + column * .22f : .215f + column * .285f + stagger;
-            float x = scene.left + scene.width() * xFraction;
-            float y = scene.top + scene.height() * (.278f + row * .157f);
+            float x = getWidth() * rootX(i);
+            float rootY = scene.top + scene.height() * rootY(i);
+            float rootOffset = plant.getMeasuredHeight() - plant.labelHeight - dp(3);
+            float y = Math.max(headerClearance, rootY - rootOffset);
+            y = Math.min(y, getHeight() - plant.getMeasuredHeight() - dp(8));
             int childLeft = Math.round(x - plant.getMeasuredWidth() / 2f);
             int childTop = Math.round(y);
             plant.layout(childLeft, childTop, childLeft + plant.getMeasuredWidth(),
@@ -154,9 +176,25 @@ public final class GardenPlotView extends FrameLayout {
         }
     }
 
+    private float rootX(int position) {
+        if (planted.size() == 1) return .505f;
+        if (planted.size() == 2) return position == 0 ? .355f : .655f;
+        if (planted.size() == 3) return position == 0 ? .305f : position == 1 ? .665f : .475f;
+        if (planted.size() == 4) return position % 2 == 0 ? .315f : .675f;
+        return ROOT_X[position];
+    }
+
+    private float rootY(int position) {
+        if (planted.size() == 1) return .674f;
+        if (planted.size() == 2) return position == 0 ? .638f : .698f;
+        if (planted.size() == 3) return position == 0 ? .608f : position == 1 ? .636f : .802f;
+        if (planted.size() == 4) return position < 2 ? .612f + position * .014f : .804f - (position - 2) * .013f;
+        return ROOT_Y[position];
+    }
+
     @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        sceneryPaint.setColor(0xffdeebc8);
+        sceneryPaint.setColor(0xffdae9be);
         canvas.drawRect(0, 0, getWidth(), getHeight(), sceneryPaint);
         if (backdrop != null) canvas.drawBitmap(backdrop, null, scene, sceneryPaint);
     }
@@ -219,6 +257,8 @@ public final class GardenPlotView extends FrameLayout {
         private final String title;
         private final int stage;
         private final int position;
+        private final float variation;
+        private final float motionOffset;
         private final Bitmap art;
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
         private final TextPaint labelPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
@@ -238,16 +278,14 @@ public final class GardenPlotView extends FrameLayout {
             String stageName = record.optString("stage");
             stage = "bloom".equals(stageName) ? 3 : "leaf".equals(stageName) ? 2
                     : "sprout".equals(stageName) ? 1 : 0;
-            // Flower variety never changes growth stage and remains stable across bed pagination.
-            int variant = Math.floorMod(taskId.hashCode(), 3);
-            art = stage == 3 && variant != 0
-                    ? GardenArtCache.load(getResources(), variant == 1
-                    ? R.drawable.garden_bloom_pink_v2 : R.drawable.garden_bloom_lilac_v2)
-                    : GardenArtCache.plant(getResources(), stage);
+            // Identity controls appearance, never completion count or the current selection.
+            variation = .97f + Math.floorMod(taskId.hashCode(), 7) * .01f;
+            motionOffset = Math.floorMod(taskId.hashCode(), 628) / 100f;
+            art = GardenArtCache.plant(getResources(), stage, taskId);
             labelPaint.setTextSize(11f * getResources().getDisplayMetrics().scaledDensity);
             labelPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
             labelPaint.setTextAlign(Paint.Align.CENTER);
-            labelPaint.setColor(0xff425b38);
+            labelPaint.setColor(0xff405535);
             setClickable(true);
             setFocusable(true);
             setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
@@ -256,8 +294,8 @@ public final class GardenPlotView extends FrameLayout {
             String stageLabel = stage == 3 ? "已经开花" : stage == 2 ? "枝叶舒展"
                     : stage == 1 ? "小芽冒头" : "刚刚播种";
             setContentDescription((title.isEmpty() ? "未命名的小事" : title) + "，" + stageLabel
-                    + "，" + record.optInt("completion_count") + " 份养分"
-                    + (record.optBoolean("archived") ? "，已归档" : "，正在花园里生长") + "，点按查看");
+                    + "，已完成 " + record.optInt("completion_count") + " 次"
+                    + (record.optBoolean("archived") ? "，已归档" : "，正在花园里生长") + "，点按选中");
             setOnClickListener(view -> {
                 setSelectedPlantId(taskId);
                 if (plantClickListener != null) plantClickListener.onPlantClick(this.record, this);
@@ -266,11 +304,15 @@ public final class GardenPlotView extends FrameLayout {
 
         @Override protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
             super.onSizeChanged(width, height, oldWidth, oldHeight);
+            updateLabelMetrics(width, height);
+        }
+
+        private void updateLabelMetrics(int width, int height) {
             shortTitle = TextUtils.ellipsize(title.isEmpty() ? "一件小事" : title,
                     labelPaint, Math.max(0, width - dp(18)), TextUtils.TruncateAt.END).toString();
-            labelWidth = Math.min(width - dp(6), labelPaint.measureText(shortTitle) + dp(14));
+            labelWidth = Math.min(width - dp(6), Math.max(dp(40), labelPaint.measureText(shortTitle) + dp(16)));
             Paint.FontMetrics metrics = labelPaint.getFontMetrics();
-            labelHeight = Math.max(dp(18), metrics.descent - metrics.ascent + dp(5));
+            labelHeight = Math.max(dp(20), metrics.descent - metrics.ascent + dp(6));
             labelBaseline = height - labelHeight / 2f - (metrics.ascent + metrics.descent) / 2f - dp(1);
         }
 
@@ -289,42 +331,45 @@ public final class GardenPlotView extends FrameLayout {
             super.onDraw(canvas);
             float centerX = getWidth() / 2f;
             float rootY = getHeight() - labelHeight - dp(3);
-            float perspective = .84f + (position / 3) * .055f;
+            float perspective = (.92f + (position / 4) * .035f) * variation;
             float soilWidth = getWidth() * .53f * perspective;
             paint.setStyle(Paint.Style.FILL);
             // The earth patch and selection ring stay rooted while leaves sway above them.
             if (isSelected() || isPressed() || isFocused()) {
-                paint.setColor(isPressed() ? 0xa0fff1a1 : 0x88fff5b6);
+                paint.setColor(isPressed() ? 0xa0eeeab0 : 0x66f4edbb);
                 shapeBounds.set(centerX - soilWidth * .74f, rootY - dp(10),
                         centerX + soilWidth * .74f, rootY + dp(6));
                 canvas.drawOval(shapeBounds, paint);
                 paint.setStyle(Paint.Style.STROKE);
                 paint.setStrokeWidth(dp(1.4f));
-                paint.setColor(0xffe5c76e);
+                paint.setColor(isFocused() ? 0xff587b49 : 0xffc8bb78);
                 canvas.drawOval(shapeBounds, paint);
                 paint.setStyle(Paint.Style.FILL);
             }
-            paint.setColor(0x3661843e);
+            paint.setColor(0x32677b37);
             shapeBounds.set(centerX - soilWidth * .57f, rootY - dp(4),
                     centerX + soilWidth * .57f, rootY + dp(5));
             canvas.drawOval(shapeBounds, paint);
-            paint.setColor(0xffc7a471);
-            shapeBounds.set(centerX - soilWidth / 2f, rootY - dp(7),
-                    centerX + soilWidth / 2f, rootY + dp(1));
-            canvas.drawOval(shapeBounds, paint);
-            paint.setColor(0xffe0be86);
-            shapeBounds.set(centerX - soilWidth * .45f, rootY - dp(7),
-                    centerX + soilWidth * .45f, rootY - dp(1));
-            canvas.drawOval(shapeBounds, paint);
             drawPlant(canvas, centerX, rootY, perspective);
-
-            paint.setColor(0x20a18454);
+            if (!isSelected()) return;
+            // Only the selected plant carries a small wooden nameplate.
+            paint.setColor(0xff9e8257);
+            canvas.drawRect(centerX - labelWidth * .30f - dp(1), getHeight() - labelHeight - dp(3),
+                    centerX - labelWidth * .30f + dp(1), getHeight() - dp(1), paint);
+            canvas.drawRect(centerX + labelWidth * .30f - dp(1), getHeight() - labelHeight - dp(3),
+                    centerX + labelWidth * .30f + dp(1), getHeight() - dp(1), paint);
+            paint.setColor(0x30a18454);
             shapeBounds.set(centerX - labelWidth / 2f, getHeight() - labelHeight,
                     centerX + labelWidth / 2f, getHeight());
-            canvas.drawRoundRect(shapeBounds, dp(6), dp(6), paint);
+            canvas.drawRoundRect(shapeBounds, dp(3), dp(3), paint);
             shapeBounds.offset(0, -dp(1));
-            paint.setColor(isSelected() ? 0xffffefbb : 0xf2fffbed);
-            canvas.drawRoundRect(shapeBounds, dp(6), dp(6), paint);
+            paint.setColor(0xffffedc9);
+            canvas.drawRoundRect(shapeBounds, dp(3), dp(3), paint);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(.8f));
+            paint.setColor(0xffbba174);
+            canvas.drawRoundRect(shapeBounds, dp(3), dp(3), paint);
+            paint.setStyle(Paint.Style.FILL);
             canvas.drawText(shortTitle, centerX, labelBaseline, labelPaint);
         }
 
@@ -332,14 +377,14 @@ public final class GardenPlotView extends FrameLayout {
             if (art == null) return;
             float heightAvailable = baseline - dp(2);
             if (heightAvailable <= 0) return;
-            float maxHeight = heightAvailable * perspective * (stage == 0 ? .49f : stage == 1 ? .78f : 1f);
-            float maxWidth = getWidth() * .78f * perspective * (stage == 0 ? .63f : 1f);
+            float maxHeight = heightAvailable * perspective * (stage == 0 ? .53f : stage == 1 ? .80f : 1f);
+            float maxWidth = getWidth() * .93f * perspective * (stage == 0 ? .67f : 1f);
             float scale = Math.min(maxWidth / art.getWidth(), maxHeight / art.getHeight());
             float width = art.getWidth() * scale, height = art.getHeight() * scale;
             artBounds.set(centerX - width / 2f, baseline - height, centerX + width / 2f, baseline);
             paint.setColor(0xffffffff);
             float angle = stage == 0 || !breeze.isStarted() ? 0f
-                    : (float) Math.sin(breezePhase + position * 1.71f) * .9f;
+                    : (float) Math.sin(breezePhase + motionOffset) * .85f;
             if (angle == 0f) {
                 canvas.drawBitmap(art, null, artBounds, paint);
                 return;

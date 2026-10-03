@@ -51,6 +51,34 @@ public final class GardenIconView extends View {
         canvas.scale(size / 24f, size / 24f);
         path.reset();
         switch (kind) {
+            case "search":
+                canvas.drawCircle(10.5f, 10.5f, 6.5f, paint);
+                canvas.drawLine(15.2f, 15.2f, 20.5f, 20.5f, paint);
+                break;
+            case "refresh":
+                path.moveTo(19, 7);
+                path.cubicTo(16, 2, 8, 2, 5, 7);
+                path.cubicTo(1, 13, 6, 21, 13, 20);
+                path.cubicTo(16, 20, 19, 18, 20, 15);
+                canvas.drawPath(path, paint);
+                path.reset();
+                path.moveTo(19, 3); path.lineTo(19, 7); path.lineTo(15, 7);
+                canvas.drawPath(path, paint);
+                break;
+            case "clock":
+                canvas.drawCircle(12, 12, 8.5f, paint);
+                path.moveTo(12, 6.5f); path.lineTo(12, 12); path.lineTo(16, 14);
+                canvas.drawPath(path, paint);
+                break;
+            case "repeat":
+                path.moveTo(5, 12); path.lineTo(5, 10);
+                path.quadTo(5, 7, 8, 7); path.lineTo(20, 7);
+                path.moveTo(17, 4); path.lineTo(20, 7); path.lineTo(17, 10);
+                path.moveTo(19, 12); path.lineTo(19, 14);
+                path.quadTo(19, 17, 16, 17); path.lineTo(4, 17);
+                path.moveTo(7, 14); path.lineTo(4, 17); path.lineTo(7, 20);
+                canvas.drawPath(path, paint);
+                break;
             case "garden":
                 path.moveTo(12, 21); path.lineTo(12, 12);
                 path.cubicTo(6, 12, 3.5f, 8.5f, 4, 4);

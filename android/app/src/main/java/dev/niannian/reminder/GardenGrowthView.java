@@ -35,6 +35,7 @@ public final class GardenGrowthView extends View {
     private final ViewTreeObserver.OnGlobalLayoutListener layoutListener = this::updateVisibility;
     private OnPhaseChangedListener phaseListener;
     private String caption = "把一点点坚持，种进生活里";
+    private String taskId = "";
     private int fromStage;
     private int toStage;
     private boolean knownCount = true;
@@ -52,7 +53,7 @@ public final class GardenGrowthView extends View {
         setClickable(false);
         // The host exposes the stage and phase as ordinary accessible text.
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
-        for (int i = 0; i < plants.length; i++) plants[i] = GardenArtCache.plant(getResources(), i);
+        for (int i = 0; i < plants.length; i++) plants[i] = GardenArtCache.plant(getResources(), i, taskId);
         watering = GardenArtCache.load(getResources(), R.drawable.garden_watering);
         ceremony = ValueAnimator.ofFloat(0f, 1f);
         ceremony.setDuration(DURATION_MS);
@@ -75,6 +76,16 @@ public final class GardenGrowthView extends View {
                 }
             }
         });
+    }
+
+    /** Keep the final bloom identical to this task's garden and list artwork. */
+    public void setTaskId(String taskId) {
+        String next = taskId == null ? "" : taskId;
+        if (this.taskId.equals(next)) return;
+        finishImmediately();
+        this.taskId = next;
+        plants[3] = GardenArtCache.plant(getResources(), 3, next);
+        invalidate();
     }
 
     /** Never infers an extra completion: all displayed stages come from these counts. */

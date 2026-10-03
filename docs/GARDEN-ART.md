@@ -19,7 +19,26 @@
 
 花朵提示以既有 `garden_bloom.png` 为风格参考：完整的三朵粉色波斯菊或淡紫三色堇、圆润鼠尾草绿叶、桃棕色土丘、清晰描边与少量分层阴影、真正透明背景，无文字或其他道具。生成尺寸按工具实际输出保留，未二次加工。
 
-## 最终生成提示词
+## 1.7.0 晴日小庭院素材
+
+以用户确认的三屏设计稿为风格参考，使用内置 image_gen 单独生成生产素材，原图直接复制到 `drawable-nodpi`；不把设计稿截图当 UI。实际提示词归档于 `docs/garden-v17-prompts.txt`。
+
+| 文件 | 用途 |
+| --- | --- |
+| garden_home_hero_v3.png | 首页庭院，天空留给标题，底部融入奶油色内容区 |
+| garden_courtyard_v3.png | 花园全幅场景，中央草地留给真实任务植物 |
+| garden_seed_pot_v3.png | 播种页育苗盆，透明背景 |
+| garden_seed_v3.png | 未完成阶段的种子与小土丘，透明背景 |
+| garden_sprout_v3.png | 1–2 次完成的双叶幼芽，透明背景 |
+| garden_leaf_v3.png | 3–6 次完成的枝叶，无花，透明背景 |
+| garden_flower_tulip.png | 粉色郁金香，透明背景 |
+| garden_flower_daisy.png | 黄白雏菊，透明背景 |
+| garden_flower_lupine.png | 紫色羽扇豆，透明背景 |
+| garden_flower_hydrangea.png | 粉色绣球，透明背景 |
+
+品种固定映射由 `GardenFlowers` 统一管理，列表、花园及生长动画共用。品种不影响真实生长阶段。旧素材保留，不作为新版本的任务花种。背景边缘植物属于环境装饰，不参与种植数量。
+
+## 较早版本生成提示词
 
 ### anime_sprout
 

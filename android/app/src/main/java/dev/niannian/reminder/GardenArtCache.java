@@ -22,8 +22,12 @@ final class GardenArtCache {
     private GardenArtCache() { }
 
     static Bitmap plant(Resources resources, int stage) {
-        return load(resources, stage == 0 ? R.drawable.garden_seed : stage == 1 ? R.drawable.garden_sprout
-                : stage == 2 ? R.drawable.garden_leaf : R.drawable.garden_bloom);
+        return plant(resources, stage, null);
+    }
+
+    static Bitmap plant(Resources resources, int stage, String taskId) {
+        return load(resources, stage == 0 ? R.drawable.garden_seed_v3 : stage == 1 ? R.drawable.garden_sprout_v3
+                : stage == 2 ? R.drawable.garden_leaf_v3 : GardenFlowers.resourceFor(taskId));
     }
 
     static Bitmap load(Resources resources, int resource) {
