@@ -51,6 +51,47 @@ public final class GardenIconView extends View {
         canvas.scale(size / 24f, size / 24f);
         path.reset();
         switch (kind) {
+            case "back":
+                path.moveTo(15, 5); path.lineTo(8, 12); path.lineTo(15, 19);
+                canvas.drawPath(path, paint);
+                break;
+            case "chevron_right":
+                path.moveTo(9, 6); path.lineTo(15, 12); path.lineTo(9, 18);
+                canvas.drawPath(path, paint);
+                break;
+            case "chevron_down":
+                path.moveTo(6, 9); path.lineTo(12, 15); path.lineTo(18, 9);
+                canvas.drawPath(path, paint);
+                break;
+            case "chevron_up":
+                path.moveTo(6, 15); path.lineTo(12, 9); path.lineTo(18, 15);
+                canvas.drawPath(path, paint);
+                break;
+            case "circle_check":
+                canvas.drawCircle(12, 12, 8.5f, paint);
+                path.moveTo(8, 12); path.lineTo(10.8f, 14.8f); path.lineTo(16.5f, 9);
+                canvas.drawPath(path, paint);
+                break;
+            case "heart":
+                path.moveTo(12, 20);
+                path.cubicTo(9.5f, 17.8f, 3.5f, 13.3f, 3.5f, 8.5f);
+                path.cubicTo(3.5f, 3.8f, 9.6f, 2.8f, 12, 7.3f);
+                path.cubicTo(14.4f, 2.8f, 20.5f, 3.8f, 20.5f, 8.5f);
+                path.cubicTo(20.5f, 13.3f, 14.5f, 17.8f, 12, 20);
+                path.close();
+                canvas.drawPath(path, paint);
+                break;
+            case "cycle":
+                path.moveTo(4.4f, 10);
+                path.cubicTo(5.4f, 5, 9.8f, 2.7f, 14.2f, 4);
+                path.cubicTo(17, 4.8f, 19, 6.8f, 19.6f, 9.5f);
+                path.moveTo(19.6f, 4.8f); path.lineTo(19.6f, 9.5f); path.lineTo(14.9f, 9.5f);
+                path.moveTo(19.6f, 14);
+                path.cubicTo(18.6f, 19, 14.2f, 21.3f, 9.8f, 20);
+                path.cubicTo(7, 19.2f, 5, 17.2f, 4.4f, 14.5f);
+                path.moveTo(4.4f, 19.2f); path.lineTo(4.4f, 14.5f); path.lineTo(9.1f, 14.5f);
+                canvas.drawPath(path, paint);
+                break;
             case "search":
                 canvas.drawCircle(10.5f, 10.5f, 6.5f, paint);
                 canvas.drawLine(15.2f, 15.2f, 20.5f, 20.5f, paint);

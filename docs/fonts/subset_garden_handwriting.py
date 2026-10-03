@@ -1,4 +1,4 @@
-"""Build the small bundled garden-sign font from the official source TTF."""
+"""Build the bundled garden-sign and sowing-note font from the official source TTF."""
 
 import sys
 from pathlib import Path
@@ -7,7 +7,10 @@ from fontTools import subset
 from fontTools.ttLib import TTFont
 
 
-CHARACTERS = "花园里，已种下 株走进我的花园花园暂未更新，点此查看0123456789-"
+CHARACTERS = (
+    "花园里，已种下 株走进我的花园花园暂未更新，点此查看0123456789-"
+    "小小的一件事也会长出美好的花让生活的每一件小事都被温柔记住念念"
+)
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "android/app/src/main/res/font/garden_handwriting.ttf"
 LICENSE = Path(__file__).with_name("garden-handwriting-OFL.txt")

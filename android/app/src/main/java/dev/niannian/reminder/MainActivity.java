@@ -51,6 +51,7 @@ public class MainActivity extends Activity {
     private String completionText = "", aiText = "", aiWarning = "";
     private boolean editing = false, manualVisible = false, taskBusy = false;
     private boolean rulesExpanded = false, advancedExpanded = false, aiExpanded = true;
+    private int selectedFlowerIndex = -1;
     private JSONObject selectedRecord = new JSONObject();
     private JSONArray calendarData = new JSONArray();
     private String calendarLoadedKey = "", calendarNotice = "";
@@ -91,6 +92,7 @@ public class MainActivity extends Activity {
             search=state.getString("search","");homeSearchExpanded=state.getBoolean("homeSearchExpanded");
             try { selected = new JSONObject(state.getString("selected", "{}")); draft = new JSONObject(state.getString("draft", "{}")); restoredForm = new JSONObject(state.getString("form", "{}")); } catch (Exception ignored) {}
             editing = state.getBoolean("editing"); manualVisible = state.getBoolean("manual");
+            selectedFlowerIndex=state.getInt("selectedFlowerIndex",-1);
             rulesExpanded=state.getBoolean("rulesExpanded"); advancedExpanded=state.getBoolean("advancedExpanded"); aiExpanded=state.getBoolean("aiExpanded",true);
             detailBack=state.getString("detailBack","home"); photoBack=state.getString("photoBack","record"); photoId=state.getString("photoId",""); photoTitle=state.getString("photoTitle",""); recordPage=state.getInt("recordPage");
             recordBack=state.getString("recordBack","history"); gardenPage=state.getInt("gardenPage");
@@ -116,6 +118,7 @@ public class MainActivity extends Activity {
         out.putString("form", restoredForm == null ? "{}" : restoredForm.toString()); out.putString("filter", filter);
         out.putString("search",search);out.putBoolean("homeSearchExpanded",homeSearchExpanded);
         out.putBoolean("editing", editing); out.putBoolean("manual", manualVisible);
+        out.putInt("selectedFlowerIndex",selectedFlowerIndex);
         out.putBoolean("rulesExpanded",rulesExpanded); out.putBoolean("advancedExpanded",advancedExpanded); out.putBoolean("aiExpanded",aiExpanded);
         out.putString("detailBack",detailBack); out.putString("photoBack",photoBack); out.putString("photoId",photoId); out.putString("photoTitle",photoTitle);
         out.putString("recordBack",recordBack); out.putInt("gardenPage",gardenPage); out.putString("completedRecord",completedRecord.toString());
@@ -146,6 +149,7 @@ public class MainActivity extends Activity {
         if(!canLeaveAuthentication())return;
         if (screen.equals("home") || (screen.equals("server") && session.base.isEmpty())) { super.onBackPressed(); return; }
         if (screen.equals("editor")) {
+            if(taskBusy){toast("正在处理提醒，请稍等");return;}
             new AlertDialog.Builder(this).setTitle("离开编辑？").setMessage("还没有保存的修改将丢弃。").setNegativeButton("继续编辑", null)
                     .setPositiveButton("离开", (d,w) -> navigate(editing ? "detail" : "home")).show(); return;
         }
@@ -177,6 +181,7 @@ public class MainActivity extends Activity {
     }
     private void render() {
         stopPageMotion();
+        GardenFlowers.configure(this,session.base,session.email);
         if(session.token.isEmpty()&&!Arrays.asList("home","login","server").contains(screen))screen="home";
         pageEpoch++; taskBusy = false; fields.clear(); kindPicker = null; modePicker = null; weekdays = null;
         root = column(); root.setBackgroundColor(BG); setContentView(root);
@@ -185,12 +190,21 @@ public class MainActivity extends Activity {
             return insets;
         });
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setClipToPadding(false); scroll.setVerticalScrollBarEnabled(false);
-        root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        if(screen.equals("editor")){
+            FrameLayout page=new FrameLayout(this);root.addView(page,new LinearLayout.LayoutParams(-1,0,1));
+            ImageView leaves=new ImageView(this);leaves.setImageBitmap(GardenArtCache.load(getResources(),R.drawable.sowing_corner_leaves));leaves.setScaleType(ImageView.ScaleType.FIT_END);leaves.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            page.addView(leaves,new FrameLayout.LayoutParams(dp(160),dp(108),Gravity.TOP|Gravity.END));page.addView(scroll,new FrameLayout.LayoutParams(-1,-1));
+        }else root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         body = column(); body.setPadding(dp(16), dp(12), dp(16), dp(20));
+        if(screen.equals("editor"))body.setPadding(dp(16),dp(4),dp(16),0);
         if((screen.equals("home")&&!session.token.isEmpty())||screen.equals("garden"))body.setPadding(0,0,0,0); scroll.addView(body, new ScrollView.LayoutParams(-1, -2));
         gardenContent=null; gardenPreview=null; gardenSelection=null;
         if (!Arrays.asList("home", "garden", "history", "settings", "login", "server").contains(screen)) {
-            TextView back = text("‹  返回", 15, BLUE, true); back.setMinHeight(dp(48)); back.setGravity(Gravity.CENTER_VERTICAL); back.setOnClickListener(v -> onBackPressed()); body.addView(back);
+            if(screen.equals("editor")){
+                LinearLayout back=row();back.setMinimumHeight(dp(48));back.addView(new GardenIconView(this,"back",INK),new LinearLayout.LayoutParams(dp(20),dp(20)));gapHorizontal(back,5);back.addView(text("返回",14,INK,false));back.setContentDescription("返回");back.setFocusable(true);back.setOnClickListener(v->onBackPressed());body.addView(back,new LinearLayout.LayoutParams(dp(80),dp(48)));
+            }else{
+                TextView back = text("‹  返回", 15, BLUE, true); back.setMinHeight(dp(48)); back.setGravity(Gravity.CENTER_VERTICAL); back.setOnClickListener(v -> onBackPressed()); body.addView(back);
+            }
         }
         errorView = text("", 14, RED, false); errorView.setPadding(dp(14), dp(12), dp(14), dp(12)); errorView.setBackground(shape(0xffffeeee, 14)); errorView.setVisibility(View.GONE); body.addView(errorView);
         switch (screen) {
@@ -668,46 +682,45 @@ public class MainActivity extends Activity {
     private void openEditor(JSONObject task) {
         if(task!=null&&pauseInFlight.contains(task.optString("id"))){toast("正在保存开关状态，请稍等");return;}
         editing=task!=null;draft=task==null?new JSONObject():copy(task);restoredForm=null;manualVisible=editing;rulesExpanded=editing;advancedExpanded=false;aiExpanded=!editing;aiText="";aiWarning="";
+        selectedFlowerIndex=editing?GardenFlowers.indexFor(task.optString("id")):-1;
         screen="editor";render();
     }
     private void renderEditor() {
-        LinearLayout seedHeading=row(),seedCopy=column();
-        seedCopy.addView(text(editing?"照料这颗种子":"播下一件小事",24,INK,true));gap(seedCopy,7);
-        seedCopy.addView(text(editing?"调整提醒，按自己的节奏来。":"把要记住的事，交给念念",13,MUTED,false));
-        seedHeading.addView(seedCopy,new LinearLayout.LayoutParams(0,-2,1));seedHeading.addView(art(R.drawable.garden_seed_v3,64));body.addView(seedHeading);gap(body,20);
+        addSowingHeading();
         if(!editing){
-            LinearLayout inputArea=column();inputArea.setPadding(dp(10),dp(10),dp(10),0);inputArea.setBackground(shape(PALE,14));body.addView(inputArea);
-            EditText sentence=field(inputArea,"ai","说一句话，安排提醒",aiText,"15 分钟后提醒我收衣服，没完成就每 5 分钟提醒",2);
+            boolean compact=manualVisible&&!aiExpanded;
+            LinearLayout inputArea=column();inputArea.setPadding(dp(10),dp(10),dp(10),dp(10));inputArea.setBackground(shape(0xffdeebd8,12));body.addView(inputArea);
+            EditText sentence=new EditText(this);styleField(sentence);sentence.setBackground(shape(PAPER,8));sentence.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));sentence.setIncludeFontPadding(false);sentence.setTextSize(14);sentence.setPadding(dp(12),dp(10),dp(12),dp(10));sentence.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);sentence.setGravity(Gravity.TOP|Gravity.START);sentence.setMinLines(compact?1:2);sentence.setMaxLines(compact?3:5);sentence.setMinHeight(dp(compact?44:80));sentence.setText(aiText);sentence.setHint("15 分钟后提醒我收衣服，没完成就每 5 分钟提醒");fields.put("ai",sentence);inputArea.addView(sentence,new LinearLayout.LayoutParams(-1,-2));
             LinearLayout actions=row();Button generate=button(manualVisible?"重新安排":"帮我安排",!manualVisible);
-            if(manualVisible)generate.setBackground(shape(Color.TRANSPARENT,10));
-            actions.addView(generate,new LinearLayout.LayoutParams(0,dp(48),1));
-            Button manual=smallButton("手动填写");manual.setBackground(shape(Color.TRANSPARENT,10));actions.addView(manual);body.addView(actions);gap(body,12);
-            manual.setOnClickListener(v->{captureTransient();manualVisible=true;rulesExpanded=true;aiExpanded=true;render();});
-            generate.setOnClickListener(v->{String input=sentence.getText().toString().trim();if(input.length()<2){showError("先写下要提醒的事和时间");return;}captureTransient();aiText=input;hideKeyboard(sentence);
-                run(generate,a->a.json("POST","/api/v1/ai/parse",object("text",input)),result->{draft=result;restoredForm=null;manualVisible=true;rulesExpanded=false;advancedExpanded=false;aiExpanded=false;JSONArray warnings=result.optJSONArray("warnings");aiWarning=warnings==null?"":join(warnings,"\n");render();});
+            if(manualVisible){generate.setBackground(shape(Color.TRANSPARENT,10));generate.setTextSize(12);generate.setTextColor(INK);actions.setGravity(Gravity.END);actions.addView(generate,new LinearLayout.LayoutParams(-2,dp(48)));TextView separator=text("|",12,LINE,false);actions.addView(separator);}
+            else{gap(body,10);actions.addView(generate,new LinearLayout.LayoutParams(0,dp(48),1));}
+            Button manual=smallButton("手动填写");manual.setBackground(shape(Color.TRANSPARENT,10));manual.setTextColor(INK);manual.setTextSize(manualVisible?12:14);actions.addView(manual);body.addView(actions);gap(body,manualVisible?2:16);
+            manual.setOnClickListener(v->{if(taskBusy)return;captureTransient();manualVisible=true;rulesExpanded=true;aiExpanded=true;render();});
+            generate.setOnClickListener(v->{if(taskBusy)return;String input=sentence.getText().toString().trim();if(input.length()<2){showError("先写下要提醒的事和时间");return;}captureTransient();aiText=input;hideKeyboard(sentence);taskBusy=true;
+                run(generate,a->a.json("POST","/api/v1/ai/parse",object("text",input)),result->{taskBusy=false;draft=result;restoredForm=null;manualVisible=true;rulesExpanded=false;advancedExpanded=false;aiExpanded=false;JSONArray warnings=result.optJSONArray("warnings");aiWarning=warnings==null?"":join(warnings,"\n");render();});
             });
         }
-        if(!manualVisible){addFlowerPreview(body);addSeedFooter(body);return;}
+        if(!manualVisible){addFlowerPreview(body);return;}
         if(!aiWarning.isEmpty())note(body,aiWarning);
         JSONObject rule=draft.optJSONObject("rule");if(rule==null)rule=new JSONObject();
-        LinearLayout draftPanel=card(body);draftPanel.setPadding(dp(12),dp(14),dp(12),dp(8));
-        draftPanel.addView(text(editing?"提醒规则":"提醒草稿",15,INK,true));gap(draftPanel,12);
-        field(draftPanel,"title","",formValue("title",draft.optString("title")),"例如：收衣服",1);
+        LinearLayout draftPanel=column();draftPanel.setPadding(dp(12),dp(12),dp(12),dp(2));GradientDrawable draftSurface=shape(PAPER,10);draftSurface.setStroke(dp(1),0xffe5e7dc);draftPanel.setBackground(draftSurface);body.addView(draftPanel);
+        TextView draftTitle=text(editing?"提醒规则":"提醒草稿",16,INK,true);draftTitle.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));draftPanel.addView(draftTitle);gap(draftPanel,10);
+        EditText title=field(draftPanel,"title","",formValue("title",draft.optString("title")),"例如：收衣服",1);title.setTextSize(17);title.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));title.setMinHeight(dp(44));title.setPadding(dp(12),dp(6),dp(12),dp(6));GradientDrawable titleSurface=shape(PAPER,7);titleSurface.setStroke(dp(1),0xffe5e7dc);title.setBackground(titleSurface);
         TextView[] summaryLabels=new TextView[3],summaryValues=new TextView[3];
-        LinearLayout[] summaryRows=new LinearLayout[3];String[] symbols={"clock","repeat","check"};
+        LinearLayout[] summaryRows=new LinearLayout[3];String[] symbols={"clock","cycle","circle_check"};
         for(int i=0;i<3;i++){
-            LinearLayout row=row();row.setPadding(0,dp(8),0,dp(8));row.setMinimumHeight(dp(52));row.setGravity(Gravity.CENTER_VERTICAL);
-            GardenIconView icon=new GardenIconView(this,symbols[i],INK);row.addView(icon,new LinearLayout.LayoutParams(dp(21),dp(21)));gapHorizontal(row,10);
-            summaryLabels[i]=text("",13,INK,false);row.addView(summaryLabels[i],new LinearLayout.LayoutParams(dp(78),-2));
-            summaryValues[i]=text("",13,INK,false);summaryValues[i].setGravity(Gravity.END|Gravity.CENTER_VERTICAL);row.addView(summaryValues[i],new LinearLayout.LayoutParams(0,-2,1));gapHorizontal(row,6);row.addView(text("›",17,MUTED,false));
+            LinearLayout row=row();row.setPadding(dp(5),dp(8),0,dp(8));row.setMinimumHeight(dp(48));row.setGravity(Gravity.CENTER_VERTICAL);
+            GardenIconView icon=new GardenIconView(this,symbols[i],INK);row.addView(icon,new LinearLayout.LayoutParams(dp(22),dp(22)));gapHorizontal(row,14);
+            summaryLabels[i]=text("",15,INK,false);row.addView(summaryLabels[i],new LinearLayout.LayoutParams(dp(84),-2));
+            summaryValues[i]=text("",15,INK,false);summaryValues[i].setGravity(Gravity.END|Gravity.CENTER_VERTICAL);row.addView(summaryValues[i],new LinearLayout.LayoutParams(0,-2,1));gapHorizontal(row,8);row.addView(new GardenIconView(this,"chevron_right",INK),new LinearLayout.LayoutParams(dp(16),dp(16)));
             draftPanel.addView(row);summaryRows[i]=row;
             if(i<2){View divider=new View(this);divider.setBackgroundColor(LINE);draftPanel.addView(divider,new LinearLayout.LayoutParams(-1,dp(1)));}
         }
         TextView previewNote=text("",11,MUTED,false);draftPanel.addView(previewNote);gap(draftPanel,4);
-        Button adjust=smallButton(rulesExpanded?"收起规则  ▴":"调整规则  ›");adjust.setBackground(shape(Color.TRANSPARENT,10));LinearLayout adjustRow=row();adjustRow.setGravity(Gravity.END);adjustRow.addView(adjust);draftPanel.addView(adjustRow);
+        LinearLayout adjustRow=row();adjustRow.setGravity(Gravity.END);Button adjust=smallButton(rulesExpanded?"收起规则":"调整规则");adjust.setTextColor(INK);adjust.setBackground(shape(Color.TRANSPARENT,10));adjustRow.addView(adjust);GardenIconView adjustArrow=new GardenIconView(this,"chevron_right",INK);adjustRow.addView(adjustArrow,new LinearLayout.LayoutParams(dp(16),dp(16)));draftPanel.addView(adjustRow);
         LinearLayout rules=column();body.addView(rules);rules.setVisibility(rulesExpanded?View.VISIBLE:View.GONE);
-        adjust.setOnClickListener(v->{rulesExpanded=!rulesExpanded;rules.setVisibility(rulesExpanded?View.VISIBLE:View.GONE);adjust.setText(rulesExpanded?"收起规则  ▴":"调整规则  ›");});
-        for(LinearLayout summaryRow:summaryRows){summaryRow.setBackground(new RippleDrawable(ColorStateList.valueOf(0x18527a58),shape(Color.TRANSPARENT,8),null));summaryRow.setOnClickListener(v->{rulesExpanded=true;rules.setVisibility(View.VISIBLE);adjust.setText("收起规则  ▴");rules.post(()->rules.requestRectangleOnScreen(new Rect(0,0,rules.getWidth(),dp(180)),false));});}
+        View.OnClickListener toggleRules=v->{rulesExpanded=!rulesExpanded;rules.setVisibility(rulesExpanded?View.VISIBLE:View.GONE);adjust.setText(rulesExpanded?"收起规则":"调整规则");};adjust.setOnClickListener(toggleRules);adjustRow.setOnClickListener(toggleRules);
+        for(LinearLayout summaryRow:summaryRows){summaryRow.setBackground(new RippleDrawable(ColorStateList.valueOf(0x18527a58),shape(Color.TRANSPARENT,8),null));summaryRow.setFocusable(true);summaryRow.setOnClickListener(v->{rulesExpanded=true;rules.setVisibility(View.VISIBLE);adjust.setText("收起规则");rules.post(()->rules.requestRectangleOnScreen(new Rect(0,0,rules.getWidth(),dp(180)),false));});}
 
         int initialKind=Arrays.asList(KINDS).indexOf(rule.optString("kind","monthly_window"));if(initialKind<0)initialKind=KINDS.length-1;
         int restoredKind=restoredForm!=null?restoredForm.optInt("kind_index",initialKind):initialKind;if(restoredKind<0||restoredKind>=KINDS.length)restoredKind=KINDS.length-1;
@@ -742,6 +755,7 @@ public class MainActivity extends Activity {
         field(extra,"description","补充说明",formValue("description",draft.optString("description")),"可不填",2);
         LinearLayout[] settingsPair=pairedFields(extra);field(settingsPair[0],"max_reminders","提醒次数上限",formValue("max_reminders",String.valueOf(rule.optInt("max_reminders",0))),"0 表示不限",1);number(fields.get("max_reminders"));
         field(settingsPair[1],"timezone","时区",formValue("timezone",rule.optString("timezone","Asia/Shanghai")),"Asia/Shanghai",1);note(extra,"上限填 0 表示不限次数，提醒按所选时区发送。");
+        addFlowerPreview(extra);
         refreshMinuteFirstFields();
         Runnable updatePreview=()->updateEditorSummary(summaryLabels,summaryValues,previewNote);
         Runnable updateKind=()->{String kind=KINDS[kindPicker.getSelectedItemPosition()];boolean minuteKind=kind.equals("minute_interval");monthly.setVisibility(kind.equals("monthly_window")?View.VISIBLE:View.GONE);weekly.setVisibility(kind.equals("weekly")?View.VISIBLE:View.GONE);interval.setVisibility(kind.equals("interval")?View.VISIBLE:View.GONE);minutes.setVisibility(minuteKind?View.VISIBLE:View.GONE);datePair[0].setVisibility(minuteKind?View.GONE:View.VISIBLE);fixedTimes.setVisibility(minuteKind?View.GONE:View.VISIBLE);completionMode.setVisibility(minuteKind?View.GONE:View.VISIBLE);modePicker.setEnabled(!kind.equals("ongoing")&&!minuteKind);if(kind.equals("ongoing")||minuteKind)modePicker.setSelection(0);dateHelp.setText(minuteKind?"结束日期可不填；填写后提醒至当天结束，长按可清除。":kind.equals("date_range")?"开始和结束日期都要填，长按可清除。":Arrays.asList("once","interval","ongoing").contains(kind)?"需选择开始日期，长按日期可清除。":"日期可不填，长按日期可清除。");updateModeHelp(modeHelp);updatePreview.run();};
@@ -750,18 +764,43 @@ public class MainActivity extends Activity {
         hiddenFirst.addTextChangedListener(watcher(()->{refreshMinuteFirstFields();updatePreview.run();}));fields.get("timezone").addTextChangedListener(watcher(()->{refreshMinuteFirstFields();updatePreview.run();}));
         hiddenTimes.addTextChangedListener(watcher(()->drawTimeChips(timeRow)));for(CheckBox day:weekdays)day.setOnCheckedChangeListener((v,checked)->updatePreview.run());
 
-        gap(body,12);Button save=button(editing?"保存修改":"播下种子，开始提醒",true);body.addView(save);save.setOnClickListener(v->saveEditor(save));
-        addSeedFooter(body);
+        gap(body,12);Button save=button(editing?"保存修改":"播下种子，开始提醒",true);save.setTextSize(16);save.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));save.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),shape(0xff567e5d,10),null));body.addView(save,new LinearLayout.LayoutParams(-1,dp(50)));save.setOnClickListener(v->saveEditor(save));
+        if(!editing&&draft.optJSONObject("rule")!=null){body.addView(new Space(this),new LinearLayout.LayoutParams(1,0,1));addSeedFooter(body);}
+    }
+    private void addSowingHeading(){
+        LinearLayout heading=row(),copy=column();
+        TextView title=text(editing?"照料这颗种子":"播下一件小事",25,HOME_TITLE,true);title.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));copy.addView(title);gap(copy,8);
+        copy.addView(text(editing?"调整提醒，按自己的节奏来。":"把要记住的事，交给念念",14,INK,false));
+        heading.addView(copy,new LinearLayout.LayoutParams(0,-2,1));
+        FrameLayout illustration=new FrameLayout(this);
+        ImageView seed=art(R.drawable.sowing_seed_mascot,80);FrameLayout.LayoutParams seedPosition=new FrameLayout.LayoutParams(dp(80),dp(108),Gravity.BOTTOM|Gravity.START);seedPosition.bottomMargin=dp(4);illustration.addView(seed,seedPosition);
+        TextView words=text("小小的\n一件事\n也会长出美好的花",12,0xff9d8e75,false);words.setTypeface(getResources().getFont(R.font.garden_handwriting));words.setGravity(Gravity.CENTER);words.setLineSpacing(dp(3),1);words.setRotation(-10);FrameLayout.LayoutParams copyPosition=new FrameLayout.LayoutParams(dp(78),-2,Gravity.CENTER_VERTICAL|Gravity.END);copyPosition.bottomMargin=dp(12);illustration.addView(words,copyPosition);
+        GardenIconView heart=new GardenIconView(this,"heart",0xffa29076);FrameLayout.LayoutParams heartPosition=new FrameLayout.LayoutParams(dp(17),dp(17),Gravity.END|Gravity.BOTTOM);heartPosition.setMargins(0,0,dp(10),dp(16));illustration.addView(heart,heartPosition);
+        heading.addView(illustration,new LinearLayout.LayoutParams(dp(getResources().getConfiguration().screenWidthDp<360?124:145),dp(124)));body.addView(heading);gap(body,8);
     }
     private void addFlowerPreview(LinearLayout parent){
-        gap(parent,14);parent.addView(text("每件小事，会慢慢长成不同的花",14,INK,true));gap(parent,6);
+        gap(parent,10);TextView title=text("选一朵喜欢的花",16,INK,true);title.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));parent.addView(title);gap(parent,12);
         int[] pictures=GardenFlowers.resources();String[] names=GardenFlowers.names();LinearLayout flowers=row();
-        for(int i=0;i<pictures.length;i++){LinearLayout item=column();item.setGravity(Gravity.CENTER);item.addView(art(pictures[i],56));TextView caption=text(names[i],11,MUTED,false);caption.setGravity(Gravity.CENTER);item.addView(caption);flowers.addView(item,new LinearLayout.LayoutParams(0,-2,1));}
-        parent.addView(flowers);gap(parent,10);note(parent,"播种后固定一种花，完成 1 次发芽、3 次长叶、7 次开花。");
+        FrameLayout[] choices=new FrameLayout[pictures.length];TextView[] captions=new TextView[pictures.length];FrameLayout[] checks=new FrameLayout[pictures.length];
+        Runnable update=()->{for(int j=0;j<choices.length;j++){
+            boolean checked=selectedFlowerIndex==j;GradientDrawable plate=shape(checked?0xffe8f0df:Color.TRANSPARENT,12);plate.setStroke(dp(checked?2:1),checked?BLUE:0xffe4e7dc);choices[j].setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),plate,null));choices[j].setSelected(checked);choices[j].setContentDescription(names[j]+(checked?"，已选中":"，未选中"));checks[j].setVisibility(checked?View.VISIBLE:View.INVISIBLE);captions[j].setTextColor(checked?HOME_TITLE:MUTED);captions[j].setTypeface(Typeface.create("sans-serif",checked?Typeface.BOLD:Typeface.NORMAL));
+        }};
+        for(int i=0;i<pictures.length;i++){
+            final int choice=i;FrameLayout item=new FrameLayout(this);choices[i]=item;item.setPadding(dp(4),dp(10),dp(4),dp(8));item.setMinimumHeight(dp(112));
+            LinearLayout content=column();content.setGravity(Gravity.CENTER);ImageView flower=art(pictures[i],64);content.addView(flower,new LinearLayout.LayoutParams(-1,dp(64)));gap(content,8);TextView caption=text(names[i],12,MUTED,false);caption.setGravity(Gravity.CENTER);captions[i]=caption;content.addView(caption);item.addView(content,new FrameLayout.LayoutParams(-1,-2,Gravity.CENTER));
+            FrameLayout check=new FrameLayout(this);check.setBackground(shape(BLUE,20));GardenIconView mark=new GardenIconView(this,"check",PAPER);check.addView(mark,new FrameLayout.LayoutParams(dp(14),dp(14),Gravity.CENTER));FrameLayout.LayoutParams badge=new FrameLayout.LayoutParams(dp(20),dp(20),Gravity.TOP|Gravity.END);item.addView(check,badge);checks[i]=check;
+            item.setFocusable(true);item.setAccessibilityDelegate(new View.AccessibilityDelegate(){@Override public void onInitializeAccessibilityNodeInfo(View host,android.view.accessibility.AccessibilityNodeInfo info){super.onInitializeAccessibilityNodeInfo(host,info);info.setClassName("android.widget.RadioButton");info.setCheckable(true);info.setChecked(host.isSelected());}});
+            item.setOnClickListener(v->{if(taskBusy){toast("正在处理提醒，请稍等");return;}selectedFlowerIndex=choice;update.run();});LinearLayout.LayoutParams slot=new LinearLayout.LayoutParams(0,-2,1);if(i>0)slot.leftMargin=dp(7);flowers.addView(item,slot);
+        }
+        update.run();parent.addView(flowers);gap(parent,12);note(parent,"完成 1 次发芽、3 次长叶、7 次开花。花种会在这台手机上记住。");
     }
     private void addSeedFooter(LinearLayout parent){
-        LinearLayout footer=row();footer.setGravity(Gravity.BOTTOM);footer.setPadding(dp(8),dp(18),0,0);
-        TextView words=text("让生活的每一件小事\n都被温柔记住",13,MUTED,false);words.setLineSpacing(dp(7),1f);footer.addView(words,new LinearLayout.LayoutParams(0,-2,1));footer.addView(art(R.drawable.garden_seed_pot_v3,116));parent.addView(footer);
+        FrameLayout footer=new FrameLayout(this);footer.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+        ImageView foliage=new ImageView(this);foliage.setImageBitmap(GardenArtCache.backdrop(getResources(),R.drawable.sowing_footer_foliage));foliage.setScaleType(ImageView.ScaleType.FIT_XY);footer.addView(foliage,new FrameLayout.LayoutParams(-1,dp(144),Gravity.BOTTOM));
+        TextView words=text("让生活的每一件小事\n都被温柔记住",17,0xff9b8b71,false);words.setTypeface(getResources().getFont(R.font.garden_handwriting));words.setLineSpacing(dp(7),1);words.setGravity(Gravity.CENTER);words.setRotation(-10);FrameLayout.LayoutParams wordsPosition=new FrameLayout.LayoutParams(dp(182),-2,Gravity.TOP|Gravity.START);wordsPosition.setMargins(dp(6),dp(35),0,0);footer.addView(words,wordsPosition);
+        GardenIconView heart=new GardenIconView(this,"heart",0xffaa947b);FrameLayout.LayoutParams heartPosition=new FrameLayout.LayoutParams(dp(18),dp(18),Gravity.TOP|Gravity.START);heartPosition.setMargins(dp(169),dp(82),0,0);footer.addView(heart,heartPosition);
+        FrameLayout pot=new FrameLayout(this);ImageView plant=art(R.drawable.garden_seed_pot_v3,136);pot.addView(plant,new FrameLayout.LayoutParams(-1,-1));TextView name=text("念念",17,0xff82583e,false);name.setTypeface(getResources().getFont(R.font.garden_handwriting));name.setGravity(Gravity.CENTER);FrameLayout.LayoutParams namePosition=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM);namePosition.bottomMargin=dp(29);pot.addView(name,namePosition);FrameLayout.LayoutParams potPosition=new FrameLayout.LayoutParams(dp(136),dp(158),Gravity.END|Gravity.BOTTOM);potPosition.setMargins(0,0,dp(22),dp(8));footer.addView(pot,potPosition);
+        LinearLayout.LayoutParams footerPosition=new LinearLayout.LayoutParams(-1,dp(190));footerPosition.setMargins(-dp(16),dp(8),-dp(16),0);parent.addView(footer,footerPosition);
     }
     private void updateEditorSummary(TextView[] labels,TextView[] values,TextView note){
         if(kindPicker==null||modePicker==null)return;
@@ -823,8 +862,11 @@ public class MainActivity extends Activity {
         }catch(DateTimeException invalid){showError("请先填写有效时区，例如 Asia/Shanghai");}
     }
     private void saveEditor(Button button){
+        if(taskBusy)return;
         JSONObject payload;try{payload=buildTask();}catch(Exception e){showError(e.getMessage());return;}String id=draft.optString("id");boolean isEditing=editing;
-        run(button,a->a.json(isEditing?"PUT":"POST",isEditing?"/api/v1/tasks/"+id:"/api/v1/tasks",payload),result->{selected=result;taskData=new JSONArray();restoredForm=null;invalidateCalendar();if(!isEditing)detailBack="home";toast(isEditing?"修改已保存":"种子已播下，提醒也安排好了");screen="detail";render();});
+        taskBusy=true;
+        int flower=selectedFlowerIndex;
+        run(button,a->a.json(isEditing?"PUT":"POST",isEditing?"/api/v1/tasks/"+id:"/api/v1/tasks",payload),result->{taskBusy=false;boolean flowerSaved=flower<0||GardenFlowers.remember(result.optString("id"),flower);selected=result;taskData=new JSONArray();restoredForm=null;invalidateCalendar();if(!isEditing)detailBack="home";toast(!flowerSaved?(isEditing?"提醒已修改，花种未保存，请重试":"提醒已创建，花种未保存，可在调整规则里重选"):isEditing?"修改已保存":"种子已播下，提醒也安排好了");screen="detail";render();});
     }
     private void updateModeHelp(TextView view){String[] help={"本期完成后停止，下期重新提醒。","今天完成后，明天继续提醒。","每期只发一次，无需点击完成。"};view.setText(Arrays.asList("ongoing","minute_interval").contains(KINDS[kindPicker.getSelectedItemPosition()])?"完成后永久结束，不再重复。":help[modePicker.getSelectedItemPosition()]);}
     private JSONObject buildTask() throws Exception {
