@@ -2,12 +2,20 @@
 
 Base URL entered in Android is origin e.g. http://192.168.1.10:56507. All paths below include /api/v1. JSON UTF-8. Bearer opaque token except health/auth. Errors {"error":"human readable Chinese"}. Timestamps RFC3339. IDs strings. Unknown fields rejected for writes. Server owns user identity, recipients and media.
 
-GET /health -> {"status":"ok","version":"1.3.1"}
+GET /health -> {"status":"ok","version":"1.4.0"}
 POST /api/v1/auth/code {"email":"..."} -> {"message":"验证码已发送"}
-POST /api/v1/auth/verify {"email":"...","code":"123456"} -> {"token":"...","user":{"id":"...","email":"..."}}
-Registration is open: any syntactically valid email can request a code, and the first successful verification creates its account. Repeat verification reuses the same account. Legacy allowed_emails configuration is ignored across login, sessions, and reminder delivery. OTP expiry/rate limits and user-data isolation still apply.
-GET /api/v1/me -> {"id":"...","email":"..."}
+POST /api/v1/auth/register {"email":"...","code":"123456","password":"..."} -> {"token":"...","user":{"id":"...","email":"...","password_set":true}}
+POST /api/v1/auth/login {"email":"...","password":"..."} -> {"token":"...","user":{"id":"...","email":"...","password_set":true}}
+POST /api/v1/auth/password/reset {"email":"...","code":"123456","password":"..."} -> {"token":"...","user":{"id":"...","email":"...","password_set":true}}
+POST /api/v1/auth/verify {"email":"...","code":"123456"} -> {"token":"...","user":{"id":"...","email":"...","password_set":false}}
+GET /api/v1/me -> {"id":"...","email":"...","password_set":true}
 POST /api/v1/auth/logout -> {"ok":true}
+
+Registration is open to syntactically valid email addresses. Registration requires a valid email code and creates a password account; it also sets the first password on an existing OTP-only account while preserving its ID, tasks and existing sessions. A password account cannot be overwritten by registration (409); use password/reset with a new valid code. Reset requires an existing account and revokes all its previous sessions before returning a new token. It does not affect other accounts or user data. Code consumption, account/password writes, session revocation and new session creation commit atomically; failed writes/commits leave the code and existing credentials/sessions intact.
+
+Passwords must contain at least 8 Unicode characters and at most 128 UTF-8 bytes. Passwords are never trimmed; email is lowercased and trimmed. Stored password hashes use PBKDF2-HMAC-SHA256, 600000 iterations, independent cryptographically random 32-byte salts, a 32-byte key and a fixed versioned format. Neither responses nor export expose credentials. Incorrect passwords and unknown accounts both return 401 with the same message and incur the same KDF work. Five failed attempts per normalized email in a 15-minute window block further password attempts with 429 until that window expires. Additionally, 30 failures per direct network source in the same window cause 429; forwarding headers do not change the source. Failure windows persist across restarts. A successful password login or verified password setup/reset clears that email's failure window. Password sessions last 90 days; clients normally reuse their token and may reauthenticate with locally encrypted credentials when needed.
+
+The shared code endpoint sends a general account verification code, valid for 10 minutes, with a 60-second resend cooldown and 10 sends per UTC day. Five incorrect code attempts invalidate it across register, reset and legacy verify. Legacy auth/verify remains compatible: first verification creates an OTP-only account, repeated verification reuses it, and password_set reflects whether that account has a password. Legacy allowed_emails configuration remains ignored across login, sessions and reminder delivery. Existing accounts and tokens survive the additive password-table migration.
 
 Rule fields: {"kind":"monthly_window","mode":"until_done","timezone":"Asia/Shanghai","times":["09:00"],"start_date":"2026-10-03","end_date":"","weekdays":[],"month_start":1,"month_end":15,"every_days":1,"max_reminders":0}
 kind = once | daily | weekly | monthly_window | date_range | interval | ongoing.

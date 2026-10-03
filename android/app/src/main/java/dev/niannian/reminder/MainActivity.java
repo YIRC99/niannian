@@ -74,6 +74,9 @@ public class MainActivity extends Activity {
     private GardenSceneView gardenScene;
     private boolean motionHostActive;
     private long codeAvailableAt;
+    private String authMode = "login", authEmail = "", homeNotice = "";
+    private boolean authBusy, automaticLoginAttempted, credentialWritePending;
+    private int authRequest;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -94,10 +97,13 @@ public class MainActivity extends Activity {
             String p = state.getString("photo", ""), c = state.getString("camera", "");
             if (!p.isEmpty()) photoFile = new File(p); if (!c.isEmpty()) cameraFile = new File(c);
             codeAvailableAt = state.getLong("codeAvailableAt");
+            authMode=state.getString("authMode","login");authEmail=state.getString("authEmail","");
+            automaticLoginAttempted=state.getBoolean("automaticLoginAttempted");homeNotice=state.getString("homeNotice","");
         }
         if (session.base.isEmpty()) screen = "server";
-        else if (session.token.isEmpty() && !screen.equals("server")) screen = "login";
+        else if (session.token.isEmpty() && !screen.equals("server") && !screen.equals("login")) screen = "home";
         render();
+        if(screen.equals("home")&&session.token.isEmpty()&&session.autoLogin&&session.hasCredentials()&&!automaticLoginAttempted)autoLogin();
     }
     @Override protected void onSaveInstanceState(Bundle out) {
         captureTransient();
@@ -112,6 +118,8 @@ public class MainActivity extends Activity {
         out.putString("aiText", aiText); out.putString("aiWarning", aiWarning); out.putString("completionText", completionText);
         out.putString("photo", photoFile == null ? "" : photoFile.getAbsolutePath()); out.putString("camera", cameraFile == null ? "" : cameraFile.getAbsolutePath());
         out.putLong("codeAvailableAt", codeAvailableAt); super.onSaveInstanceState(out);
+        out.putString("authMode",authMode);out.putString("authEmail",authEmail);out.putString("homeNotice",homeNotice);
+        out.putBoolean("automaticLoginAttempted",automaticLoginAttempted&&!authBusy);
     }
     @Override protected void onResume() { super.onResume(); setMotionHostActive(true); }
     @Override protected void onPause() { setMotionHostActive(false); super.onPause(); }
@@ -128,14 +136,17 @@ public class MainActivity extends Activity {
         if(body!=null)body.animate().cancel();
     }
     @Override public void onBackPressed() {
-        if (screen.equals("home") || screen.equals("login") || (screen.equals("server") && session.base.isEmpty())) { super.onBackPressed(); return; }
+        if(!canLeaveAuthentication())return;
+        if (screen.equals("home") || (screen.equals("server") && session.base.isEmpty())) { super.onBackPressed(); return; }
         if (screen.equals("editor")) {
             new AlertDialog.Builder(this).setTitle("离开编辑？").setMessage("还没有保存的修改将丢弃。").setNegativeButton("继续编辑", null)
                     .setPositiveButton("离开", (d,w) -> navigate(editing ? "detail" : "home")).show(); return;
         }
-        navigate(screen.equals("photo") ? photoBack : screen.equals("record") ? recordBack : screen.equals("detail") ? detailBack : screen.equals("complete") ? "detail" : session.token.isEmpty() ? "login" : "home");
+        navigate(screen.equals("photo") ? photoBack : screen.equals("record") ? recordBack : screen.equals("detail") ? detailBack : screen.equals("complete") ? "detail" : "home");
     }
     private void navigate(String next) {
+        if(!canLeaveAuthentication())return;
+        authRequest++;authBusy=false;
         boolean changed=!screen.equals(next);captureTransient();screen=next;render();
         if(changed&&motionHostActive&&!next.equals("grown")&&ValueAnimator.areAnimatorsEnabled()){
             body.setAlpha(0f);body.setTranslationY(dp(5));body.animate().alpha(1f).translationY(0f).setDuration(180)
@@ -155,9 +166,11 @@ public class MainActivity extends Activity {
             if (fields.containsKey("ai")) aiText = value("ai");
         }
         if (screen.equals("complete") && fields.containsKey("completion")) completionText = value("completion");
+        if (screen.equals("login") && fields.containsKey("email")) authEmail=value("email");
     }
     private void render() {
         stopPageMotion();
+        if(session.token.isEmpty()&&!Arrays.asList("home","login","server").contains(screen))screen="home";
         pageEpoch++; taskBusy = false; fields.clear(); kindPicker = null; modePicker = null; weekdays = null;
         root = column(); root.setBackgroundColor(BG); setContentView(root);
         root.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -202,7 +215,7 @@ public class MainActivity extends Activity {
         Button test = button("测试连接", false); body.addView(test); test.setOnClickListener(v -> {
             String address;
             try { address = Api.normalize(value("server")); } catch (Exception e) { showError(e.getMessage()); return; }
-            run(test, a -> new Api(address, "").json("GET", "/health", null), data -> {
+            run(test, a -> {try{return new Api(address, "").json("GET", "/health", null);}catch(Api.Failure e){throw new IOException(e.getMessage());}}, data -> {
                 if (!"ok".equals(data.optString("status"))) { showError("地址可访问，但不是念念提醒服务"); return; }
                 toast("连接成功 · " + data.optString("version", "服务正常"));
             });
@@ -211,36 +224,103 @@ public class MainActivity extends Activity {
         save.setOnClickListener(v -> {
             String address;
             try { address = Api.normalize(value("server")); } catch (Exception e) { showError(e.getMessage()); return; }
-            run(save, a -> new Api(address, "").json("GET", "/health", null), data -> {
-                if (!"ok".equals(data.optString("status"))) { showError("这不是念念提醒服务，请检查地址"); return; }
-                if (!session.base.equals(address)) { accountEpoch++; session.switchServer(address); clearAccountData(); }
-                navigate(session.token.isEmpty() ? "login" : "settings");
-            });
+            try {
+                String previous=session.base;
+                session.switchServer(address);
+                if(!previous.equals(session.base)){accountEpoch++;clearAccountData();codeAvailableAt=0;}
+                homeNotice="";
+                if(!session.token.isEmpty()){navigate("home");toast("服务器地址已保存");}
+                else if(session.hasCredentials()){automaticLoginAttempted=false;autoLogin();}
+                else{homeNotice="服务器地址已保存，请先登录。已有账号可验证邮箱设置一次密码。";navigate("home");}
+            }catch(Exception e){showError("服务器地址未保存，请重试");}
         });
-        if (!session.base.isEmpty()) { gap(body,12); Button cancel = button("返回", false); body.addView(cancel); cancel.setOnClickListener(v -> navigate(session.token.isEmpty() ? "login" : "settings")); }
-        gap(body,20); note(body,"切换到其他服务器后需要重新登录。不同服务器的任务和照片分别保存。公网部署建议使用 HTTPS。");
+        if (!session.base.isEmpty()) { gap(body,12); Button cancel = button("返回", false); body.addView(cancel); cancel.setOnClickListener(v -> navigate("home")); }
+        gap(body,20); note(body,"保存后会用手机已记住的账号密码尝试登录新服务器。不同服务器的任务和照片分别保存。公网地址请使用 HTTPS。");
     }
     private void renderLogin() {
-        body.addView(art(R.drawable.garden_bloom,110));gap(body,12);
-        header("欢迎来到念念", "你的小花园，在等你", "用邮箱登录，收下提醒，也留住每一次小小的完成。");
-        EditText email = field(body,"email","接收提醒的邮箱",session.email,"你的邮箱地址",1); email.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-        EditText code = field(body,"code","邮箱验证码","","输入邮件中的验证码",1); code.setInputType(android.text.InputType.TYPE_CLASS_NUMBER); code.setFilters(new InputFilter[]{new InputFilter.LengthFilter(8)});
-        Button send = button("发送验证码", false); body.addView(send); updateCodeButton(send);
-        send.setOnClickListener(v -> {
-            String address = value("email"); if (!android.util.Patterns.EMAIL_ADDRESS.matcher(address).matches()) { email.setError("请填写有效的邮箱地址"); return; }
-            run(send, a -> a.json("POST", "/api/v1/auth/code", object("email",address)), result -> { codeAvailableAt = System.currentTimeMillis()+60000; updateCodeButton(send); toast("验证码已发送，请查看邮箱和垃圾邮件"); });
-        }); gap(body,12);
-        Button login = button("登录念念", true); body.addView(login);
-        login.setOnClickListener(v -> {
-            String address=value("email"), digits=value("code");
-            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(address).matches()) { email.setError("请填写有效的邮箱地址"); return; }
-            if (digits.length()!=6) { code.setError("请输入 6 位验证码"); return; }
-            run(login, a -> a.json("POST", "/api/v1/auth/verify", object("email",address,"code",digits)), result -> {
-                try { session.login(result.getString("token"),result.getJSONObject("user").getString("email")); accountEpoch++; clearAccountData(); navigate("home"); }
-                catch(Exception e) { showError("无法保存登录状态，请重试"); }
-            });
-        }); gap(body,24); note(body,session.base);
+        boolean passwordLogin=authMode.equals("login"),reset=authMode.equals("reset");
+        body.addView(art(R.drawable.garden_bloom,86));gap(body,10);
+        header("欢迎来到念念",passwordLogin?"你的小花园，在等你":reset?"重新设置登录密码":"给账号设置一个密码",
+                passwordLogin?"用邮箱和密码登录，下次打开就能继续。":reset?"验证邮箱后换个新密码，原来的提醒和记录都在。":"新用户验证邮箱后注册；已有账号设置后，原来的记录继续保留。");
+        EditText email=field(body,"email","接收提醒的邮箱",authEmail.isEmpty()?session.email:authEmail,"你的邮箱地址",1);
+        email.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+        if(!passwordLogin){
+            EditText code=field(body,"code","邮箱验证码","","输入 6 位验证码",1);code.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);code.setFilters(new InputFilter[]{new InputFilter.LengthFilter(6)});code.setSaveEnabled(false);
+            Button send=button("发送验证码",false);body.addView(send);updateCodeButton(send);
+            send.setOnClickListener(v->{String address=value("email");if(!android.util.Patterns.EMAIL_ADDRESS.matcher(address).matches()){email.setError("请填写有效的邮箱地址");return;}
+                run(send,a->new Api(a.base,"").json("POST","/api/v1/auth/code",object("email",address)),r->{codeAvailableAt=System.currentTimeMillis()+60000;updateCodeButton(send);toast("验证码已发送，请查看邮箱和垃圾邮件");});});gap(body,12);
+        }
+        EditText password=field(body,"password",passwordLogin?"登录密码":"设置密码",passwordLogin?session.password:"","至少 8 个字符",1);
+        password.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);password.setSaveEnabled(false);
+        password.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);password.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING);
+        if(passwordLogin){
+            if(!email.getText().toString().trim().equalsIgnoreCase(session.email))password.setText("");
+            boolean[] remembered={password.getText().toString().equals(session.password)};
+            email.addTextChangedListener(watcher(()->{if(remembered[0]&&!email.getText().toString().trim().equalsIgnoreCase(session.email)){remembered[0]=false;password.setText("");}}));
+            password.addTextChangedListener(watcher(()->remembered[0]=false));
+        }
+        note(body,"登录后，账号密码会加密记在这台手机上，下次自动登录。");
+        Button login=button(passwordLogin?"登录念念":reset?"保存新密码并登录":"验证邮箱并继续",true);body.addView(login);
+        login.setOnClickListener(v->{
+            String address=value("email"),secret=password.getText().toString(),digits=passwordLogin?"":value("code");
+            if(!android.util.Patterns.EMAIL_ADDRESS.matcher(address).matches()){email.setError("请填写有效的邮箱地址");return;}
+            if(secret.codePointCount(0,secret.length())<8||secret.getBytes(StandardCharsets.UTF_8).length>128){password.setError("密码至少 8 个字符，最多 128 字节");return;}
+            if(!passwordLogin&&digits.length()!=6){fields.get("code").setError("请输入 6 位验证码");return;}
+            startAuthentication(login,passwordLogin?"/api/v1/auth/login":reset?"/api/v1/auth/password/reset":"/api/v1/auth/register",address,secret,digits,false);
+        });gap(body,10);
+        LinearLayout links=row();Button primaryLink=smallButton(passwordLogin?"注册 / 首次设置密码":"已有密码，返回登录");links.addView(primaryLink,new LinearLayout.LayoutParams(0,dp(48),1));primaryLink.setOnClickListener(v->openAuth(passwordLogin?"register":"login"));
+        if(passwordLogin){Button forgot=smallButton("忘记密码");links.addView(forgot);forgot.setOnClickListener(v->openAuth("reset"));}body.addView(links);gap(body,14);note(body,session.base);
         Button change = button("更换服务器",false); body.addView(change); change.setOnClickListener(v -> navigate("server"));
+        gap(body,8);Button home=smallButton("返回首页");body.addView(home);home.setOnClickListener(v->navigate("home"));
+    }
+    private boolean canLeaveAuthentication(){if(credentialWritePending){toast("正在保存密码，请稍候");return false;}return true;}
+    private void openAuth(String mode){if(!canLeaveAuthentication())return;captureTransient();authMode=mode;homeNotice="";navigate("login");}
+    private void autoLogin(){
+        if(automaticLoginAttempted||!session.hasCredentials()||session.base.isEmpty())return;
+        automaticLoginAttempted=true;homeNotice="";navigate("home");authBusy=true;render();
+        startAuthentication(null,"/api/v1/auth/login",session.email,session.password,"",true);
+    }
+    private void startAuthentication(Button trigger,String endpoint,String address,String password,String code,boolean automatic){
+        int request=++authRequest,account=accountEpoch,page=pageEpoch;String base=session.base;
+        CharSequence caption=trigger==null?"":trigger.getText();authBusy=true;errorView.setVisibility(View.GONE);
+        credentialWritePending=!endpoint.equals("/api/v1/auth/login");
+        if(trigger!=null){trigger.setEnabled(false);trigger.setText("正在登录…");}
+        JSONObject payload=object("email",address,"password",password);if(!code.isEmpty())try{payload.put("code",code);}catch(JSONException ignored){}
+        workers.submit(()->{
+            JSONObject response=null;Exception error=null;
+            try{response=new Api(base,"").json("POST",endpoint,payload);}catch(Exception e){error=e;}
+            JSONObject result=response;Exception failure=error;
+            ui.post(()->{
+                if(isDestroyed()||request!=authRequest||account!=accountEpoch||page!=pageEpoch||!base.equals(session.base))return;
+                authBusy=false;credentialWritePending=false;if(trigger!=null){trigger.setEnabled(true);trigger.setText(caption);}
+                if(failure==null){
+                    try{
+                        String token=result.getString("token"),email=result.getJSONObject("user").getString("email");
+                        if(token.isEmpty()||!email.equalsIgnoreCase(address.trim()))throw new IOException("账号返回不一致");
+                        session.login(token,email,password);accountEpoch++;clearAccountData();authEmail=email;homeNotice="";authMode="login";
+                        if(!automatic)automaticLoginAttempted=false;navigate("home");return;
+                    }catch(Exception ignored){authenticationFailed(automatic,"无法保存登录信息，请重试");return;}
+                }
+                authenticationFailed(automatic,authFailureMessage(failure));
+            });
+        });
+    }
+    private String authFailureMessage(Exception error){
+        if(error instanceof Api.Failure){int status=((Api.Failure)error).status;
+            if(status==404||status==405)return "当前服务器还不支持密码登录，请更新后端到 1.4.0";
+            if(status==401)return "邮箱或密码不正确，或这个服务器还没有你的账号";
+        }
+        return error.getMessage()==null?"暂时无法登录，请重试":error.getMessage();
+    }
+    private void authenticationFailed(boolean automatic,String message){
+        if(automatic){homeNotice="自动登录未成功："+message;screen="home";render();toast(homeNotice);}else showError(message);
+    }
+    private void loginExpired(){
+        if(credentialWritePending)return;
+        try{session.clear();}catch(Exception e){showError("无法更新登录状态，请重试");return;}
+        accountEpoch++;clearAccountData();
+        if(session.autoLogin&&session.hasCredentials()&&!automaticLoginAttempted)autoLogin();
+        else{homeNotice="登录已过期，请重新登录。手机已记住你的账号信息。";navigate("home");}
     }
     private void updateCodeButton(Button button) {
         long remaining = (codeAvailableAt - System.currentTimeMillis() + 999) / 1000;
@@ -248,7 +328,18 @@ public class MainActivity extends Activity {
         button.setEnabled(false); button.setText(remaining + " 秒后可重发");
         int p=pageEpoch; ui.postDelayed(() -> { if (pageEpoch==p && !isDestroyed()) updateCodeButton(button); }, 1000);
     }
+    private void renderGuestHome(){
+        header("念念 · 今天","让小事，慢慢长大",authBusy?"正在用已保存的账号连接你的小花园…":"登录后，继续照料你种下的小事。");
+        LinearLayout welcome=card(body);welcome.setGravity(Gravity.CENTER_HORIZONTAL);welcome.addView(art(R.drawable.garden_sprout,140));gap(welcome,14);
+        TextView caption=text(authBusy?"正在自动登录":"你的小花园，还在等你",18,INK,true);caption.setGravity(Gravity.CENTER);welcome.addView(caption);gap(welcome,10);
+        TextView description=text(homeNotice.isEmpty()?"每一件认真完成的小事，都会留下成长。":homeNotice,14,homeNotice.isEmpty()?MUTED:RED,false);description.setGravity(Gravity.CENTER);welcome.addView(description);
+        if(authBusy){gap(welcome,12);ProgressBar progress=new ProgressBar(this);welcome.addView(progress,new LinearLayout.LayoutParams(dp(28),dp(28)));}
+        gap(body,8);Button login=button(authBusy?"改用手动登录":"登录我的花园",true);body.addView(login);login.setOnClickListener(v->openAuth("login"));gap(body,10);
+        Button register=button("注册 / 首次设置密码",false);body.addView(register);register.setOnClickListener(v->openAuth("register"));gap(body,14);
+        Button change=smallButton("更换服务器");body.addView(change);change.setOnClickListener(v->navigate("server"));
+    }
     private void renderHome() {
+        if(session.token.isEmpty()){renderGuestHome();return;}
         String date = LocalDate.now().format(DateTimeFormatter.ofPattern("M 月 d 日  EEEE", Locale.CHINA));
         LinearLayout heading=row(), titles=column(); titles.addView(text("念念",25,INK,true)); titles.addView(text(date,12,MUTED,false)); heading.addView(titles,new LinearLayout.LayoutParams(0,-2,1));
         Button create=smallButton("＋ 播种");create.setTextColor(PAPER);create.setBackground(shape(BLUE,18));create.setContentDescription("播下一颗种子，新建提醒任务");heading.addView(create);create.setOnClickListener(v->openEditor(null));body.addView(heading);gap(body,18);
@@ -423,7 +514,7 @@ public class MainActivity extends Activity {
                 ui.post(()->{
                     if(isDestroyed()||account!=accountEpoch)return;
                     pauseInFlight.remove(id);
-                    if(error instanceof Api.Failure&&((Api.Failure)error).status==401){accountEpoch++;session.clear();clearAccountData();screen="login";render();showError("登录已过期，请重新获取验证码登录");return;}
+                    if(error instanceof Api.Failure&&((Api.Failure)error).status==401){loginExpired();return;}
                     if(error==null){
                         taskLoadRequest++;
                         for(int i=0;i<taskData.length();i++)if(id.equals(taskData.optJSONObject(i)==null?"":taskData.optJSONObject(i).optString("id")))try{taskData.put(i,result);}catch(JSONException ignored){}
@@ -665,11 +756,12 @@ public class MainActivity extends Activity {
         section(body,"连接与数据");label(body,"当前服务器");TextView address=text(session.base,15,INK,false);address.setTextIsSelectable(true);body.addView(address);gap(body,12);
         Button change=button("更换服务器地址",false);body.addView(change);change.setOnClickListener(v->navigate("server"));gap(body,12);
         Button check=button("检查连接和登录状态",false);body.addView(check);check.setOnClickListener(v->run(check,a->{a.json("GET","/health",null);return a.json("GET","/api/v1/me",null);},r->toast("连接正常，当前登录："+r.optString("email"))));gap(body,12);
+        Button password=button(session.hasCredentials()?"修改登录密码":"设置密码，以后自动登录",false);body.addView(password);password.setOnClickListener(v->{authEmail=session.email;openAuth(session.hasCredentials()?"reset":"register");});gap(body,12);
         Button export=button("导出我的全部文字记录",false);body.addView(export);export.setOnClickListener(v->run(export,a->{JSONObject data=a.json("GET","/api/v1/export",null);File dir=new File(getCacheDir(),"exports");if(!dir.exists()&&!dir.mkdirs())throw new IOException("无法创建导出文件");File file=new File(dir,"念念记录-"+LocalDate.now()+"-"+UUID.randomUUID()+".json");try(OutputStream out=new FileOutputStream(file)){out.write(data.toString(2).getBytes(StandardCharsets.UTF_8));}return file;},file->{Uri uri=FileProvider.getUriForFile(this,getPackageName()+".files",file);Intent i=new Intent(Intent.ACTION_SEND);i.setType("application/json");i.putExtra(Intent.EXTRA_STREAM,uri);i.setClipData(ClipData.newRawUri("念念记录",uri));i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"保存或分享记录"));}));gap(body,12);
         note(body,"导出包含提醒规则、完成文字和邮件记录。照片原文件保存在服务器的数据目录，完整备份时请一起保存该目录。");
-        section(body,"关于念念");body.addView(text("念念 1.3.1 · 小事生长的地方",15,INK,true));gap(body,8);note(body,"创建任务就是播种，真实完成才会增加养分。已经拥有的成长，不会因为漏做而消失。邮件按时发送，手机无需后台常驻。");
+        section(body,"关于念念");body.addView(text("念念 1.4.0 · 小事生长的地方",15,INK,true));gap(body,8);note(body,"创建任务就是播种，真实完成才会增加养分。已经拥有的成长，不会因为漏做而消失。邮件按时发送，手机无需后台常驻。");
         Button logout=button("退出登录",false);logout.setTextColor(RED);body.addView(logout);logout.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("退出当前账号？").setMessage("服务器上的提醒仍会照常发送，任务和记录不会删除。").setNegativeButton("取消",null).setPositiveButton("退出",(d,w)->{
-            Api old=new Api(session.base,session.token);accountEpoch++;session.clear();clearAccountData();navigate("login");workers.submit(()->{try{old.json("POST","/api/v1/auth/logout",object());}catch(Exception ignored){}});
+            Api old=new Api(session.base,session.token);try{session.logout();}catch(Exception e){showError("退出登录未保存，请重试");return;}accountEpoch++;clearAccountData();homeNotice="已退出登录。账号信息仍记在这台手机上，点登录即可继续。";navigate("home");workers.submit(()->{try{old.json("POST","/api/v1/auth/logout",object());}catch(Exception ignored){}});
         }).show());
     }
     private void clearAccountData(){growthAnimationState.clear();gardenPage=0;gardenContent=null;gardenPreview=null;recordBack="history";completedRecord=new JSONObject();taskData=new JSONArray();taskLoadRequest++;pauseInFlight.clear();selected=new JSONObject();draft=new JSONObject();selectedRecord=new JSONObject();invalidateCalendar();calendarDate=LocalDate.now();calendarMonth=YearMonth.now();recordPage=0;detailBack="home";photoBack="record";photoId="";photoTitle="";calendarGrid=null;calendarRecords=null;calendarCaption=null;calendarRefresh=null;restoredForm=null;photoFile=null;cameraFile=null;search="";filter="全部";aiText="";aiWarning="";completionText="";taskList=null;manualVisible=false;rulesExpanded=false;advancedExpanded=false;aiExpanded=true;}
@@ -681,7 +773,7 @@ public class MainActivity extends Activity {
     private <T> void run(Button trigger,Job<T> job,Result<T> success,Result<Exception> failure){
         int account=accountEpoch,page=pageEpoch;Api api=new Api(session.base,session.token);CharSequence caption=trigger==null?"":trigger.getText();if(trigger!=null){trigger.setEnabled(false);trigger.setText("请稍等…");}errorView.setVisibility(View.GONE);
         workers.submit(()->{try{T result=job.run(api);ui.post(()->{if(isDestroyed()||account!=accountEpoch||page!=pageEpoch)return;if(trigger!=null){trigger.setEnabled(true);trigger.setText(caption);}success.accept(result);});}
-            catch(Exception e){ui.post(()->{if(isDestroyed()||account!=accountEpoch||page!=pageEpoch)return;taskBusy=false;if(trigger!=null){trigger.setEnabled(true);trigger.setText(caption);}if(e instanceof Api.Failure&&((Api.Failure)e).status==401&&!session.token.isEmpty()){accountEpoch++;session.clear();clearAccountData();screen="login";render();showError("登录已过期，请重新获取验证码登录");}else if(failure!=null)failure.accept(e);else showError(e.getMessage()==null?"操作未完成，请重试":e.getMessage());});}
+            catch(Exception e){ui.post(()->{if(isDestroyed()||account!=accountEpoch||page!=pageEpoch)return;taskBusy=false;if(trigger!=null){trigger.setEnabled(true);trigger.setText(caption);}if(e instanceof Api.Failure&&((Api.Failure)e).status==401&&!session.token.isEmpty()){loginExpired();}else if(failure!=null)failure.accept(e);else showError(e.getMessage()==null?"操作未完成，请重试":e.getMessage());});}
         });
     }
     private void loadImage(ImageView target,String id){

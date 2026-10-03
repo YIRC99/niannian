@@ -43,8 +43,9 @@ type App struct {
 	closeOnce sync.Once
 }
 type User struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
+	ID          string `json:"id"`
+	Email       string `json:"email"`
+	PasswordSet bool   `json:"password_set"`
 }
 type userContextKey struct{}
 type task struct {
@@ -138,6 +139,8 @@ CREATE INDEX IF NOT EXISTS ai_requests_user ON ai_requests(user_id,created_at);
 CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,email TEXT NOT NULL UNIQUE,created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS codes(email TEXT PRIMARY KEY,hash TEXT NOT NULL,salt TEXT NOT NULL,expires_at TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,sent_at TEXT NOT NULL,day TEXT NOT NULL,day_count INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS sessions(hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),expires_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS password_credentials(user_id TEXT PRIMARY KEY REFERENCES users(id),password_hash TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS password_failures(scope TEXT PRIMARY KEY,attempts INTEGER NOT NULL,reset_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS tasks(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),title TEXT NOT NULL,description TEXT NOT NULL,rule TEXT NOT NULL,paused INTEGER NOT NULL DEFAULT 0,archived INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,snooze_until TEXT NOT NULL DEFAULT '',snooze_cycle TEXT NOT NULL DEFAULT '');
 CREATE INDEX IF NOT EXISTS tasks_user ON tasks(user_id,archived);
 CREATE TABLE IF NOT EXISTS media(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),filename TEXT NOT NULL,content_type TEXT NOT NULL,size INTEGER NOT NULL,created_at TEXT NOT NULL);
@@ -151,10 +154,13 @@ CREATE INDEX IF NOT EXISTS notification_user ON notifications(user_id,scheduled_
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 200, map[string]string{"status": "ok", "version": "1.3.1"})
+		writeJSON(w, 200, map[string]string{"status": "ok", "version": "1.4.0"})
 	})
 	mux.HandleFunc("POST /api/v1/auth/code", a.requestCode)
 	mux.HandleFunc("POST /api/v1/auth/verify", a.verifyCode)
+	mux.HandleFunc("POST /api/v1/auth/register", a.registerPassword)
+	mux.HandleFunc("POST /api/v1/auth/login", a.loginPassword)
+	mux.HandleFunc("POST /api/v1/auth/password/reset", a.resetPassword)
 	secured := func(pattern string, h http.HandlerFunc) { mux.Handle(pattern, a.authorize(h)) }
 	secured("GET /api/v1/me", func(w http.ResponseWriter, r *http.Request) { writeJSON(w, 200, currentUser(r)) })
 	secured("POST /api/v1/auth/logout", a.logout)
@@ -194,7 +200,7 @@ func (a *App) authorize(next http.Handler) http.Handler {
 			return
 		}
 		var u User
-		err := a.db.QueryRowContext(r.Context(), `SELECT u.id,u.email FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.hash=? AND s.expires_at>?`, digest(token), stamp(a.now())).Scan(&u.ID, &u.Email)
+		err := a.db.QueryRowContext(r.Context(), `SELECT u.id,u.email,EXISTS(SELECT 1 FROM password_credentials p WHERE p.user_id=u.id) FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.hash=? AND s.expires_at>?`, digest(token), stamp(a.now())).Scan(&u.ID, &u.Email, &u.PasswordSet)
 		if err != nil {
 			writeError(w, 401, "登录已过期，请重新登录")
 			return

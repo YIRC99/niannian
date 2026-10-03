@@ -14,14 +14,7 @@ final class Api {
         Failure(int status, String message) { super(message); this.status = status; }
     }
     static String normalize(String raw) throws IOException {
-        try {
-            URI uri = new URI(raw.trim());
-            if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme())) || uri.getHost() == null
-                    || uri.getUserInfo() != null || uri.getQuery() != null || uri.getFragment() != null
-                    || (uri.getPath() != null && !uri.getPath().isEmpty() && !uri.getPath().equals("/")))
-                throw new IOException("请填写完整的服务器地址，例如 https://提醒.example.com 或 http://192.168.1.10:56507，不包含接口路径");
-            return uri.getScheme().toLowerCase(java.util.Locale.ROOT) + "://" + uri.getRawAuthority();
-        } catch (URISyntaxException e) { throw new IOException("服务器地址格式不正确，请检查 http:// 或 https://"); }
+        return SessionPolicy.normalizeOrigin(raw);
     }
     JSONObject json(String method, String path, JSONObject data) throws Exception {
         int maxBytes = path.equals("/api/v1/export") ? 32 * 1024 * 1024 : 8 * 1024 * 1024;

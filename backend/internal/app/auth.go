@@ -2,7 +2,6 @@ package app
 
 import (
 	"crypto/rand"
-	"crypto/subtle"
 	"database/sql"
 	"fmt"
 	"math/big"
@@ -76,7 +75,7 @@ func (a *App) requestCode(w http.ResponseWriter, r *http.Request) {
 	}
 	a.authMu.Unlock()
 	locked = false
-	if err = a.mailer.Send(r.Context(), email, "念念 · 登录验证码", "你的验证码是："+code+"\n10 分钟内有效。若非本人操作，请忽略。请勿把验证码分享给他人。"); err != nil {
+	if err = a.mailer.Send(r.Context(), email, "念念 · 账号验证码", "你的验证码是："+code+"\n可用于注册、设置或重设密码及验证码登录，10 分钟内有效。若非本人操作，请忽略。请勿把验证码分享给他人。"); err != nil {
 		// A failed attempt still consumes quota; this keeps failure loops from spamming SMTP.
 		a.db.Exec(`UPDATE codes SET expires_at=? WHERE email=? AND hash=?`, stamp(now), email, digest(email+salt+code))
 		writeError(w, 502, "验证码邮件未能发出，请稍后重试或检查服务器邮件配置")
@@ -100,17 +99,7 @@ func (a *App) verifyCode(w http.ResponseWriter, r *http.Request) {
 	a.authMu.Lock()
 	defer a.authMu.Unlock()
 	now := a.now()
-	var hash, salt, expires string
-	var attempts int
-	err := a.db.QueryRow(`SELECT hash,salt,expires_at,attempts FROM codes WHERE email=?`, email).Scan(&hash, &salt, &expires, &attempts)
-	expiry, _ := time.Parse(time.RFC3339Nano, expires)
-	if err != nil || !now.Before(expiry) || attempts >= 5 {
-		writeError(w, 400, "验证码无效或已过期")
-		return
-	}
-	if subtle.ConstantTimeCompare([]byte(hash), []byte(digest(email+salt+in.Code))) != 1 {
-		a.db.Exec(`UPDATE codes SET attempts=attempts+1 WHERE email=?`, email)
-		writeError(w, 400, "验证码无效或已过期")
+	if !a.checkVerificationCode(w, email, in.Code, now) {
 		return
 	}
 	tx, err := a.db.Begin()
@@ -125,20 +114,16 @@ func (a *App) verifyCode(w http.ResponseWriter, r *http.Request) {
 		dbFailure(w)
 		return
 	}
-	if err = tx.QueryRow(`SELECT id FROM users WHERE email=?`, email).Scan(&user.ID); err != nil {
+	if err = tx.QueryRow(`SELECT id,EXISTS(SELECT 1 FROM password_credentials p WHERE p.user_id=u.id) FROM users u WHERE email=?`, email).Scan(&user.ID, &user.PasswordSet); err != nil {
 		dbFailure(w)
 		return
 	}
-	token := randomID()
-	if _, err = tx.Exec(`INSERT INTO sessions(hash,user_id,expires_at) VALUES(?,?,?)`, digest(token), user.ID, stamp(now.Add(90*24*time.Hour))); err != nil {
+	token, err := createSession(tx, user.ID, now)
+	if err != nil {
 		dbFailure(w)
 		return
 	}
 	if _, err = tx.Exec(`UPDATE codes SET expires_at=? WHERE email=?`, stamp(now), email); err != nil {
-		dbFailure(w)
-		return
-	}
-	if _, err = tx.Exec(`DELETE FROM sessions WHERE expires_at<=?`, stamp(now)); err != nil {
 		dbFailure(w)
 		return
 	}
