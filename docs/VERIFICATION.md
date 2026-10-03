@@ -1,6 +1,13 @@
 # 交付检查记录
 
-日期：2026-10-03。当前客户端版本：1.7.1，后端版本：1.5.0。
+日期：2026-10-03。当前客户端版本：1.7.2，后端版本：1.5.0。
+
+## 1.7.2 木牌艺术字本次验证
+
+- 木牌中文、动态株数及加载/未更新提示统一使用内置毛笔楷书，调整为 14sp 与轻微字距。字体取自 Google Fonts 的 Ma Shan Zheng，保留 SIL OFL 1.1、版权及来源；32 个所需字符制成 25,304 字节子集，全部字形覆盖，生成说明位于 `docs/fonts/`。
+- `:app:assembleRelease :app:lintRelease --no-daemon` 通过，Lint 0 errors / 10 既有 warnings；APK v2 签名通过。ADB 覆盖安装 Success，包管理器确认 versionName 1.7.2 / versionCode 11。未清理应用数据或自动启动页面，字形观感由用户查看。
+- 未启动项目服务，结束时 Java 构建进程已退出，原有后端 PID 29732 保持不变。
+- 发布包：`release/niannian-1.7.2.apk`；SHA256：`B6E71CDCBC8049E0CCE09E464C8F1C254ECD6F0BD401F5523366632C3243865D`。
 
 ## 1.7.1 首页细节本次验证
 

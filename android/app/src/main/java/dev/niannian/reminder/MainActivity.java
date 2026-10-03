@@ -469,7 +469,8 @@ public class MainActivity extends Activity {
         FrameLayout sign=new FrameLayout(this);
         sign.setBackground(new RippleDrawable(ColorStateList.valueOf(0x225b4730),getDrawable(R.drawable.garden_notice_board),getDrawable(R.drawable.garden_notice_board)));
         sign.setPadding(dp(14),dp(10),dp(14),dp(28));sign.setMinimumWidth(dp(164));sign.setMinimumHeight(dp(68));sign.setRotation(-5f);
-        TextView caption=text(title,12,HOME_WOOD_TEXT,false);caption.setTypeface(Typeface.create("serif",Typeface.NORMAL));caption.setGravity(Gravity.CENTER);
+        TextView caption=text(title,14,HOME_WOOD_TEXT,false);
+        caption.setTypeface(getResources().getFont(R.font.garden_handwriting));caption.setLetterSpacing(.02f);caption.setGravity(Gravity.CENTER);
         caption.setMaxWidth(dp(204));caption.setMaxLines(2);caption.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         sign.addView(caption,new FrameLayout.LayoutParams(-1,-2,Gravity.CENTER));
         gardenPreview.addView(sign,new LinearLayout.LayoutParams(-2,-2));sign.setContentDescription(title+"，打开我的花园");sign.setFocusable(true);sign.setOnClickListener(v->navigate("garden"));
