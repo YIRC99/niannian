@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="164dp"
+    android:height="68dp"
+    android:viewportWidth="180"
+    android:viewportHeight="76">
+
+    <!-- Short supports sit behind the board. -->
+    <path
+        android:fillColor="#C6A272"
+        android:strokeColor="#99784F"
+        android:strokeWidth="0.8"
+        android:strokeLineJoin="round"
+        android:pathData="M27.5,50 L35.5,50 L35,71.3 L28,71.5 Z M147.5,50 L154.5,50 L154,71.5 L148,71 Z" />
+    <path
+        android:fillColor="#D8B887"
+        android:pathData="M28.4,53 L30.2,53 L30.5,70.6 L28.8,70.7 Z M148.3,53 L150,53 L150.5,70.4 L148.8,70.2 Z" />
+    <path
+        android:fillColor="#795E3F"
+        android:fillAlpha="0.18"
+        android:pathData="M27.6,51 L35.4,51 L35.3,57 L27.7,56.2 Z M147.6,51 L154.4,51 L154.3,56.8 L147.8,56 Z" />
+
+    <!-- A thin lower edge gives the light wooden face a little depth. -->
+    <path
+        android:fillColor="#765A3B"
+        android:fillAlpha="0.18"
+        android:pathData="M5,48.5 L176,48.5 L175.8,52.5 L173.2,55 L7,54.6 L4.8,52 Z" />
+    <path
+        android:fillColor="#F0D7AC"
+        android:strokeColor="#A17D54"
+        android:strokeWidth="1"
+        android:strokeLineJoin="round"
+        android:pathData="M6,6.5 L63,7 L122,6.6 L173.5,6.5 L176.5,9.5 L176.1,34 L176.5,49.5 L173.5,53.5 L121,53 L65,53.5 L6,53 L3.5,50 L4,27 L3.5,10 Z" />
+    <path
+        android:fillColor="#F8E8C9"
+        android:fillAlpha="0.8"
+        android:pathData="M7,8 L63,8.5 L122,8.1 L172.6,8 L174.2,9.8 L122,10.2 L64,10.5 L5.8,10 Z" />
+    <path
+        android:fillColor="#C39B68"
+        android:fillAlpha="0.35"
+        android:pathData="M5.1,49.8 L64.8,51 L121,50.4 L175,50.2 L172.9,52 L121,51.8 L65,52.3 L6.7,51.5 Z" />
+
+    <!-- Keep x14..166 / y13..48 clear for the native count label. -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#BA9260"
+        android:strokeAlpha="0.5"
+        android:strokeWidth="0.65"
+        android:strokeLineCap="round"
+        android:pathData="M17,11.4 C28,10.8 37,12 48,11.4 M102,11 C118,10.5 135,11.9 147,11.2 M22,49.7 C35,49.2 48,50.4 61,49.8 M120,49.5 C133,50 148,49.3 160,49.7 M7.2,17 C9.4,19.5 6.8,23.5 8.3,27 M9.8,36 C11.8,39 8.7,43 10.5,46 M171.9,15 C169.9,19 173.2,22 171.3,26 M173.4,36 C171,38.5 173.8,42.3 172,45.5" />
+    <path
+        android:fillColor="#95754D"
+        android:fillAlpha="0.65"
+        android:pathData="M11,29 m-0.85,0 a0.85,0.85 0,1 0,1.7 0 a0.85,0.85 0,1 0,-1.7 0 M169,29 m-0.85,0 a0.85,0.85 0,1 0,1.7 0 a0.85,0.85 0,1 0,-1.7 0" />
+</vector>

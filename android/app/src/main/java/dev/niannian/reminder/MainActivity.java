@@ -29,6 +29,8 @@ public class MainActivity extends Activity {
     private static final int BLUE = 0xff527a58, INK = 0xff283c32, MUTED = 0xff68786d,
             BG = 0xfffffcf5, PAPER = 0xfffffdf8, PALE = 0xffe8efe0, LINE = 0xffdfe5d7,
             RED = 0xffb65b55, GREEN = 0xff3d7c58, YELLOW = 0xff946b25, INFO = 0xff527eab;
+    private static final int HOME_TITLE = 0xff173d29, HOME_SEED = 0xff5b805b,
+            HOME_WOOD_TEXT = 0xff5b4730, HOME_ENCOURAGEMENT = 0xff818570;
     private static final String[] KINDS = {"once", "daily", "weekly", "monthly_window", "date_range", "interval", "ongoing", "minute_interval", "unsupported"};
     private static final String[] KIND_LABELS = {"只在一天提醒", "每天", "每周指定星期", "每月一段时间", "指定日期范围", "每隔几天", "每天提醒，做完结束", "每隔几分钟催一次", "请选择重复方式"};
     private static final String[] MODES = {"until_done", "every_day", "notify_once"};
@@ -346,21 +348,23 @@ public class MainActivity extends Activity {
     }
     private void renderHome() {
         if(session.token.isEmpty()){renderGuestHome();return;}
-        int heroHeight=Math.max(220,Math.min(280,Math.round(getResources().getConfiguration().screenWidthDp*.70f)));
+        int heroHeight=Math.max(236,Math.min(304,Math.round(getResources().getConfiguration().screenWidthDp*.74f)));
         FrameLayout hero=new FrameLayout(this);
         hero.addView(scenery(R.drawable.garden_home_hero_v3),new FrameLayout.LayoutParams(-1,-1));
         View fade=new View(this);fade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,new int[]{0x00fffcf5,BG}));
-        hero.addView(fade,new FrameLayout.LayoutParams(-1,dp(30),Gravity.BOTTOM));
-        LinearLayout heading=row(),titles=column();titles.addView(text("念念",30,INK,true));
-        titles.addView(text(LocalDate.now().format(DateTimeFormatter.ofPattern("M 月 d 日  EEEE",Locale.CHINA)),12,INK,false));
+        hero.addView(fade,new FrameLayout.LayoutParams(-1,dp(64),Gravity.BOTTOM));
+        LinearLayout heading=row(),titles=column();heading.setBaselineAligned(false);heading.setGravity(Gravity.TOP);
+        TextView brand=homeTitle("念念",32);brand.setShadowLayer(dp(1),0,dp(1),0xbbfffdf8);titles.addView(brand);gap(titles,3);
+        titles.addView(text(LocalDate.now().format(DateTimeFormatter.ofPattern("M 月 d 日  EEEE",Locale.CHINA)),12,HOME_TITLE,false));
         heading.addView(titles,new LinearLayout.LayoutParams(0,-2,1));
-        Button create=smallButton("＋ 播种");create.setTextColor(PAPER);create.setBackground(new android.graphics.drawable.InsetDrawable(shape(BLUE,20),0,dp(7),0,dp(7)));create.setContentDescription("播种，新建提醒");
+        Button create=homeSeedButton();
         heading.addView(create);create.setOnClickListener(v->openEditor(null));
-        FrameLayout.LayoutParams headingLp=new FrameLayout.LayoutParams(-1,-2,Gravity.TOP);headingLp.setMargins(dp(20),dp(16),dp(16),0);hero.addView(heading,headingLp);
-        gardenPreview=column();FrameLayout.LayoutParams previewLp=new FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.START);previewLp.setMargins(dp(20),0,dp(16),dp(28));hero.addView(gardenPreview,previewLp);
+        FrameLayout.LayoutParams headingLp=new FrameLayout.LayoutParams(-1,-2,Gravity.TOP);headingLp.setMargins(dp(22),dp(12),dp(16),0);hero.addView(heading,headingLp);
+        gardenPreview=column();gardenPreview.setPadding(dp(4),dp(9),dp(4),dp(9));
+        FrameLayout.LayoutParams previewLp=new FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.START);previewLp.setMargins(dp(12),0,dp(16),dp(32));hero.addView(gardenPreview,previewLp);
         body.addView(hero,new LinearLayout.LayoutParams(-1,dp(heroHeight)));drawGardenPreview();
         LinearLayout content=column();content.setPadding(dp(16),0,dp(16),dp(20));body.addView(content);
-        LinearLayout titleRow=row();titleRow.addView(text("今天的小事",21,INK,true),new LinearLayout.LayoutParams(0,-2,1));
+        LinearLayout titleRow=row();titleRow.setBaselineAligned(false);titleRow.addView(homeTitle("今天的小事",23),new LinearLayout.LayoutParams(0,-2,1));
         Button find=iconButton("search","搜索提醒"),refresh=iconButton("refresh","刷新提醒");titleRow.addView(find);titleRow.addView(refresh);content.addView(titleRow);
         EditText query=new EditText(this);styleField(query);query.setSingleLine(true);query.setText(search);query.setHint("搜索提醒标题或内容");
         query.setVisibility(homeSearchExpanded||!search.isEmpty()?View.VISIBLE:View.GONE);content.addView(query);
@@ -375,8 +379,41 @@ public class MainActivity extends Activity {
         content.addView(tabs);gap(content,8);taskList=column();content.addView(taskList);
         query.addTextChangedListener(watcher(()->{search=query.getText().toString().trim();drawTasks();}));
         refresh.setOnClickListener(v->{loadTasks(refresh);loadGarden();});
-        TextView encouragement=text("完成一件小事，花园就长大一点",12,MUTED,false);encouragement.setGravity(Gravity.CENTER);encouragement.setPadding(0,dp(18),0,dp(12));content.addView(encouragement);
+        content.addView(homeEncouragement());
         drawTasks();loadTasks(refresh);loadGarden();
+    }
+    private TextView homeTitle(String caption,int size){
+        TextView title=text(caption,size,HOME_TITLE,true);
+        title.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));
+        androidx.core.view.ViewCompat.setAccessibilityHeading(title,true);
+        return title;
+    }
+    private Button homeSeedButton(){
+        Button seed=smallButton("＋  播种");
+        android.graphics.drawable.InsetDrawable capsule=new android.graphics.drawable.InsetDrawable(shape(HOME_SEED,18),0,dp(7),0,dp(7));
+        seed.setBackground(new RippleDrawable(ColorStateList.valueOf(0x33fffdf8),capsule,null));
+        seed.setBackgroundTintList(null);
+        // Background replacement can reset padding; keep the visible capsule wide and its touch area 48dp tall.
+        seed.setPadding(dp(14),0,dp(14),0);seed.setMinimumWidth(dp(84));seed.setMinWidth(dp(84));
+        seed.setTextColor(PAPER);seed.setTextSize(14);seed.setLetterSpacing(0f);seed.setIncludeFontPadding(false);
+        seed.setSingleLine(true);seed.setGravity(Gravity.CENTER);seed.setContentDescription("播种，新建提醒");
+        return seed;
+    }
+    private View homeEncouragement(){
+        LinearLayout message=row();message.setBaselineAligned(false);message.setGravity(Gravity.CENTER);
+        message.setPadding(dp(18),dp(22),dp(18),dp(14));
+        ImageView left=new ImageView(this);left.setImageResource(R.drawable.garden_encouragement_leaves);
+        left.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        message.addView(left,new LinearLayout.LayoutParams(dp(26),dp(36)));
+        TextView copy=text("完成一件小事，花园就长大一点",12,HOME_ENCOURAGEMENT,false);
+        copy.setGravity(Gravity.CENTER);copy.setTypeface(Typeface.create("serif",Typeface.NORMAL));copy.setLetterSpacing(.04f);
+        copy.setPadding(dp(6),0,dp(6),0);
+        copy.setMaxWidth(dp(Math.max(1,Math.min(250,getResources().getConfiguration().screenWidthDp-120))));
+        message.addView(copy,new LinearLayout.LayoutParams(-2,-2));
+        ImageView right=new ImageView(this);right.setImageResource(R.drawable.garden_encouragement_leaves);right.setScaleX(-1f);right.setRotation(-12f);
+        right.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        message.addView(right,new LinearLayout.LayoutParams(dp(26),dp(36)));
+        return message;
     }
     private void styleFilter(Button tab,boolean active){
         tab.setTextColor(active?INK:MUTED);tab.setSelected(active);
@@ -429,9 +466,13 @@ public class MainActivity extends Activity {
         if(gardenPreview==null)return;gardenPreview.removeAllViews();
         String title=gardenData==null?"走进我的花园":"花园里，已种下 "+gardenData.optInt("total_plants")+" 株";
         if(!gardenNotice.isEmpty())title="花园暂未更新，点此查看";
-        TextView sign=text(title+"  ›",13,INK,true);sign.setGravity(Gravity.CENTER);sign.setMinHeight(dp(48));sign.setPadding(dp(12),dp(8),dp(12),dp(8));
-        GradientDrawable plaque=shape(0xfff6e1b8,8);plaque.setStroke(dp(1),0xffccb98d);sign.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),plaque,null));
-        gardenPreview.addView(sign);sign.setContentDescription(title+"，打开我的花园");sign.setOnClickListener(v->navigate("garden"));
+        FrameLayout sign=new FrameLayout(this);
+        sign.setBackground(new RippleDrawable(ColorStateList.valueOf(0x225b4730),getDrawable(R.drawable.garden_notice_board),getDrawable(R.drawable.garden_notice_board)));
+        sign.setPadding(dp(14),dp(10),dp(14),dp(28));sign.setMinimumWidth(dp(164));sign.setMinimumHeight(dp(68));sign.setRotation(-5f);
+        TextView caption=text(title,12,HOME_WOOD_TEXT,false);caption.setTypeface(Typeface.create("serif",Typeface.NORMAL));caption.setGravity(Gravity.CENTER);
+        caption.setMaxWidth(dp(204));caption.setMaxLines(2);caption.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        sign.addView(caption,new FrameLayout.LayoutParams(-1,-2,Gravity.CENTER));
+        gardenPreview.addView(sign,new LinearLayout.LayoutParams(-2,-2));sign.setContentDescription(title+"，打开我的花园");sign.setFocusable(true);sign.setOnClickListener(v->navigate("garden"));
     }
     private void loadGarden(){
         int request=++gardenRequest;String zone=ZoneId.systemDefault().getId();gardenLoading=true;gardenNotice="";
