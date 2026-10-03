@@ -6,6 +6,47 @@ import (
 	"testing"
 )
 
+func TestLoadAlwaysUsesDeepSeekFlash(t *testing.T) {
+	cases := []struct {
+		name     string
+		embedded string
+		file     string
+		env      string
+	}{
+		{name: "default"},
+		{name: "embedded reasoner", embedded: `{"deepseek_model":"deepseek-reasoner"}`},
+		{name: "embedded chat", embedded: `{"deepseek_model":"deepseek-chat"}`},
+		{name: "file reasoner", file: `{"deepseek_model":"deepseek-reasoner"}`},
+		{name: "file chat", file: `{"deepseek_model":"deepseek-chat"}`},
+		{name: "environment reasoner", env: "deepseek-reasoner"},
+		{name: "environment chat", env: "deepseek-chat"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			t.Setenv("NIANNIAN_CONFIG", "")
+			t.Setenv("NIANNIAN_DEEPSEEK_MODEL", tc.env)
+			if tc.env == "" {
+				if err := os.Unsetenv("NIANNIAN_DEEPSEEK_MODEL"); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if tc.file != "" {
+				if err := os.WriteFile("config.local.json", []byte(tc.file), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			c, err := Load([]byte(tc.embedded))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if c.DeepSeekModel != "deepseek-flash" {
+				t.Fatalf("model = %q, want deepseek-flash", c.DeepSeekModel)
+			}
+		})
+	}
+}
+
 func TestLoadEmbeddedOverridesAndFile(t *testing.T) {
 	t.Chdir(t.TempDir())
 	t.Setenv("NIANNIAN_ADDR", "127.0.0.1:9090")

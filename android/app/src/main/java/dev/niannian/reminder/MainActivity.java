@@ -632,7 +632,7 @@ public class MainActivity extends Activity {
             JSONObject rule=selected.optJSONObject("rule");String kind=rule==null?"":rule.optString("kind"),mode=rule==null?"":rule.optString("mode");
             String doneCopy=kind.equals("ongoing")||kind.equals("minute_interval")||kind.equals("once")||kind.equals("date_range")?"这次安排已经结束，所有记录都会保留。":"本期已经结束，下一期会按规则重新开始。";
             if(mode.equals("notify_once"))doneCopy="本期的提醒邮件已经发出，不需要再点击完成。";
-            note(body,status.equals("done")?doneCopy:status.equals("upcoming")?"还没有到本期时间，开始后再记录完成。":status.equals("expired")?"这条提醒已超出日期范围，记录依然保留。":"已暂停发送邮件，可以随时恢复。");
+            note(body,status.equals("done")?doneCopy:status.equals("upcoming")?"还没有到本期时间，开始后再记录完成。":status.equals("expired")?"这条提醒已过截止时间，记录依然保留。":"已暂停发送邮件，可以随时恢复。");
         }
         Button edit=button("编辑提醒",false);body.addView(edit);edit.setOnClickListener(v->openEditor(selected));gap(body,12);
         Button records=button("查看日历安排",false);body.addView(records);records.setOnClickListener(v->{LocalDate next=RecordDates.localDate(selected.optString("next_reminder"),ZoneId.systemDefault());calendarDate=next==null?LocalDate.now():next;calendarMonth=YearMonth.from(calendarDate);recordPage=0;navigate("history");});gap(body,16);
@@ -738,10 +738,18 @@ public class MainActivity extends Activity {
         String initialFirst=rule.optString("kind").equals("minute_interval")?rule.optString("first_at"):MinuteIntervalForm.defaultFirstAt(Instant.now(),firstZone);
         EditText hiddenFirst=new EditText(this);hiddenFirst.setText(formValue("first_at",initialFirst));fields.put("first_at",hiddenFirst);
         LinearLayout[] firstPair=pairedFields(minutes);
-        EditText firstDate=field(firstPair[0],"first_date","首次提醒日期","","选择日期",1);firstDate.setFocusable(false);firstDate.setOnClickListener(v->pickMinuteFirstDate());
-        EditText firstTime=field(firstPair[1],"first_time","首次提醒时间","","选择时间",1);firstTime.setFocusable(false);firstTime.setOnClickListener(v->pickMinuteFirstTime());
+        EditText firstDate=field(firstPair[0],"first_date","首次提醒日期","","选择日期",1);firstDate.setFocusable(false);firstDate.setOnClickListener(v->pickMinuteDate("first_at"));
+        EditText firstTime=field(firstPair[1],"first_time","首次提醒时间","","选择时间",1);firstTime.setFocusable(false);firstTime.setOnClickListener(v->pickMinuteTime("first_at"));
         field(minutes,"repeat_minutes","之后每隔几分钟",formValue("repeat_minutes",String.valueOf(rule.optString("kind").equals("minute_interval")?rule.optInt("repeat_minutes",5):5)),"1 至 1440",1);number(fields.get("repeat_minutes"));
-        note(minutes,"按下方时区显示首次时间。之后持续提醒，跨天、跨月也继续；点完成后永久停止。");
+        note(minutes,"按下方时区显示时间。没完成就继续提醒；完成后永久停止。设了截止，到期也会停止。");
+        String initialEnd=rule.optString("kind").equals("minute_interval")&&!rule.isNull("end_at")?rule.optString("end_at"):"";
+        EditText hiddenEnd=new EditText(this);hiddenEnd.setText(formValue("end_at",initialEnd));fields.put("end_at",hiddenEnd);
+        LinearLayout deadline=column();minutes.addView(deadline);LinearLayout[] deadlinePair=pairedFields(deadline);
+        EditText deadlineDate=field(deadlinePair[0],"deadline_date","截止日期","","选择日期",1);deadlineDate.setFocusable(false);deadlineDate.setOnClickListener(v->pickMinuteDate("end_at"));
+        EditText deadlineTime=field(deadlinePair[1],"deadline_time","截止时间","","选择时间",1);deadlineTime.setFocusable(false);deadlineTime.setOnClickListener(v->pickMinuteTime("end_at"));
+        Button clearDeadline=smallButton("清除截止，不限时间");deadline.addView(clearDeadline);
+        Button useEndDate=smallButton("改为日期截止（当天结束）");deadline.addView(useEndDate);
+        Button setDeadline=smallButton("设置截止时间");minutes.addView(setDeadline);
         LinearLayout[] datePair=pairedFields(rules);
         field(datePair[0],"start_date","开始日期",formValue("start_date",rule.optString("start_date")),"不限 / 选择",1);dateField(fields.get("start_date"));
         field(datePair[1],"end_date","结束日期",formValue("end_date",rule.optString("end_date")),"不限 / 选择",1);dateField(fields.get("end_date"));
@@ -756,12 +764,16 @@ public class MainActivity extends Activity {
         LinearLayout[] settingsPair=pairedFields(extra);field(settingsPair[0],"max_reminders","提醒次数上限",formValue("max_reminders",String.valueOf(rule.optInt("max_reminders",0))),"0 表示不限",1);number(fields.get("max_reminders"));
         field(settingsPair[1],"timezone","时区",formValue("timezone",rule.optString("timezone","Asia/Shanghai")),"Asia/Shanghai",1);note(extra,"上限填 0 表示不限次数，提醒按所选时区发送。");
         addFlowerPreview(extra);
-        refreshMinuteFirstFields();
+        refreshMinuteFields("first_at");refreshMinuteFields("end_at");
         Runnable updatePreview=()->updateEditorSummary(summaryLabels,summaryValues,previewNote);
-        Runnable updateKind=()->{String kind=KINDS[kindPicker.getSelectedItemPosition()];boolean minuteKind=kind.equals("minute_interval");monthly.setVisibility(kind.equals("monthly_window")?View.VISIBLE:View.GONE);weekly.setVisibility(kind.equals("weekly")?View.VISIBLE:View.GONE);interval.setVisibility(kind.equals("interval")?View.VISIBLE:View.GONE);minutes.setVisibility(minuteKind?View.VISIBLE:View.GONE);datePair[0].setVisibility(minuteKind?View.GONE:View.VISIBLE);fixedTimes.setVisibility(minuteKind?View.GONE:View.VISIBLE);completionMode.setVisibility(minuteKind?View.GONE:View.VISIBLE);modePicker.setEnabled(!kind.equals("ongoing")&&!minuteKind);if(kind.equals("ongoing")||minuteKind)modePicker.setSelection(0);dateHelp.setText(minuteKind?"结束日期可不填；填写后提醒至当天结束，长按可清除。":kind.equals("date_range")?"开始和结束日期都要填，长按可清除。":Arrays.asList("once","interval","ongoing").contains(kind)?"需选择开始日期，长按日期可清除。":"日期可不填，长按日期可清除。");updateModeHelp(modeHelp);updatePreview.run();};
+        Runnable updateKind=()->{String kind=KINDS[kindPicker.getSelectedItemPosition()];boolean minuteKind=kind.equals("minute_interval"),hasDeadline=!value("end_at").isEmpty();monthly.setVisibility(kind.equals("monthly_window")?View.VISIBLE:View.GONE);weekly.setVisibility(kind.equals("weekly")?View.VISIBLE:View.GONE);interval.setVisibility(kind.equals("interval")?View.VISIBLE:View.GONE);minutes.setVisibility(minuteKind?View.VISIBLE:View.GONE);deadline.setVisibility(hasDeadline?View.VISIBLE:View.GONE);setDeadline.setVisibility(hasDeadline?View.GONE:View.VISIBLE);setDeadline.setText(value("end_date").isEmpty()?"设置截止时间":"改为精确时间截止");datePair[0].setVisibility(minuteKind?View.GONE:View.VISIBLE);datePair[1].setVisibility(minuteKind&&hasDeadline?View.GONE:View.VISIBLE);fixedTimes.setVisibility(minuteKind?View.GONE:View.VISIBLE);completionMode.setVisibility(minuteKind?View.GONE:View.VISIBLE);modePicker.setEnabled(!kind.equals("ongoing")&&!minuteKind);if(kind.equals("ongoing")||minuteKind)modePicker.setSelection(0);dateHelp.setText(minuteKind?(hasDeadline?"按上方截止时间结束，之后不再提醒。":"结束日期可不填；填写后提醒至当天结束，长按可清除。"):kind.equals("date_range")?"开始和结束日期都要填，长按可清除。":Arrays.asList("once","interval","ongoing").contains(kind)?"需选择开始日期，长按日期可清除。":"日期可不填，长按日期可清除。");updateModeHelp(modeHelp);updatePreview.run();};
         kindPicker.setOnItemSelectedListener(selection(updateKind));modePicker.setOnItemSelectedListener(selection(()->{updateModeHelp(modeHelp);updatePreview.run();}));updateKind.run();
+        clearDeadline.setOnClickListener(v->{fields.get("end_date").setText("");hiddenEnd.setText("");});
+        useEndDate.setOnClickListener(v->{try{String date=MinuteIntervalForm.date(value("end_at"),ZoneId.of(value("timezone")));hiddenEnd.setText("");fields.get("end_date").setText(date);}catch(Exception invalid){showError("请先选择有效的截止时间和时区");}});
+        setDeadline.setOnClickListener(v->pickMinuteDeadline());
         for(Map.Entry<String,EditText> entry:fields.entrySet())if(!entry.getKey().equals("ai"))entry.getValue().addTextChangedListener(watcher(updatePreview));
-        hiddenFirst.addTextChangedListener(watcher(()->{refreshMinuteFirstFields();updatePreview.run();}));fields.get("timezone").addTextChangedListener(watcher(()->{refreshMinuteFirstFields();updatePreview.run();}));
+        hiddenFirst.addTextChangedListener(watcher(()->{refreshMinuteFields("first_at");updatePreview.run();}));hiddenEnd.addTextChangedListener(watcher(()->{refreshMinuteFields("end_at");updateKind.run();}));
+        fields.get("end_date").addTextChangedListener(watcher(updateKind));fields.get("timezone").addTextChangedListener(watcher(()->{refreshMinuteFields("first_at");refreshMinuteFields("end_at");updatePreview.run();}));
         hiddenTimes.addTextChangedListener(watcher(()->drawTimeChips(timeRow)));for(CheckBox day:weekdays)day.setOnCheckedChangeListener((v,checked)->updatePreview.run());
 
         gap(body,12);Button save=button(editing?"保存修改":"播下种子，开始提醒",true);save.setTextSize(16);save.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));save.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),shape(0xff567e5d,10),null));body.addView(save,new LinearLayout.LayoutParams(-1,dp(50)));save.setOnClickListener(v->saveEditor(save));
@@ -831,34 +843,56 @@ public class MainActivity extends Activity {
             String current=value("times");List<String> times=new ArrayList<>();if(!current.isEmpty())times.addAll(Arrays.asList(current.replace('，',',').split("[,\\s]+")));String chosen=String.format(Locale.ROOT,"%02d:%02d",h,m);if(position>=0&&position<times.size())times.set(position,chosen);else times.add(chosen);TreeSet<String> sorted=new TreeSet<>(times);fields.get("times").setText(TextUtils.join(", ",sorted));
         },time.getHour(),time.getMinute(),true).show();
     }
-    private void refreshMinuteFirstFields(){
+    private void refreshMinuteFields(String key){
+        String prefix=key.equals("first_at")?"first":"deadline";
         try{
             ZoneId zone=ZoneId.of(value("timezone"));
-            fields.get("first_date").setText(MinuteIntervalForm.date(value("first_at"),zone));
-            fields.get("first_time").setText(MinuteIntervalForm.time(value("first_at"),zone));
+            fields.get(prefix+"_date").setText(MinuteIntervalForm.date(value(key),zone));
+            fields.get(prefix+"_time").setText(MinuteIntervalForm.time(value(key),zone));
         }catch(Exception invalid){
-            fields.get("first_date").setText("");fields.get("first_time").setText("");
+            fields.get(prefix+"_date").setText("");fields.get(prefix+"_time").setText("");
         }
     }
     private String minuteFirstOrDefault(ZoneId zone){
         try{return MinuteIntervalForm.validate(value("first_at"),zone,null);}catch(IllegalArgumentException invalid){return MinuteIntervalForm.defaultFirstAt(Instant.now(),zone);}
     }
-    private void pickMinuteFirstDate(){
+    private String minuteInstantOrDefault(String key,ZoneId zone){
+        if(key.equals("first_at"))return minuteFirstOrDefault(zone);
+        try{MinuteIntervalForm.date(value(key),zone);return value(key);}catch(IllegalArgumentException invalid){
+            String first=minuteFirstOrDefault(zone),end=value("end_date");
+            if(!end.isEmpty())try{return MinuteIntervalForm.reschedule(first,LocalDate.parse(end),LocalTime.of(23,59),zone);}catch(IllegalArgumentException|DateTimeException ignored){}
+            return DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(OffsetDateTime.parse(first).plusHours(3).withSecond(0).withNano(0));
+        }
+    }
+    private void setMinuteInstant(String key,String instant){
+        if(key.equals("end_at"))fields.get("end_date").setText("");
+        fields.get(key).setText(instant);
+    }
+    private void pickMinuteDate(String key){
         try{
-            ZoneId zone=ZoneId.of(value("timezone"));String source=minuteFirstOrDefault(zone);LocalDate date=LocalDate.parse(MinuteIntervalForm.date(source,zone));
+            ZoneId zone=ZoneId.of(value("timezone"));String source=minuteInstantOrDefault(key,zone);LocalDate date=LocalDate.parse(MinuteIntervalForm.date(source,zone));
             new DatePickerDialog(this,(picker,y,m,d)->{
-                try{fields.get("first_at").setText(MinuteIntervalForm.reschedule(source,LocalDate.of(y,m+1,d),LocalTime.parse(MinuteIntervalForm.time(source,zone)),zone));}
+                try{setMinuteInstant(key,MinuteIntervalForm.reschedule(source,LocalDate.of(y,m+1,d),LocalTime.parse(MinuteIntervalForm.time(source,zone)),zone));}
                 catch(IllegalArgumentException invalid){showError(invalid.getMessage());}
             },date.getYear(),date.getMonthValue()-1,date.getDayOfMonth()).show();
         }catch(DateTimeException invalid){showError("请先填写有效时区，例如 Asia/Shanghai");}
     }
-    private void pickMinuteFirstTime(){
+    private void pickMinuteTime(String key){
         try{
-            ZoneId zone=ZoneId.of(value("timezone"));String source=minuteFirstOrDefault(zone);LocalTime time=LocalTime.parse(MinuteIntervalForm.time(source,zone));
+            ZoneId zone=ZoneId.of(value("timezone"));String source=minuteInstantOrDefault(key,zone);LocalTime time=LocalTime.parse(MinuteIntervalForm.time(source,zone));
             new TimePickerDialog(this,(picker,h,m)->{
-                try{fields.get("first_at").setText(MinuteIntervalForm.reschedule(source,LocalDate.parse(MinuteIntervalForm.date(source,zone)),time.withHour(h).withMinute(m),zone));}
+                try{setMinuteInstant(key,MinuteIntervalForm.reschedule(source,LocalDate.parse(MinuteIntervalForm.date(source,zone)),time.withHour(h).withMinute(m),zone));}
                 catch(IllegalArgumentException invalid){showError(invalid.getMessage());}
             },time.getHour(),time.getMinute(),true).show();
+        }catch(DateTimeException invalid){showError("请先填写有效时区，例如 Asia/Shanghai");}
+    }
+    private void pickMinuteDeadline(){
+        try{
+            ZoneId zone=ZoneId.of(value("timezone"));String source=minuteInstantOrDefault("end_at",zone);LocalDate date=LocalDate.parse(MinuteIntervalForm.date(source,zone));LocalTime time=LocalTime.parse(MinuteIntervalForm.time(source,zone));
+            new DatePickerDialog(this,(datePicker,y,month,day)->new TimePickerDialog(this,(timePicker,h,m)->{
+                try{setMinuteInstant("end_at",MinuteIntervalForm.reschedule(source,LocalDate.of(y,month+1,day),time.withHour(h).withMinute(m),zone));}
+                catch(IllegalArgumentException invalid){showError(invalid.getMessage());}
+            },time.getHour(),time.getMinute(),true).show(),date.getYear(),date.getMonthValue()-1,date.getDayOfMonth()).show();
         }catch(DateTimeException invalid){showError("请先填写有效时区，例如 Asia/Shanghai");}
     }
     private void saveEditor(Button button){
@@ -873,7 +907,7 @@ public class MainActivity extends Activity {
         String title=value("title"),kind=KINDS[kindPicker.getSelectedItemPosition()],mode=MODES[modePicker.getSelectedItemPosition()];
         if(kind.equals("unsupported"))throw new IOException("当前规则暂不支持，请先选择重复方式");
         if(title.isEmpty())throw new IOException("请填写事情名称");if(title.codePointCount(0,title.length())>100)throw new IOException("事情名称请控制在 100 字以内");
-        boolean minuteKind=kind.equals("minute_interval");String start=minuteKind?"":value("start_date"),end=value("end_date");LocalDate s=null,e=null;
+        boolean minuteKind=kind.equals("minute_interval");String endAt=minuteKind?value("end_at"):"",start=minuteKind?"":value("start_date"),end=minuteKind&&!endAt.isEmpty()?"":value("end_date");LocalDate s=null,e=null;
         try{if(!start.isEmpty())s=LocalDate.parse(start);if(!end.isEmpty())e=LocalDate.parse(end);}catch(Exception x){throw new IOException("日期请使用 YYYY-MM-DD 格式");}
         if(Arrays.asList("once","date_range","interval","ongoing").contains(kind)&&s==null)throw new IOException("这种提醒需要填写开始日期");
         if(kind.equals("ongoing"))mode="until_done";
@@ -882,7 +916,9 @@ public class MainActivity extends Activity {
         int cap=parseNumber("max_reminders",0,100);
         if(minuteKind){
             String first=MinuteIntervalForm.validate(value("first_at"),ZoneId.of(zone),e);int repeat=parseNumber("repeat_minutes",1,1440);
+            endAt=MinuteIntervalForm.validateEndAt(first,endAt,ZoneId.of(zone),e);
             JSONObject rule=object("kind",kind,"mode","until_done","timezone",zone,"first_at",first,"repeat_minutes",repeat,"times",new JSONArray(),"start_date","","end_date",end,"weekdays",new JSONArray(),"month_start",0,"month_end",0,"every_days",0,"max_reminders",cap);
+            if(!endAt.isEmpty())rule.put("end_at",endAt);
             JSONObject task=object("title",title,"description",value("description"),"rule",rule);if(editing)task.put("paused",draft.optBoolean("paused"));return task;
         }
         TreeSet<String> times=new TreeSet<>();for(String t:value("times").replace('，',',').split("[,\\s]+")){if(!t.matches("(?:[01]\\d|2[0-3]):[0-5]\\d"))throw new IOException("时间请按 09:00, 20:00 这样的格式填写");times.add(t);}

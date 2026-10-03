@@ -26,6 +26,7 @@ type Rule struct {
 	EveryDays     int      `json:"every_days"`
 	MaxReminders  int      `json:"max_reminders"`
 	FirstAt       string   `json:"first_at,omitempty"`
+	EndAt         string   `json:"end_at,omitempty"`
 	RepeatMinutes int      `json:"repeat_minutes,omitempty"`
 }
 
@@ -48,6 +49,7 @@ type prepared struct {
 	// interval day arithmetic correct across daylight saving transitions.
 	start, end time.Time
 	firstAt    time.Time
+	endAt      time.Time
 }
 
 func Validate(r Rule) error { _, err := prepare(r); return err }
@@ -72,8 +74,8 @@ func prepare(r Rule) (prepared, error) {
 	if err != nil {
 		return p, errors.New("时区无效")
 	}
-	if r.Kind != "minute_interval" && (r.FirstAt != "" || r.RepeatMinutes != 0) {
-		return p, errors.New("首次时间和分钟间隔仅适用于分钟间隔提醒")
+	if r.Kind != "minute_interval" && (r.FirstAt != "" || r.EndAt != "" || r.RepeatMinutes != 0) {
+		return p, errors.New("首次时间、截止时间和分钟间隔仅适用于分钟间隔提醒")
 	}
 	if r.Kind != "minute_interval" && (len(r.Times) < 1 || len(r.Times) > 8) {
 		return p, errors.New("每天需设置 1 到 8 个提醒时间")
@@ -274,7 +276,16 @@ func CycleAt(r Rule, at time.Time) (Cycle, bool) {
 	if err != nil {
 		return Cycle{}, false
 	}
-	return p.cycle(civil(at.In(p.loc)))
+	cycle, ok := p.cycle(civil(at.In(p.loc)))
+	if ok && r.Kind == "minute_interval" && r.EndAt != "" {
+		// Keep the permanent completion key and the waiting period before
+		// first_at, while ending eligibility immediately after the deadline.
+		if at.After(p.endAt) {
+			return Cycle{}, false
+		}
+		cycle.End = p.minuteEnd()
+	}
+	return cycle, ok
 }
 
 func (p prepared) slots(day time.Time) []Occurrence {
@@ -497,6 +508,9 @@ func Summary(r Rule) string {
 		if r.EndDate != "" {
 			text += "，至 " + r.EndDate
 		}
+	}
+	if r.EndAt != "" {
+		text += "，截止 " + p.endAt.Format("2006-01-02 15:04:05.999999999") + "（含此时刻）"
 	}
 	return text
 }

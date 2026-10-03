@@ -158,7 +158,10 @@ func (a *App) createTask(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, err.Error())
 		return
 	}
-	if in.Rule.Kind == "minute_interval" {
+	// Precise windows may already be in progress; Next below still requires
+	// an unsent future slot before their deadline. Unbounded relative drafts
+	// must retain their originally requested first reminder.
+	if in.Rule.Kind == "minute_interval" && in.Rule.EndAt == "" {
 		first, _ := time.Parse(time.RFC3339Nano, in.Rule.FirstAt)
 		if !first.After(a.now()) {
 			writeError(w, 400, "首次提醒时间已过，请调整首次时间后再创建")

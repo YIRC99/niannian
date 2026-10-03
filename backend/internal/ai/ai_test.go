@@ -147,7 +147,7 @@ func TestInvalidMinuteIntervalModelOutputRejected(t *testing.T) {
 			}))
 			defer s.Close()
 			_, err := New(config.Config{DeepSeekBaseURL: s.URL, DeepSeekAPIKey: "test"}).Parse(context.Background(), "15分钟后收衣服，没完成每隔5分钟提醒", time.Date(2026, 10, 3, 4, 0, 37, 0, time.UTC))
-			if err == nil || !strings.Contains(err.Error(), "AI 时间规则需要调整") {
+			if err == nil || !strings.Contains(err.Error(), "没能整理好提醒安排") {
 				t.Fatalf("invalid repeat_minutes should fail rule validation, got %v", err)
 			}
 		})

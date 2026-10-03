@@ -1,5 +1,6 @@
 package dev.niannian.reminder;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,17 @@ final class ReminderSummary {
         List<String> notes = new ArrayList<>();
         String start = "minute_interval".equals(kind) ? "" : field(fields, "start_date");
         String end = field(fields, "end_date");
-        if (!start.isEmpty() && !end.isEmpty()) notes.add(start + " 至 " + end);
+        String endAt = "minute_interval".equals(kind) ? field(fields, "end_at") : "";
+        if (!endAt.isEmpty()) {
+            try {
+                ZoneId zone = ZoneId.of(field(fields, "timezone"));
+                notes.add("截止 " + MinuteIntervalForm.date(endAt, zone) + " " + MinuteIntervalForm.time(endAt, zone) + "，之后停止提醒");
+            } catch (IllegalArgumentException invalid) {
+                notes.add("截止时间待调整");
+            } catch (java.time.DateTimeException invalid) {
+                notes.add("截止时间待调整");
+            }
+        } else if (!start.isEmpty() && !end.isEmpty()) notes.add(start + " 至 " + end);
         else if (!start.isEmpty()) notes.add(start + " 起");
         else if (!end.isEmpty()) notes.add("至 " + end + " 当天结束");
 

@@ -17,16 +17,19 @@ import (
 //go:embed defaults/*.json
 var defaults embed.FS
 
+const DeepSeekFlashModel = "deepseek-flash"
+
 type Config struct {
 	Addr            string `json:"addr"`
 	DataDir         string `json:"data_dir"`
 	DeepSeekAPIKey  string `json:"deepseek_api_key"`
 	DeepSeekBaseURL string `json:"deepseek_base_url"`
-	DeepSeekModel   string `json:"deepseek_model"`
-	SMTPHost        string `json:"smtp_host"`
-	SMTPUser        string `json:"smtp_user"`
-	SMTPPassword    string `json:"smtp_password"`
-	SMTPPort        int    `json:"smtp_port"`
+	// Deprecated: accepted for compatibility; Load always uses DeepSeekFlashModel.
+	DeepSeekModel string `json:"deepseek_model"`
+	SMTPHost      string `json:"smtp_host"`
+	SMTPUser      string `json:"smtp_user"`
+	SMTPPassword  string `json:"smtp_password"`
+	SMTPPort      int    `json:"smtp_port"`
 	// Deprecated: accepted only for old configuration compatibility, never enforced.
 	AllowedEmails []string `json:"allowed_emails,omitempty"`
 	PublicURL     string   `json:"public_url"`
@@ -42,7 +45,7 @@ func EmbeddedDefaults() []byte {
 }
 
 func Load(embedded []byte) (Config, error) {
-	c := Config{Addr: ":56507", DataDir: "data", DeepSeekBaseURL: "https://api.deepseek.com", DeepSeekModel: "deepseek-flash", SMTPHost: "hwsmtp.qiye.163.com", SMTPPort: 465}
+	c := Config{Addr: ":56507", DataDir: "data", DeepSeekBaseURL: "https://api.deepseek.com", DeepSeekModel: DeepSeekFlashModel, SMTPHost: "hwsmtp.qiye.163.com", SMTPPort: 465}
 	apply := func(data []byte) error {
 		if len(bytes.TrimSpace(data)) == 0 {
 			return nil
@@ -79,6 +82,8 @@ func Load(embedded []byte) (Config, error) {
 			*v = strings.TrimSpace(e)
 		}
 	}
+	// Legacy configuration must not switch requests back to chat or reasoner.
+	c.DeepSeekModel = DeepSeekFlashModel
 	if s, ok := os.LookupEnv("NIANNIAN_SMTP_PORT"); ok {
 		n, err := strconv.Atoi(s)
 		if err != nil {

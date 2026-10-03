@@ -52,6 +52,16 @@ public final class ReminderSummaryTest {
                 ReminderSummary.note("monthly_window", "every_day", bounded), "every-day cap is per day");
         equal("至 2026-10-31 当天结束 · 最多 4 次 · 时区 America/New_York",
                 ReminderSummary.note("minute_interval", "until_done", bounded), "minute rule ignores stale start date and preserves end day");
+        equal("截止 2026-10-03 17:00:07.123，之后停止提醒 · 时区 Asia/Shanghai",
+                ReminderSummary.note("minute_interval", "until_done", fields("end_at", "2026-10-03T09:00:07.123Z", "timezone", "Asia/Shanghai")),
+                "exact deadline uses the reminder timezone and retains seconds");
+        equal("截止 2026-10-03 17:00:00，之后停止提醒 · 最多 4 次 · 时区 Asia/Shanghai",
+                ReminderSummary.note("minute_interval", "until_done", fields("end_at", "2026-10-03T17:00:00+08:00", "end_date", "2026-10-31", "max_reminders", "4", "timezone", "Asia/Shanghai")),
+                "exact deadline takes priority over stale end date in summary");
+        equal("时区 Asia/Shanghai", ReminderSummary.note("daily", "until_done", fields("end_at", "2026-10-03T17:00:00+08:00", "timezone", "Asia/Shanghai")),
+                "other schedule kinds do not display a stale exact deadline");
+        equal("截止时间待调整 · 时区 Asia/Shanghai", ReminderSummary.note("minute_interval", "until_done", fields("end_at", "invalid", "timezone", "Asia/Shanghai")),
+                "invalid deadline remains visibly incomplete");
         equal("2026-10-03 至 2026-10-31 · 最多 4 次 · 时区 America/New_York",
                 ReminderSummary.note("ongoing", "until_done", bounded), "ongoing cap belongs to the whole task");
         equal("2026-10-03 至 2026-10-31 · 时区 America/New_York",

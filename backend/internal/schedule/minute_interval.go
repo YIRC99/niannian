@@ -31,6 +31,22 @@ func (p *prepared) prepareMinuteInterval() error {
 	if r.EndDate != "" && p.end.Before(civil(p.firstAt)) {
 		return errors.New("结束日期不能早于首次提醒日期")
 	}
+	if r.EndAt != "" {
+		if r.EndDate != "" {
+			return errors.New("结束日期和精确截止时间只能设置一种")
+		}
+		end, err := time.Parse(time.RFC3339Nano, r.EndAt)
+		if err != nil || !firstAtFormat.MatchString(r.EndAt) || end.Year() < 1 {
+			return errors.New("截止时间需为包含秒和时区的 RFC3339 格式")
+		}
+		p.endAt = end.In(p.loc)
+		if p.endAt.Year() < 1 || p.endAt.Year() > 9999 {
+			return errors.New("截止时间需在当地公元 1 到 9999 年内")
+		}
+		if p.endAt.Before(p.firstAt) {
+			return errors.New("截止时间不能早于首次提醒时间")
+		}
+	}
 	return nil
 }
 
@@ -50,6 +66,10 @@ func (p prepared) minuteAt(index int64) time.Time {
 }
 
 func (p prepared) minuteEnd() time.Time {
+	if p.r.EndAt != "" {
+		// Cycle ends are exclusive; end_at itself is an eligible instant.
+		return p.endAt.Add(time.Nanosecond)
+	}
 	end := time.Date(10000, time.January, 1, 0, 0, 0, 0, time.UTC)
 	if p.r.EndDate != "" {
 		end = p.end.AddDate(0, 0, 1)
@@ -80,6 +100,9 @@ func (p prepared) minuteDue(from, to, firstDay, lastDay time.Time, limit int) []
 		from = lower.Add(-time.Nanosecond)
 	}
 	upper := p.localMidnight(lastDay.AddDate(0, 0, 1))
+	if end := p.minuteEnd(); end.Before(upper) {
+		upper = end
+	}
 	if !to.Before(upper) {
 		to = upper.Add(-time.Nanosecond)
 	}

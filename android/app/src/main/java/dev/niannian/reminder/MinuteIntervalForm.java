@@ -4,7 +4,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/** Keeps the exact first reminder instant while the form is reviewed or edited. */
+/** Keeps exact reminder and deadline instants while the form is reviewed or edited. */
 final class MinuteIntervalForm {
     private MinuteIntervalForm() {}
 
@@ -35,6 +35,17 @@ final class MinuteIntervalForm {
         if (end != null && end.isBefore(first.toLocalDate()))
             throw new IllegalArgumentException("结束日期不能早于首次提醒日期");
         return firstAt;
+    }
+
+    static String validateEndAt(String firstAt, String endAt, ZoneId zone, LocalDate end) {
+        if (endAt == null || endAt.isEmpty()) return "";
+        if (end != null) throw new IllegalArgumentException("截止时间和结束日期只能选择一种");
+        ZonedDateTime deadline;
+        try { deadline = local(endAt, zone); }
+        catch (IllegalArgumentException invalid) { throw new IllegalArgumentException("截止时间无效，请重新选择完整日期和时间"); }
+        if (deadline.toInstant().isBefore(local(firstAt, zone).toInstant()))
+            throw new IllegalArgumentException("截止时间不能早于首次提醒时间");
+        return endAt;
     }
 
     private static ZonedDateTime local(String firstAt, ZoneId zone) {
