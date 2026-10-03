@@ -75,6 +75,7 @@ type Completion struct {
 }
 type Notification struct {
 	ID          string `json:"id"`
+	TaskID      string `json:"task_id"`
 	TaskTitle   string `json:"task_title"`
 	ScheduledAt string `json:"scheduled_at"`
 	SentAt      string `json:"sent_at"`
@@ -150,7 +151,7 @@ CREATE INDEX IF NOT EXISTS notification_user ON notifications(user_id,scheduled_
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 200, map[string]string{"status": "ok", "version": "1.0.0"})
+		writeJSON(w, 200, map[string]string{"status": "ok", "version": "1.1.0"})
 	})
 	mux.HandleFunc("POST /api/v1/auth/code", a.requestCode)
 	mux.HandleFunc("POST /api/v1/auth/verify", a.verifyCode)

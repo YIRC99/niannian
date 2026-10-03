@@ -26,9 +26,25 @@ keytool -genkeypair -keystore niannian-release.jks -storepass niannian-local-rel
 2. 输入邮箱并发送验证码，登录状态通过 Android Keystore 加密保存在手机。此邮箱用于接收提醒。
 3. 输入自然语言生成可编辑草稿，或直接手动创建。支持一次、每日、每周、每月范围、日期范围、固定天数间隔和「每天提醒直到完成」。
 4. 任务详情可完成、附备注、调用系统相机、选择相册、延后、暂停或归档。完成凭证的照片会压缩为 JPEG 上传到自己的服务器。
-5. 记录页查看完成文字、照片和邮件发送结果。我的页面可以切换服务器、检查连接、导出文字记录、退出登录。完整备份需要同时保存服务器媒体目录。
+5. 记录页用月历查看邮件提醒与完成记录。蓝点表示提醒、绿点表示完成；点日期看当天记录，再点记录查看文字、照片和关联提醒。我的页面可以切换服务器、检查连接、导出文字记录、退出登录。完整备份需要同时保存服务器媒体目录。
 
 切换服务器会清理当前账号和页面缓存；旧请求的结果不会进入新服务器的界面。服务器地址、证书或网络出错时展示可重试的错误。
+
+## 1.1.0 界面调整
+
+保留白蓝配色，缩小字号和留白，首页改为紧凑提醒列表。AI 草稿直接显示事项、规则摘要和保存按钮；具体规则与更多设置按需展开。开始/结束日期及每月起止日成对排列，窄屏和大字体自动换行。提醒时间通过时间按钮选择、修改或移除。
+
+月历仅呈现服务器已有记录：邮件按 `scheduled_at`、完成按 `created_at`，统一换算为手机时区。每次进入记录页刷新，切换日期和月份只更新本地列表；每日超过 20 条分页显示，照片进入详情后加载。返回详情/照片保留选定月份、日期和页码。已归档提醒只读；旧服务器缺少关联编号或不能读取归档任务时，原记录仍可查看。
+
+日期归组的独立测试（在 `android` 目录运行，需要 JDK 17+）：
+
+```powershell
+New-Item -ItemType Directory -Force build/record-dates-tests | Out-Null
+& "$env:JAVA_HOME/bin/javac.exe" -encoding UTF-8 --release 17 -d build/record-dates-tests app/src/main/java/dev/niannian/reminder/RecordDates.java tests/RecordDatesTest.java
+& "$env:JAVA_HOME/bin/java.exe" -cp build/record-dates-tests dev.niannian.reminder.RecordDatesTest
+```
+
+覆盖午夜跨日、时区偏移、夏令时、无效时间、排序及月历边界，共 52 项断言。
 
 ## 本次验证边界
 

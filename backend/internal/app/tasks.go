@@ -190,7 +190,8 @@ func (a *App) createTask(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 201, a.view(t))
 }
 func (a *App) getTask(w http.ResponseWriter, r *http.Request) {
-	t, err := a.findTask(r.PathValue("id"), currentUser(r).ID)
+	// Historical records keep linking to archived tasks, but mutations use findTask.
+	t, err := scanTask(a.db.QueryRow(`SELECT `+taskColumns+` FROM tasks WHERE id=? AND user_id=?`, r.PathValue("id"), currentUser(r).ID))
 	if err == sql.ErrNoRows {
 		writeError(w, 404, "任务不存在")
 		return
@@ -407,7 +408,7 @@ func (a *App) allCompletions(userID string) ([]Completion, error) {
 	return out, rows.Err()
 }
 func (a *App) allNotifications(userID string) ([]Notification, error) {
-	rows, err := a.db.Query(`SELECT id,task_title,scheduled_at,sent_at,CASE WHEN status='sending' THEN 'pending' ELSE status END,error FROM notifications WHERE user_id=? ORDER BY scheduled_at DESC,id`, userID)
+	rows, err := a.db.Query(`SELECT id,task_id,task_title,scheduled_at,sent_at,CASE WHEN status='sending' THEN 'pending' ELSE status END,error FROM notifications WHERE user_id=? ORDER BY scheduled_at DESC,id`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +416,7 @@ func (a *App) allNotifications(userID string) ([]Notification, error) {
 	out := []Notification{}
 	for rows.Next() {
 		var n Notification
-		if err := rows.Scan(&n.ID, &n.TaskTitle, &n.ScheduledAt, &n.SentAt, &n.Status, &n.Error); err != nil {
+		if err := rows.Scan(&n.ID, &n.TaskID, &n.TaskTitle, &n.ScheduledAt, &n.SentAt, &n.Status, &n.Error); err != nil {
 			return nil, err
 		}
 		out = append(out, n)

@@ -2,7 +2,7 @@
 
 Base URL entered in Android is origin e.g. http://192.168.1.10:56507. All paths below include /api/v1. JSON UTF-8. Bearer opaque token except health/auth. Errors {"error":"human readable Chinese"}. Timestamps RFC3339. IDs strings. Unknown fields rejected for writes. Server owns user identity, recipients and media.
 
-GET /health -> {"status":"ok","version":"1.0.0"}
+GET /health -> {"status":"ok","version":"1.1.0"}
 POST /api/v1/auth/code {"email":"..."} -> {"message":"验证码已发送"}
 POST /api/v1/auth/verify {"email":"...","code":"123456"} -> {"token":"...","user":{"id":"...","email":"..."}}
 Registration is open: any syntactically valid email can request a code, and the first successful verification creates its account. Repeat verification reuses the same account. Legacy allowed_emails configuration is ignored across login, sessions, and reminder delivery. OTP expiry/rate limits and user-data isolation still apply.
@@ -17,7 +17,7 @@ ongoing requires start_date, optional end_date, mode=until_done only. Repeats da
 
 GET /api/v1/tasks -> {"tasks":[TaskView]}
 POST /api/v1/tasks {"title":"...","description":"...","rule":Rule} -> TaskView
-GET /api/v1/tasks/{id} -> TaskView
+GET /api/v1/tasks/{id} -> TaskView (owner can also read archived:true tasks for history navigation; all mutations still reject archived tasks)
 PUT /api/v1/tasks/{id} {"title":"...","description":"...","rule":Rule,"paused":false} -> TaskView
 DELETE /api/v1/tasks/{id} -> {"ok":true} (soft archive, preserve history)
 POST /api/v1/tasks/{id}/complete {"text":"...","media_ids":["..."]} -> Completion
@@ -25,7 +25,8 @@ POST /api/v1/tasks/{id}/snooze {"minutes":60} -> {"ok":true} (1..1440, durable)
 TaskView {"id":"...","title":"...","description":"...","rule":Rule,"paused":false,"created_at":"...","updated_at":"...","summary":"每月 1—15 日，每天 09:00，完成后停止本月提醒","status":"pending|done|upcoming|paused|expired","next_reminder":"RFC3339 or empty","cycle_key":"..."}
 Completion {"id":"...","task_id":"...","task_title":"...","cycle_key":"...","text":"...","media_ids":[],"created_at":"..."}
 GET /api/v1/history -> {"records":[Completion]}
-GET /api/v1/notifications -> {"notifications":[{"id":"...","task_title":"...","scheduled_at":"...","sent_at":"...","status":"sent|failed|pending","error":"..."}]}
+GET /api/v1/notifications -> {"notifications":[{"id":"...","task_id":"...","task_title":"...","scheduled_at":"...","sent_at":"...","status":"sent|failed|pending","error":"..."}]}
+Android calendar combines these actual notifications (scheduled_at date) and /history completions (created_at date), converting timestamps into the phone's local timezone. It does not synthesize sent records from future schedules. task_id provides owner-authenticated navigation to the reminder, including read-only archived reminders.
 POST /api/v1/media multipart field file (jpeg/png/webp, max 10MB) -> {"id":"...","url":"/api/v1/media/{id}"}
 GET /api/v1/media/{id} -> authenticated bytes
 POST /api/v1/ai/parse {"text":"每月1到15号提醒申报，完成就不提醒"} -> {"title":"申报财务信息","description":"...","rule":Rule,"summary":"...","warnings":[]}. Draft only, validate before returning, no silent save.
