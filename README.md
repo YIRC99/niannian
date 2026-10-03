@@ -64,7 +64,7 @@
 
 后端：Go 1.26 或更高版本，`cd backend && go test ./... && go build ./cmd/server`。纯 Go SQLite，无 CGO；Linux 包包含时区数据。
 
-安卓：Java 17/21、Android SDK 35、Gradle Wrapper。创建 `android/local.properties` 指定 `sdk.dir`，在 `android` 运行 `gradlew.bat --no-daemon assembleDebug`。发布 APK 使用独立签名密钥，升级要保留原签名文件。
+安卓：Java 17/21、Android SDK 35、Gradle Wrapper。创建 `android/local.properties` 指定 `sdk.dir`，在 `android` 运行 `gradlew.bat --no-daemon assembleDebug`。发布 APK 使用独立签名密钥，升级要保留原签名文件。原文件为 `android/niannian-release.jks`，交付目录另有 `release/niannian-signing-backup.zip`，签名说明见 `android/README.md`；公开源码压缩包不含密钥与签名文件。
 
 `scripts/build.ps1` 构建 Linux amd64/arm64 后端。源代码里没有私人密钥时仍能编译，通过配置文件填入 SMTP/AI 即可运行。
 
