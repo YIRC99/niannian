@@ -1,6 +1,23 @@
 # 交付检查记录
 
-日期：2026-10-03。当前版本：1.4.0。
+日期：2026-10-03。当前版本：1.5.0。
+
+## 1.5.0 分钟催办本次验证
+
+- 新增分钟间隔规则，首次时间保留秒和时区，从首次时间连续计算间隔。整个任务共用一个完成周期，提前完成（包括首次提醒在次日）、跨日/月、修改首次时间及重启后都不会重新催促。
+- 核心与应用回归覆盖首次 15 分钟等待、每 5 分钟继续、发送去重、跨午夜补最近一次、暂停/恢复/稍后提醒、提醒上限、完成后永久停止、重启持久化、过期草稿拒绝和日历状态。独立复核补充了“到截止日后重启不补发/不重试”和“已限制次数的密集提醒不挤掉其他任务日历”回归。
+- 使用真实 DeepSeek 接口单独运行原话案例：返回首次 12:15:37、间隔 5 分钟、次数不限且无截止日，当前时间固定为 12:00:37。其他 AI 校验走模拟接口。本轮没有发送真实验证码或提醒邮件。
+- Android 首次时间处理 17 项 Java 检查通过，覆盖原始秒/小数/偏移保留、跨日和夏令时。正式构建与 Lint 通过（0 errors / 5 既有 warnings），APK v2 签名验证通过。ADB 覆盖安装 Success，包管理器确认 versionName 1.5.0 / versionCode 7；未启动应用进行页面自动化。
+- 实际手机交互和最终收信需用户验收。后端每 30 秒扫描，邮件到达时间受服务商影响；完成须在任务中点击确认。
+- 最终全量 Go 测试、`go vet ./...` 通过；Windows amd64 与 Linux amd64/arm64 后端均已构建。退出前检查无新启动的项目或 Java 后台进程；原有 PID 11824 的 1.4.0 后端仍保留，实际 `/health` 返回 1.4.0，需由用户替换为新版后端后使用分钟规则。
+
+新增时间表单检查（在 android 目录）：
+
+```powershell
+New-Item -ItemType Directory -Force build/minute-tests | Out-Null
+javac -encoding UTF-8 --release 17 -d build/minute-tests app/src/main/java/dev/niannian/reminder/MinuteIntervalForm.java tests/MinuteIntervalFormTest.java
+java -cp build/minute-tests dev.niannian.reminder.MinuteIntervalFormTest
+```
 
 ## 1.4.0 密码与自动登录本次验证
 

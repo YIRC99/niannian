@@ -158,6 +158,13 @@ func (a *App) createTask(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, err.Error())
 		return
 	}
+	if in.Rule.Kind == "minute_interval" {
+		first, _ := time.Parse(time.RFC3339Nano, in.Rule.FirstAt)
+		if !first.After(a.now()) {
+			writeError(w, 400, "首次提醒时间已过，请调整首次时间后再创建")
+			return
+		}
+	}
 	if _, ok := schedule.Next(in.Rule, a.now()); !ok {
 		writeError(w, 400, "没有未来提醒时间，请调整日期或时间")
 		return

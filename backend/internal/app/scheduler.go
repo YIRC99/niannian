@@ -30,6 +30,11 @@ func (a *App) candidate(t task, now time.Time) (schedule.Occurrence, bool) {
 	if t.Paused || t.Archived {
 		return schedule.Occurrence{}, false
 	}
+	if t.Rule.Kind == "minute_interval" {
+		if _, active := schedule.CycleAt(t.Rule, now); !active {
+			return schedule.Occurrence{}, false
+		}
+	}
 	loc, err := time.LoadLocation(t.Rule.Timezone)
 	if err != nil {
 		return schedule.Occurrence{}, false
@@ -38,16 +43,12 @@ func (a *App) candidate(t task, now time.Time) (schedule.Occurrence, bool) {
 	dayStart := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, loc)
 	from := dayStart.Add(-time.Nanosecond)
 	created, _ := time.Parse(time.RFC3339Nano, t.CreatedAt)
-	if created.After(from) {
+	if t.Rule.Kind == "minute_interval" || created.After(from) {
 		from = created
 	}
-	var candidate schedule.Occurrence
-	var found bool
-	due := schedule.Due(t.Rule, from, now)
-	if len(due) > 0 {
-		candidate = due[len(due)-1]
-		found = true
-	}
+	// Minute intervals are continuous across midnight. Select only the latest
+	// slot arithmetically so long outages never enumerate or send a backlog.
+	candidate, found := schedule.LatestDue(t.Rule, from, now)
 	if t.SnoozeUntil != "" {
 		until, e := time.Parse(time.RFC3339Nano, t.SnoozeUntil)
 		if e == nil {
@@ -58,7 +59,7 @@ func (a *App) candidate(t task, now time.Time) (schedule.Occurrence, bool) {
 				found = false
 			}
 			cycle, active := schedule.CycleAt(t.Rule, now)
-			if !until.Before(dayStart) && active && cycle.Key == t.SnoozeCycle && (!found || until.After(candidate.At)) {
+			if (t.Rule.Kind == "minute_interval" || !until.Before(dayStart)) && active && cycle.Key == t.SnoozeCycle && (!found || until.After(candidate.At)) {
 				candidate = schedule.Occurrence{At: until, CycleKey: t.SnoozeCycle}
 				found = true
 			}
@@ -164,7 +165,7 @@ func (a *App) tick(ctx context.Context) error {
 			continue
 		}
 		// Re-evaluate just before send, so completed or expired tasks never leave the queue.
-		// Only the latest local-day slot is eligible after downtime or a long retry delay.
+		// Only the latest eligible slot is sent after downtime or a long retry delay.
 		if !ok || q.scheduled != stamp(occurrence.At) || q.cycle != occurrence.CycleKey {
 			if e = cancel(q.id, "提醒时段已过，或已由更晚的提醒替代"); e != nil {
 				return e

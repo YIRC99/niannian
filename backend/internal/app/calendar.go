@@ -1,6 +1,7 @@
 package app
 
 import (
+	"container/heap"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -43,6 +44,32 @@ type calendarCycleData struct {
 	sent, sentBeforeMonth int
 	sentInMonth           []time.Time
 	end                   time.Time
+}
+
+type calendarPlanStream struct {
+	t      task
+	cycles map[string]schedule.Cycle
+	slot   schedule.Occurrence
+	next   func() (schedule.Occurrence, bool)
+}
+
+type calendarPlanHeap []*calendarPlanStream
+
+func (h calendarPlanHeap) Len() int { return len(h) }
+func (h calendarPlanHeap) Less(i, j int) bool {
+	if h[i].slot.At.Equal(h[j].slot.At) {
+		return h[i].t.ID < h[j].t.ID
+	}
+	return h[i].slot.At.Before(h[j].slot.At)
+}
+func (h calendarPlanHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+func (h *calendarPlanHeap) Push(v any)   { *h = append(*h, v.(*calendarPlanStream)) }
+func (h *calendarPlanHeap) Pop() any {
+	last := len(*h) - 1
+	v := (*h)[last]
+	(*h)[last] = nil
+	*h = (*h)[:last]
+	return v
 }
 
 func calendarCycleEnd(end time.Time) string {
@@ -128,6 +155,69 @@ func calendarBudgetSlots(t task, cycle schedule.Cycle, data *calendarCycleData, 
 		cursor = next
 	}
 	return out
+}
+
+// Minute rules can have 44,640 slots in one month. Read their ledger before
+// enumerating, then retain only a small chunk per task. Capped future slots
+// come from the lifetime budget, even when they fall outside this month.
+func calendarMinuteCandidates(t task, from, to, now time.Time, data *calendarCycleData, budget map[string]bool) func() (schedule.Occurrence, bool) {
+	if !data.completedAt.IsZero() && !data.completedAt.After(to) {
+		to = data.completedAt.Add(-time.Nanosecond)
+	}
+	regularTo := to
+	future := []schedule.Occurrence{}
+	if limit := calendarLimit(t.Rule); limit > 0 {
+		if !regularTo.Before(now) {
+			regularTo = now.Add(-time.Nanosecond)
+		}
+		if data.sentBeforeMonth >= limit {
+			regularTo = from
+		} else if remaining := limit - data.sentBeforeMonth; len(data.sentInMonth) >= remaining {
+			cutoff := data.sentInMonth[remaining-1].Add(-time.Nanosecond)
+			if cutoff.Before(regularTo) {
+				regularTo = cutoff
+			}
+		}
+		for at := range budget {
+			instant, err := time.Parse(time.RFC3339Nano, at)
+			if err == nil && instant.After(from) && !instant.After(to) {
+				future = append(future, schedule.Occurrence{At: instant, CycleKey: "minute_interval"})
+			}
+		}
+		sort.Slice(future, func(i, j int) bool { return future[i].At.Before(future[j].At) })
+	}
+	cursor := from
+	snooze, hasSnooze := calendarSnooze(t)
+	var chunk []schedule.Occurrence
+	chunkIndex, futureIndex := 0, 0
+	regularDone := false
+	return func() (schedule.Occurrence, bool) {
+		if !regularDone {
+			if hasSnooze && snooze.At.After(cursor) {
+				cursor = snooze.At
+				if !cursor.After(regularTo) {
+					return snooze, true
+				}
+			}
+			if chunkIndex == len(chunk) {
+				chunk = schedule.DueLimited(t.Rule, cursor, regularTo, 64)
+				chunkIndex = 0
+			}
+			if chunkIndex < len(chunk) {
+				slot := chunk[chunkIndex]
+				chunkIndex++
+				cursor = slot.At
+				return slot, true
+			}
+			regularDone = true
+		}
+		if futureIndex < len(future) {
+			slot := future[futureIndex]
+			futureIndex++
+			return slot, true
+		}
+		return schedule.Occurrence{}, false
+	}
 }
 
 func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
@@ -237,9 +327,10 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		truncated = true
 	}
 	type projection struct {
-		t      task
-		slots  []schedule.Occurrence
-		cycles map[string]schedule.Cycle
+		t        task
+		slots    []schedule.Occurrence
+		cycles   map[string]schedule.Cycle
+		from, to time.Time
 	}
 	plans := []projection{}
 	for _, t := range tasks {
@@ -250,9 +341,19 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		if effective := calendarEffective(t); effective.After(from) {
 			from = effective
 		}
-		p := projection{t: t, cycles: map[string]schedule.Cycle{}}
+		p := projection{t: t, cycles: map[string]schedule.Cycle{}, from: from, to: end.Add(-time.Nanosecond)}
 		snooze, hasSnooze := calendarSnooze(t)
-		for _, slot := range schedule.Due(t.Rule, from, end.Add(-time.Nanosecond)) {
+		if t.Rule.Kind == "minute_interval" {
+			first, _ := time.Parse(time.RFC3339Nano, t.Rule.FirstAt)
+			if c, ok := schedule.CycleAt(t.Rule, first); ok {
+				p.cycles[c.Key] = c
+				needCycle(t.ID, c.Key)
+			}
+			plans = append(plans, p)
+			continue
+		}
+		slots := schedule.Due(t.Rule, from, p.to)
+		for _, slot := range slots {
 			if hasSnooze && slot.CycleKey == snooze.CycleKey && !slot.At.After(snooze.At) {
 				continue
 			}
@@ -263,6 +364,9 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		}
 		sort.Slice(p.slots, func(i, j int) bool { return p.slots[i].At.Before(p.slots[j].At) })
 		for _, slot := range p.slots {
+			if _, known := p.cycles[slot.CycleKey]; known {
+				continue
+			}
 			if c, ok := schedule.CycleAt(t.Rule, slot.At); ok {
 				p.cycles[c.Key] = c
 				needCycle(t.ID, c.Key)
@@ -324,6 +428,11 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 			data.sentInMonth = append(data.sentInMonth, n.at)
 		}
 	}
+	for _, data := range cycles {
+		// SQL unixepoch orders whole seconds; old records may differ only in
+		// fractional seconds, so cap cutoffs must use the original instants.
+		sort.Slice(data.sentInMonth, func(i, j int) bool { return data.sentInMonth[i].Before(data.sentInMonth[j]) })
+	}
 	for i := range entries {
 		entries[i].CycleEnd = calendarCycleEnd(cycles[calendarCycleID{entries[i].TaskID, entries[i].CycleKey}].end)
 	}
@@ -336,6 +445,7 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		n.entry.State = calendarState(n.at, cycle, data, n.rule.Mode, now)
 		entries = append(entries, n.entry)
 	}
+	streams := calendarPlanHeap{}
 	for _, p := range plans {
 		budget := map[string]map[string]bool{}
 		if calendarLimit(p.t.Rule) > 0 {
@@ -343,35 +453,78 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 				budget[key] = calendarBudgetSlots(p.t, c, cycles[calendarCycleID{p.t.ID, key}], now)
 			}
 		}
-		for _, slot := range p.slots {
-			at := stamp(slot.At)
-			if actualSlots[p.t.ID+"/"+at] {
+		index := 0
+		candidate := func() (schedule.Occurrence, bool) {
+			if index == len(p.slots) {
+				return schedule.Occurrence{}, false
+			}
+			slot := p.slots[index]
+			index++
+			return slot, true
+		}
+		if p.t.Rule.Kind == "minute_interval" {
+			data := cycles[calendarCycleID{p.t.ID, "minute_interval"}]
+			if data == nil {
 				continue
 			}
-			data := cycles[calendarCycleID{p.t.ID, slot.CycleKey}]
-			if !data.completedAt.IsZero() && !slot.At.Before(data.completedAt) {
-				continue
-			}
-			if limit := calendarLimit(p.t.Rule); limit > 0 {
-				if !slot.At.Before(now) {
-					if !budget[slot.CycleKey][at] {
-						continue
-					}
-				} else {
-					sent := data.sentBeforeMonth
-					for _, sentAt := range data.sentInMonth {
-						if !sentAt.After(slot.At) {
-							sent++
+			candidate = calendarMinuteCandidates(p.t, p.from, p.to, now, data, budget["minute_interval"])
+		}
+		stream := &calendarPlanStream{t: p.t, cycles: p.cycles}
+		stream.next = func() (schedule.Occurrence, bool) {
+			for {
+				slot, ok := candidate()
+				if !ok {
+					return schedule.Occurrence{}, false
+				}
+				at := stamp(slot.At)
+				if actualSlots[p.t.ID+"/"+at] {
+					continue
+				}
+				data := cycles[calendarCycleID{p.t.ID, slot.CycleKey}]
+				if !data.completedAt.IsZero() && !slot.At.Before(data.completedAt) {
+					continue
+				}
+				if limit := calendarLimit(p.t.Rule); limit > 0 {
+					if !slot.At.Before(now) {
+						if !budget[slot.CycleKey][at] {
+							continue
+						}
+					} else {
+						sent := data.sentBeforeMonth
+						for _, sentAt := range data.sentInMonth {
+							if !sentAt.After(slot.At) {
+								sent++
+							}
+						}
+						if sent >= limit {
+							continue
 						}
 					}
-					if sent >= limit {
-						continue
-					}
 				}
+				return slot, true
 			}
-			c := p.cycles[slot.CycleKey]
-			entries = append(entries, calendarEntry{ID: "planned:" + p.t.ID + ":" + at, Type: "planned", TaskID: p.t.ID, TaskTitle: p.t.Title, At: at, ScheduledAt: at, State: calendarState(slot.At, c, data, p.t.Rule.Mode, now), CycleKey: slot.CycleKey, CycleEnd: calendarCycleEnd(c.End)})
 		}
+		if slot, ok := stream.next(); ok {
+			stream.slot = slot
+			heap.Push(&streams, stream)
+		}
+	}
+	// Merge eligible plans by instant so a newer high-density task cannot hide
+	// earlier plans from another task. Suppressed slots never consume the cap.
+	for projected := 0; streams.Len() > 0 && projected <= calendarEntryLimit; projected++ {
+		stream := heap.Pop(&streams).(*calendarPlanStream)
+		slot := stream.slot
+		at := stamp(slot.At)
+		c := stream.cycles[slot.CycleKey]
+		data := cycles[calendarCycleID{stream.t.ID, slot.CycleKey}]
+		entries = append(entries, calendarEntry{ID: "planned:" + stream.t.ID + ":" + at, Type: "planned", TaskID: stream.t.ID, TaskTitle: stream.t.Title, At: at, ScheduledAt: at, State: calendarState(slot.At, c, data, stream.t.Rule.Mode, now), CycleKey: slot.CycleKey, CycleEnd: calendarCycleEnd(c.End)})
+		if next, ok := stream.next(); ok {
+			stream.slot = next
+			heap.Push(&streams, stream)
+		}
+	}
+	if streams.Len() > 0 {
+		truncated = true
 	}
 	sort.Slice(entries, func(i, j int) bool {
 		if entries[i].At == entries[j].At {

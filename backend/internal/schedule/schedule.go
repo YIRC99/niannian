@@ -14,17 +14,19 @@ import (
 )
 
 type Rule struct {
-	Kind         string   `json:"kind"`
-	Mode         string   `json:"mode"`
-	Timezone     string   `json:"timezone"`
-	Times        []string `json:"times"`
-	StartDate    string   `json:"start_date"`
-	EndDate      string   `json:"end_date"`
-	Weekdays     []int    `json:"weekdays"`
-	MonthStart   int      `json:"month_start"`
-	MonthEnd     int      `json:"month_end"`
-	EveryDays    int      `json:"every_days"`
-	MaxReminders int      `json:"max_reminders"`
+	Kind          string   `json:"kind"`
+	Mode          string   `json:"mode"`
+	Timezone      string   `json:"timezone"`
+	Times         []string `json:"times"`
+	StartDate     string   `json:"start_date"`
+	EndDate       string   `json:"end_date"`
+	Weekdays      []int    `json:"weekdays"`
+	MonthStart    int      `json:"month_start"`
+	MonthEnd      int      `json:"month_end"`
+	EveryDays     int      `json:"every_days"`
+	MaxReminders  int      `json:"max_reminders"`
+	FirstAt       string   `json:"first_at,omitempty"`
+	RepeatMinutes int      `json:"repeat_minutes,omitempty"`
 }
 
 // Cycle contains its start and excludes its end. Keys do not depend on the
@@ -45,6 +47,7 @@ type prepared struct {
 	// Dates are UTC calendar labels, never elapsed-time instants. This keeps
 	// interval day arithmetic correct across daylight saving transitions.
 	start, end time.Time
+	firstAt    time.Time
 }
 
 func Validate(r Rule) error { _, err := prepare(r); return err }
@@ -52,7 +55,7 @@ func Validate(r Rule) error { _, err := prepare(r); return err }
 func prepare(r Rule) (prepared, error) {
 	p := prepared{r: r}
 	switch r.Kind {
-	case "once", "daily", "weekly", "monthly_window", "date_range", "interval", "ongoing":
+	case "once", "daily", "weekly", "monthly_window", "date_range", "interval", "ongoing", "minute_interval":
 	default:
 		return p, errors.New("不支持的提醒类型")
 	}
@@ -69,7 +72,10 @@ func prepare(r Rule) (prepared, error) {
 	if err != nil {
 		return p, errors.New("时区无效")
 	}
-	if len(r.Times) < 1 || len(r.Times) > 8 {
+	if r.Kind != "minute_interval" && (r.FirstAt != "" || r.RepeatMinutes != 0) {
+		return p, errors.New("首次时间和分钟间隔仅适用于分钟间隔提醒")
+	}
+	if r.Kind != "minute_interval" && (len(r.Times) < 1 || len(r.Times) > 8) {
 		return p, errors.New("每天需设置 1 到 8 个提醒时间")
 	}
 	seenTimes := make(map[string]bool, len(r.Times))
@@ -118,6 +124,10 @@ func prepare(r Rule) (prepared, error) {
 		seenDays[day] = true
 	}
 	switch r.Kind {
+	case "minute_interval":
+		if err := p.prepareMinuteInterval(); err != nil {
+			return p, err
+		}
 	case "ongoing":
 		if r.StartDate == "" {
 			return p, errors.New("持续提醒需设置开始日期")
@@ -190,6 +200,12 @@ func (p prepared) cycle(day time.Time) (Cycle, bool) {
 	start, end := day, day.AddDate(0, 0, 1)
 	key := day.Format("2006-01-02")
 	switch r.Kind {
+	case "minute_interval":
+		// The task owns this single completion cycle, including the waiting
+		// period before first_at. Moving its anchor must not revive it.
+		start = time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)
+		end = time.Date(10000, time.January, 1, 0, 0, 0, 0, time.UTC)
+		key = "minute_interval"
 	case "ongoing":
 		start = p.start
 		end = time.Date(10000, time.January, 1, 0, 0, 0, 0, time.UTC)
@@ -282,8 +298,22 @@ func (p prepared) slots(day time.Time) []Occurrence {
 
 // Due returns candidate slots in (from,to]. To bound work for invalid caller
 // ranges, it examines at most the latest five calendar years ending at to.
-// Backend catch-up should use only the latest due slot from the current day.
+// Callers of dense minute rules should use DueLimited or LatestDue instead.
 func Due(r Rule, from, to time.Time) []Occurrence {
+	return due(r, from, to, 0)
+}
+
+// DueLimited returns at most limit earliest candidates in (from,to], with the
+// same five-calendar-year bound as Due. A nonpositive limit returns no slots.
+// Request one extra slot when a caller needs to detect truncation.
+func DueLimited(r Rule, from, to time.Time, limit int) []Occurrence {
+	if limit <= 0 {
+		return nil
+	}
+	return due(r, from, to, limit)
+}
+
+func due(r Rule, from, to time.Time, limit int) []Occurrence {
 	if !to.After(from) {
 		return nil
 	}
@@ -313,15 +343,53 @@ func Due(r Rule, from, to time.Time) []Occurrence {
 	if r.Kind == "once" && last.After(p.start) {
 		last = p.start
 	}
+	if r.Kind == "minute_interval" {
+		return p.minuteDue(from, to, first, last, limit)
+	}
 	var result []Occurrence
 	for day := first; !day.After(last); day = day.AddDate(0, 0, 1) {
 		for _, slot := range p.slots(day) {
 			if slot.At.After(from) && !slot.At.After(to) {
 				result = append(result, slot)
+				if limit > 0 && len(result) == limit {
+					return result
+				}
 			}
 		}
 	}
 	return result
+}
+
+// LatestDue returns the latest candidate in (from,to]. Minute intervals use
+// constant-space arithmetic, so a long outage never enumerates missed slots.
+// Ordinary rules retain Due's five-calendar-year lookup bound.
+func LatestDue(r Rule, from, to time.Time) (Occurrence, bool) {
+	if !to.After(from) {
+		return Occurrence{}, false
+	}
+	p, err := prepare(r)
+	if err != nil {
+		return Occurrence{}, false
+	}
+	if r.Kind == "minute_interval" {
+		end := p.minuteEnd()
+		if !to.Before(end) {
+			to = end.Add(-time.Nanosecond)
+		}
+		if to.Before(p.firstAt) || !to.After(from) {
+			return Occurrence{}, false
+		}
+		at := p.minuteAt(p.minuteIndex(to))
+		if !at.After(from) {
+			return Occurrence{}, false
+		}
+		return Occurrence{At: at, CycleKey: "minute_interval"}, true
+	}
+	slots := Due(r, from, to)
+	if len(slots) == 0 {
+		return Occurrence{}, false
+	}
+	return slots[len(slots)-1], true
 }
 
 // Next returns the first candidate strictly after after within five years.
@@ -330,6 +398,9 @@ func Next(r Rule, after time.Time) (time.Time, bool) {
 	p, err := prepare(r)
 	if err != nil {
 		return time.Time{}, false
+	}
+	if r.Kind == "minute_interval" {
+		return p.minuteNext(after)
 	}
 	first := civil(after.In(p.loc))
 	if first.Year() > 9999 {
@@ -374,6 +445,8 @@ func Summary(r Rule) string {
 	clock := strings.Join(times, "、")
 	var text, cycle string
 	switch r.Kind {
+	case "minute_interval":
+		text = fmt.Sprintf("%s 首次提醒，之后每 %d 分钟提醒一次", p.firstAt.Format("2006-01-02 15:04:05.999999999"), r.RepeatMinutes)
 	case "ongoing":
 		text = "从 " + r.StartDate + " 起，每天 " + clock
 	case "once":
@@ -404,7 +477,7 @@ func Summary(r Rule) string {
 	}
 	switch r.Mode {
 	case "until_done":
-		if r.Kind == "ongoing" {
+		if r.Kind == "ongoing" || r.Kind == "minute_interval" {
 			text += "，完成后不再提醒"
 		} else {
 			text += "，完成后停止" + cycle + "提醒"
