@@ -68,6 +68,19 @@ body.white {
 .done-stamp small { display:block; font-size:10px; color:#769487; margin-top:3px; }
 .art-caption { position:absolute; top:454px; left:25px; font-size:11px; color:#8a98ae; }
 
+/* Approved, unaltered device captures. Cropping here only changes composition. */
+.cover-capture { position:absolute; left:911px; top:125px; width:452px; }
+.capture-label { display:flex; align-items:center; gap:9px; font-size:12px; color:#7f91ae; margin:0 0 15px 4px; }
+.capture-label>span:last-child { margin-left:auto; font:11px Consolas,monospace; }
+.live-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:#7397cf; flex:none; }
+.home-viewport { display:block; position:relative; width:452px; height:455px; overflow:hidden; border:1px solid #dbe4f1; border-radius:10px; background:#f6f8ff; box-shadow:var(--shadow); }
+.home-viewport img { width:452px; max-width:none; height:auto; transform:translateY(-59px); }
+.cover-capture figcaption { text-align:center; margin-top:13px; font-size:10px; color:#8e9fb8; }
+.capture-takeaway { margin-top:21px; display:flex; align-items:center; gap:15px; padding-left:16px; }
+.capture-takeaway>span { width:31px; height:31px; display:grid; place-items:center; border:1px solid #a5caba; border-radius:50%; color:#3e896b; }
+.capture-takeaway b { display:block; font-size:15px; color:#43816b; }
+.capture-takeaway small { display:block; font-size:12px; color:#8ba094; margin-top:5px; }
+
 /* From the sentence to three explicit rules. */
 .sentence { position:absolute; top:270px; left:125px; font-size:40px; line-height:1.8; letter-spacing:-.025em; }
 .quote-mark { position:absolute; left:-68px; top:-25px; font:110px Georgia,serif; color:#dae5fa; }
@@ -91,9 +104,9 @@ body.white {
 /* Calendar state transitions show what completion changes. */
 .cycle-copy { position:absolute; left:72px; top:116px; width:530px; }
 .white .cycle h2 { font-size:58px; line-height:1.3; font-weight:650; }
-.cycle .body-copy { font-size:18px; line-height:1.8; margin-top:23px; }
-.cycle-controls { margin-top:27px; }
-.cycle-controls .process-step { width:100%; display:flex; gap:19px; padding:13px 0 13px 13px; border-left:2px solid #e3eaf4; }
+.cycle .body-copy { font-size:18px; line-height:1.7; margin-top:23px; }
+.cycle-controls { margin-top:22px; }
+.cycle-controls .process-step { width:100%; display:flex; gap:19px; padding:10px 0 10px 13px; border-left:2px solid #e3eaf4; }
 .cycle-controls .process-step>span { font:15px/1.8 Consolas,monospace; color:#a9b6cc; }
 .cycle-controls b { display:block; font-size:18px; font-weight:550; }
 .cycle-controls small { display:block; font-size:12px; margin-top:5px; }
@@ -133,6 +146,23 @@ body.white {
 .green-check { font-style:normal; font-size:18px; color:#378e6d; }
 .calendar-caption { position:absolute; top:582px; left:3px; font-size:11px; color:#8a98ad; }
 
+/* The three steps switch between three observed pages of the same task. */
+.evidence-stage { position:absolute; left:655px; top:133px; width:720px; height:558px; }
+.evidence-pane { display:none; position:absolute; inset:0; }
+.cycle[data-phase='0'] .evidence-zero,.cycle[data-phase='1'] .evidence-one,.cycle[data-phase='2'] .evidence-two { display:block; }
+.evidence-viewport { position:absolute; display:block; left:0; top:0; width:398px; height:542px; overflow:hidden; border:1px solid #dbe4f1; border-radius:10px; background:#f6f8ff; box-shadow:0 15px 45px #294c870c; }
+.evidence-viewport img { width:398px; max-width:none; height:auto; }
+.detail-viewport img { transform:translateY(-103px); }
+.calendar-viewport img { transform:translateY(-57px); }
+.evidence-pane figcaption { position:absolute; left:432px; right:0; top:59px; }
+.evidence-kicker { color:#90a2bd; font-size:12px; letter-spacing:.07em; }
+.evidence-pane h3 { font-size:28px; line-height:1.6; font-weight:550; margin:24px 0 25px; }
+.evidence-pane p { font-size:16px; line-height:2; color:#5f7597; }
+.evidence-note { font-size:13px; line-height:1.9; margin-top:30px; padding-top:20px; border-top:1px solid var(--line); color:#8b9cb6; }
+.evidence-one h3 { color:#347e61; }
+.evidence-two h3 { color:var(--accent); }
+.evidence-caption { position:absolute; left:0; bottom:-16px; font-size:11px; color:#8f9fb7; }
+
 /* Completion is a keepsake: illustrated record on paper. */
 .record-spread { position:absolute; left:112px; top:276px; right:85px; display:grid; grid-template-columns:452px 1fr; gap:111px; }
 .record-paper { position:relative; background:white; border:1px solid #dbe5f1; padding:30px; height:374px; box-shadow:0 14px 40px #314c8512; transform:rotate(-3deg); }
@@ -156,6 +186,17 @@ body.white {
 .record-story .active h3,.record-story .active .record-n { color:var(--accent); }
 .archive-note { color:#8391a7; font-size:13px; padding-top:24px; }
 .archive-note span { font-size:22px; color:#9eb5d7; margin-right:14px; }
+
+.record-proof { padding-top:12px; }
+.record-proof-heading { display:flex; align-items:center; gap:10px; margin-bottom:25px; color:#7d90ad; font-size:13px; }
+.record-viewport { display:block; width:452px; height:227px; overflow:hidden; background:#f6f8ff; border:1px solid #dbe5f2; border-radius:9px; box-shadow:0 12px 30px #294c870a; }
+.record-viewport img { width:452px; max-width:none; height:auto; transform:translateY(-645px); }
+.record-proof figcaption { font-size:10px; color:#91a1b8; text-align:center; margin-top:13px; }
+.record-proof-summary { margin-top:28px; display:flex; align-items:center; justify-content:space-between; }
+.record-proof-summary b { font-size:17px; font-weight:550; color:#426a56; }
+.record-proof-summary>span { font-size:12px; color:#799885; }
+.records[data-phase='1'] .record-proof-summary>span { color:var(--accent); }
+.records[data-phase='2'] .record-viewport { border-color:#87a8e5; }
 
 /* Data flow is deliberately separate from product UI. */
 .delivery-flow { position:absolute; left:96px; right:96px; top:347px; display:grid; grid-template-columns:300px 1fr 300px 1fr 300px; gap:12px; align-items:center; }

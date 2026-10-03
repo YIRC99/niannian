@@ -14,7 +14,7 @@
 <div class="deck" role="region" aria-label="念念提醒功能演示">
   <header class="deck-header">
     <span class="brand"><img src="assets/mark.svg" alt="">念念提醒<span class="brand-en">NIANNIAN</span></span>
-    <span class="template-label">每一件小事，都有回音 <i></i> 功能演示 · 流程示意</span>
+    <span class="template-label">每一件小事，都有回音 <i></i> 1.2.0 实机画面 · 功能讲解</span>
   </header>
 
   <section class="slide cover is-active" data-scene="cover" data-title="做完本月，下月再见" data-duration="9000" data-steps="1">
@@ -25,23 +25,19 @@
       <button class="main-action" data-go="1">看一个月度申报的例子 <span aria-hidden="true">↗</span></button>
       <div class="cover-note"><span class="tiny-mark">✓</span> 自己定规则，做完留记录。</div>
     </div>
-    <div class="cover-art" aria-label="月份规则示意：十月八日完成后本月停止，十一月继续">
-      <div class="back-sheet"><span>下个月</span><b>11</b><p>念念会继续提醒</p></div>
-      <div class="month-sheet">
-        <div class="sheet-top"><span>月度申报</span><span>OCTOBER</span></div>
-        <div class="month-number">10<span>月</span></div>
-        <div class="mini-path"><span>01</span><i></i><strong>08 <em>✓</em></strong><i class="stopped"></i><span class="faint">15</span></div>
-        <div class="done-stamp"><span>✓</span><div><b>本月已完成</b><small>本月后续提醒停止</small></div></div>
-      </div>
-      <div class="art-caption">月度规则示例 · 10 月 8 日完成</div>
-    </div>
+    <figure class="cover-capture">
+      <div class="capture-label"><span class="live-dot"></span>在手机上，真实的一条提醒 <span>1.2.0</span></div>
+      <a class="home-viewport" href="assets/ui-home.png" target="_blank" rel="noopener" aria-label="查看首页原尺寸实机截图"><img src="assets/ui-home.png" alt="念念提醒首页：每月申报提醒，本期已完成，下一次11月1日12点；每月1到15日每天12点，完成后停止本月提醒"></a>
+      <figcaption>实机首页局部 · 点图查看原尺寸</figcaption>
+      <div class="capture-takeaway"><span>✓</span><div><b>本期已完成</b><small>下一次提醒：11 月 1 日 12:00</small></div></div>
+    </figure>
   </section>
 
   <section class="slide intent" data-scene="intent" data-title="把想法说清楚，规则就有了" data-duration="15000" data-steps="3" data-phase="0" inert aria-hidden="true">
     <p class="kicker section-kicker">01 / 一句话，安排好</p>
     <h2 class="section-title">不用先研究一页设置。</h2>
-    <div class="sentence"><span class="quote-mark">“</span>每月 <mark>1—15 日</mark>，早上 <mark>9 点</mark>提醒申报。<br><mark class="stop-mark">完成后，这个月就不再提醒。</mark><span class="sentence-caption">示例输入</span></div>
-    <div class="intent-rule"><span class="rule-label">看清草稿里的三件事</span><div><small>什么时候</small><b>每月 1—15 日</b></div><div><small>几点提醒</small><b>每天 09:00</b></div><div><small>何时停止</small><b>本期完成一次就停止</b></div></div>
+    <div class="sentence"><span class="quote-mark">“</span>每月 <mark>1—15 日</mark>，中午 <mark>12 点</mark>提醒申报。<br><mark class="stop-mark">完成后，这个月就不再提醒。</mark><span class="sentence-caption">示例输入</span></div>
+    <div class="intent-rule"><span class="rule-label">看清草稿里的三件事</span><div><small>什么时候</small><b>每月 1—15 日</b></div><div><small>几点提醒</small><b>每天 12:00</b></div><div><small>何时停止</small><b>本期完成一次就停止</b></div></div>
     <div class="three-steps">
       <button class="process-step" data-phase="0"><span class="step-number">01</span><span><b>说出你想办的事</b><small>新建 → 输入描述 →「✦ 帮我安排」</small></span></button>
       <button class="process-step" data-phase="1"><span class="step-number">02</span><span><b>检查生成的草稿</b><small>需要修改时，点「调整规则」</small></span></button>
@@ -50,67 +46,52 @@
     <p class="scene-note">AI 生成可编辑草稿，也可以手动创建。这里展示规则含义，不是一次 AI 实测结果。</p>
   </section>
 
-  <section class="slide cycle" data-scene="cycle" data-title="本月完成就停，下月自动继续" data-duration="18000" data-steps="3" data-phase="0" inert aria-hidden="true">
+  <section class="slide cycle" data-scene="cycle" data-title="本月完成就停，下月安排还在" data-duration="18000" data-steps="3" data-phase="0" inert aria-hidden="true">
     <div class="cycle-copy">
-      <p class="kicker">02 / 提醒知道，什么时候停</p>
-      <h2>本月办完。<br>下月，<br><span class="blue">念念还记得。</span></h2>
-      <p class="body-copy">不用删掉再建，<br>也不用每月重新设一遍。</p>
+      <p class="kicker">02 / 看一条真实提醒，如何跨月</p>
+      <h2>本月办完。<br>下月，<br><span class="blue">安排还在。</span></h2>
+      <p class="body-copy">同一条月度提醒，<br>在手机里看清规则、完成与下期安排。</p>
       <div class="cycle-controls">
-        <button class="process-step" data-phase="0"><span>01</span><div><b>1 日起，按规则提醒</b><small>每月 1—15 日，每天 09:00</small></div></button>
-        <button class="process-step" data-phase="1"><span>02</span><div><b>8 日完成，本月就停</b><small>后续 9—15 日不再安排提醒</small></div></button>
-        <button class="process-step" data-phase="2"><span>03</span><div><b>下月 1 日，继续提醒</b><small>新一期开始，无需重建任务</small></div></button>
+        <button class="process-step" data-phase="0"><span>01</span><div><b>先看这条提醒的规则</b><small>每月 1—15 日，每天中午 12 点</small></div></button>
+        <button class="process-step" data-phase="1"><span>02</span><div><b>本月已完成</b><small>10 月 3 日留有记录，后续安排停止</small></div></button>
+        <button class="process-step" data-phase="2"><span>03</span><div><b>下月计划，已经排好</b><small>11 月 1—15 日，仍有待提醒安排</small></div></button>
       </div>
     </div>
-    <div class="calendar-stage">
-      <div class="calendar-page october">
-        <div class="calendar-title"><div><b>10<span>月</span></b><small>2026 / OCTOBER</small></div><span class="calendar-tag">月度申报</span></div>
-        <div class="weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
-        <div class="calendar-grid">
-          <span class="other">28</span><span class="other">29</span><span class="other">30</span>
-          <span class="scheduled earlier">1<i></i></span><span class="scheduled earlier">2<i></i></span><span class="scheduled earlier">3<i></i></span><span class="scheduled earlier">4<i></i></span>
-          <span class="scheduled earlier">5<i></i></span><span class="scheduled earlier">6<i></i></span><span class="scheduled earlier">7<i></i></span><span class="scheduled completion">8<i></i><em>✓</em></span><span class="scheduled remaining">9<i></i></span><span class="scheduled remaining">10<i></i></span><span class="scheduled remaining">11<i></i></span>
-          <span class="scheduled remaining">12<i></i></span><span class="scheduled remaining">13<i></i></span><span class="scheduled remaining">14<i></i></span><span class="scheduled remaining">15<i></i></span><span>16</span><span>17</span><span>18</span>
-          <span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span>
-          <span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span class="other">1</span>
-        </div>
-      </div>
-      <div class="calendar-page november">
-        <div class="calendar-title"><div><b>11<span>月</span></b><small>2026 / NOVEMBER</small></div><span class="calendar-tag">新的一期</span></div>
-        <div class="weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
-        <div class="calendar-grid">
-          <span class="other">26</span><span class="other">27</span><span class="other">28</span><span class="other">29</span><span class="other">30</span><span class="other">31</span><span class="scheduled">1<i></i></span>
-          <span class="scheduled">2<i></i></span><span class="scheduled">3<i></i></span><span class="scheduled">4<i></i></span><span class="scheduled">5<i></i></span><span class="scheduled">6<i></i></span><span class="scheduled">7<i></i></span><span class="scheduled">8<i></i></span>
-          <span class="scheduled">9<i></i></span><span class="scheduled">10<i></i></span><span class="scheduled">11<i></i></span><span class="scheduled">12<i></i></span><span class="scheduled">13<i></i></span><span class="scheduled">14<i></i></span><span class="scheduled">15<i></i></span>
-          <span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span>
-          <span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span>
-          <span>30</span><span class="other">1</span><span class="other">2</span><span class="other">3</span><span class="other">4</span><span class="other">5</span><span class="other">6</span>
-        </div>
-      </div>
-      <div class="calendar-result phase-zero"><i class="blue-dot"></i><b>每天 09:00，按规则发送邮件</b><span>1—15 日</span></div>
-      <div class="calendar-result phase-one"><i class="green-check">✓</i><b>本月已完成，后续提醒停止</b><span>10 月 8 日</span></div>
-      <div class="calendar-result phase-two"><i class="blue-dot"></i><b>新的一期，重新开始提醒</b><span>11 月 1 日</span></div>
-      <p class="calendar-caption">规则示意 · 蓝点为计划提醒日，绿色为示例完成日 · 可点击左侧步骤切换</p>
+    <div class="evidence-stage">
+      <figure class="evidence-pane evidence-zero">
+        <a class="evidence-viewport detail-viewport" href="assets/ui-detail.png" target="_blank" rel="noopener" aria-label="查看任务详情原尺寸实机截图"><img src="assets/ui-detail.png" alt="任务详情实机截图，规则为每月1到15日每天12点，完成后停止本月提醒；下一次提醒2026年11月1日12点"></a>
+        <figcaption><span class="evidence-kicker">实机 / 提醒详情</span><h3>什么时间提醒，<br>什么时间停。</h3><p>每月 1—15 日<br>每天 12:00<br>完成后停止本月提醒</p><div class="evidence-note">规则和下一次时间，<br>在详情里直接看清。</div></figcaption>
+      </figure>
+      <figure class="evidence-pane evidence-one">
+        <a class="evidence-viewport calendar-viewport" href="assets/ui-calendar-current.png" target="_blank" rel="noopener" aria-label="查看十月日历原尺寸实机截图"><img src="assets/ui-calendar-current.png" alt="10月实机日历，3日有绿色完成标记，4到15日没有待提醒计划；完成记录时间为15点07分"></a>
+        <figcaption><span class="evidence-kicker">实机 / 本月日历</span><h3>这件事，<br>本月已经办过。</h3><p>10 月 3 日 · 15:07<br>已完成，留有记录。</p><div class="evidence-note">4—15 日，<br>不再显示后续待提醒计划。</div></figcaption>
+      </figure>
+      <figure class="evidence-pane evidence-two">
+        <a class="evidence-viewport calendar-viewport" href="assets/ui-calendar-next.png" target="_blank" rel="noopener" aria-label="查看十一月日历原尺寸实机截图"><img src="assets/ui-calendar-next.png" alt="11月实机日历，1到15日均有蓝色计划标记，1日12点是每月申报提醒的待提醒安排"></a>
+        <figcaption><span class="evidence-kicker">实机 / 下月日历</span><h3>下一期，<br>继续提醒你。</h3><p>11 月 1 日 · 12:00<br>下一次提醒已安排。</p><div class="evidence-note">1—15 日的蓝点，<br>是下个月的待提醒计划。</div></figcaption>
+      </figure>
+      <p class="evidence-caption">1.2.0 实机截图局部 · 点击左侧步骤切换，点图查看原尺寸</p>
     </div>
   </section>
 
-  <section class="slide records" data-scene="records" data-title="做过的事，也有迹可循" data-duration="15000" data-steps="3" data-phase="0" inert aria-hidden="true">
-    <p class="kicker section-kicker">03 / 做过的事，留下来</p>
-    <h2 class="section-title">不用再想：<span class="blue">“我到底办过没有？”</span></h2>
+  <section class="slide records" data-scene="records" data-title="做过的事，日历里找得到" data-duration="15000" data-steps="3" data-phase="0" inert aria-hidden="true">
+    <p class="kicker section-kicker">03 / 完成记录，随时回看</p>
+    <h2 class="section-title">做过的事，<span class="blue">日历里找得到。</span></h2>
     <div class="record-spread">
-      <div class="record-paper">
-        <span class="paper-kicker">一条完成记录 · 内容示例</span><div class="receipt-mark">✓</div>
-        <h3>月度申报，已完成。</h3><p class="record-date">10 月 8 日 · 14:26</p><div class="record-divider"></div>
-        <p class="record-text">已经提交申报。<br>回执留在照片里，之后查起来也方便。</p>
-        <div class="photo-symbol"><svg viewBox="0 0 60 48" fill="none" aria-hidden="true"><rect x="3" y="3" width="54" height="42" rx="5"/><circle cx="43" cy="15" r="4"/><path d="m6 39 14-16 11 12 7-8 16 15"/></svg><span>完成时，可附一张照片</span></div>
-      </div>
+      <figure class="record-proof">
+        <div class="record-proof-heading"><span class="live-dot"></span>来自手机上的完成记录</div>
+        <a class="record-viewport" href="assets/ui-calendar-current.png" target="_blank" rel="noopener" aria-label="查看完成记录所在日历原尺寸截图"><img src="assets/ui-calendar-current.png" alt="实机日历中的10月3日完成记录：15点07分，每月申报提醒，已完成，1张照片"></a>
+        <figcaption>1.2.0 实机日历局部 · 点图查看原尺寸</figcaption>
+        <div class="record-proof-summary"><b>10 月 3 日 · 15:07</b><span>已完成 · 1 张照片</span></div>
+      </figure>
       <div class="record-story">
-        <button class="process-step" data-phase="0"><span class="record-n">01</span><div><h3>点完成，先把事情放下。</h3><p>可以直接完成；备注和照片都可不填。</p></div></button>
-        <button class="process-step" data-phase="1"><span class="record-n">02</span><div><h3>想留凭证，就多留一点。</h3><p>写几句话，或拍照、从相册选择图片。</p></div></button>
-        <button class="process-step" data-phase="2"><span class="record-n">03</span><div><h3>以后打开日历，就能回看。</h3><p>未来安排和已有记录，放在同一本日历里。</p></div></button>
-        <div class="archive-note"><span>↗</span>提醒归档后，完成文字和照片仍保留。</div>
+        <button class="process-step" data-phase="0"><span class="record-n">01</span><div><h3>完成过，日历就有记录。</h3><p>日期、时间、对应的提醒，一起留在这里。</p></div></button>
+        <button class="process-step" data-phase="1"><span class="record-n">02</span><div><h3>照片，也能一起留下来。</h3><p>这条记录显示已附 1 张照片。</p></div></button>
+        <button class="process-step" data-phase="2"><span class="record-n">03</span><div><h3>选中日期，回看那天的事。</h3><p>点日历下方的记录，可以进入详情。</p></div></button>
+        <div class="archive-note"><span>↗</span>完成时可直接确认，也可附文字或照片。</div>
       </div>
     </div>
-    <p class="scene-note">完成记录示意，非应用截图。实际数据与图片保存在自己的服务器。</p>
+    <p class="scene-note">1.2.0 实机记录局部 · 照片正文未展开</p>
   </section>
 
   <section class="slide delivery" data-scene="mail" data-title="手机不常驻，提醒照常安排" data-duration="15000" data-steps="3" data-phase="0" inert aria-hidden="true">
@@ -134,7 +115,7 @@
       <div><span>03 / 安排第一件事</span><h3>从总忘记的小事开始。</h3><p>用一句话生成草稿，也能手动创建。<br>检查规则并保存，让念念开始提醒。</p></div>
     </div>
     <div class="closing-actions"><button class="main-action" data-action="start">再看一次 <span>↗</span></button><a href="发布文案.txt">查看配套发布文案 <span>↗</span></a></div>
-    <p class="closing-meta">功能依据：1.2.0 源码与项目说明。当前演示使用规则示意，未包含公开下载链接。</p>
+    <p class="closing-meta">首页、提醒详情和日历来自 1.2.0 实机；AI 建任务及邮件流程为讲解示意。未提供公开下载链接。</p>
   </section>
 
   <footer class="deck-footer">

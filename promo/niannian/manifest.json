@@ -5,7 +5,28 @@
   "basis_version": "1.2.0",
   "format": "16:9 animated HTML",
   "pages": ["cover", "intent", "cycle", "records", "mail", "closing"],
-  "media": {"brand_mark": "assets/mark.svg"},
-  "evidence": "流程及记录均为规则示意，非实机截图或邮件投递实测。",
+  "media": {
+    "brand_mark": "assets/mark.svg",
+    "ui_home": "assets/ui-home.png",
+    "ui_detail": "assets/ui-detail.png",
+    "ui_calendar_current": "assets/ui-calendar-current.png",
+    "ui_calendar_next": "assets/ui-calendar-next.png"
+  },
+  "evidence": "实机截图来自念念 1.2.0，只读观察已有任务「每月申报提醒」。没有新建任务、标记完成、修改规则、发送邮件或调用 AI；未打开照片正文，未实测邮箱送达，不代表端到端验收。",
+  "scene_evidence": {
+    "cover": "实机首页",
+    "intent": "AI 生成流程示意，非本次 AI 实测",
+    "cycle": "实机任务详情、2026 年 10 月及 11 月日历",
+    "records": "实机 10 月日历的已有完成记录局部，未展示照片正文",
+    "mail": "邮件发送流程示意，非邮箱送达实测",
+    "closing": "使用说明"
+  },
+  "observed_task": {
+    "name": "每月申报提醒",
+    "rule": "每月 1—15 日，每天 12:00，完成后停止本月提醒",
+    "completion_record": "2026/10/3 15:07，已完成 · 完成记录，1 张照片",
+    "next_plan": "2026/11/1 12:00",
+    "calendar": "10 月 4—15 日无计划蓝点；11 月 1—15 日有计划蓝点"
+  },
   "entry": "index.html"
 }
