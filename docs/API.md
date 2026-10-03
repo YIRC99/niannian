@@ -2,7 +2,7 @@
 
 Base URL entered in Android is origin e.g. http://192.168.1.10:56507. All paths below include /api/v1. JSON UTF-8. Bearer opaque token except health/auth. Errors {"error":"human readable Chinese"}. Timestamps RFC3339. IDs strings. Unknown fields rejected for writes. Server owns user identity, recipients and media.
 
-GET /health -> {"status":"ok","version":"1.2.0"}
+GET /health -> {"status":"ok","version":"1.3.0"}
 POST /api/v1/auth/code {"email":"..."} -> {"message":"验证码已发送"}
 POST /api/v1/auth/verify {"email":"...","code":"123456"} -> {"token":"...","user":{"id":"...","email":"..."}}
 Registration is open: any syntactically valid email can request a code, and the first successful verification creates its account. Repeat verification reuses the same account. Legacy allowed_emails configuration is ignored across login, sessions, and reminder delivery. OTP expiry/rate limits and user-data isolation still apply.
@@ -26,6 +26,13 @@ POST /api/v1/tasks/{id}/snooze {"minutes":60} -> {"ok":true} (1..1440, durable)
 TaskView {"id":"...","title":"...","description":"...","rule":Rule,"paused":false,"created_at":"...","updated_at":"...","summary":"每月 1—15 日，每天 09:00，完成后停止本月提醒","status":"pending|done|upcoming|paused|expired","next_reminder":"RFC3339 or empty","cycle_key":"..."}
 Completion {"id":"...","task_id":"...","task_title":"...","cycle_key":"...","text":"...","media_ids":[],"created_at":"..."}
 GET /api/v1/history -> {"records":[Completion]}
+GET /api/v1/garden?timezone=Asia%2FShanghai -> {"timezone":"Asia/Shanghai","generated_at":"RFC3339","week_start_date":"2026-09-28","total_completions":20,"week_completions":3,"total_plants":2,"plants":[GardenPlant],"recent_completions":[Completion],"truncated":false,"plant_limit":2000}
+GardenPlant {"task_id":"...","title":"...","completion_count":7,"last_completed_at":"RFC3339 or empty","archived":false,"stage":"seed|sprout|leaf|bloom"}
+
+The authenticated garden endpoint defaults to Asia/Shanghai when timezone is omitted; an invalid, empty, repeated, or implicit Local timezone is rejected with 400. It accepts only the optional timezone query parameter. All-time and current local-week totals count actual completion rows, including archived tasks, independently of the recent-record limit. The week starts Monday at 00:00 in the requested timezone and ends at the next local Monday. Reminder delivery never counts as completion. Repeated completion of the same task cycle remains one stored completion, and skipped days never reduce growth.
+
+Every non-archived task, including paused tasks and seeds with no completions, is a plant; archived tasks remain plants only when they have completions. Plant titles reflect current task titles; recent Completion records retain their historical task_title, text and media_ids. Stages use lifetime completion_count: 0 seed, 1–2 sprout, 3–6 leaf, 7+ bloom. Plants sort with non-archived tasks first, then by latest completion and task creation, and return at most 2,000 items with full total_plants and explicit truncated metadata. recent_completions contains at most the latest 12 actual Completion records. Totals always cover all owned completion records, even when the plant list is truncated. All fields are read from one database snapshot and ownership is checked on both tasks and completions; empty lists are arrays.
+
 GET /api/v1/notifications -> {"notifications":[{"id":"...","task_id":"...","task_title":"...","scheduled_at":"...","sent_at":"...","status":"sent|failed|pending","error":"..."}]}
 GET /api/v1/calendar?month=2026-10&timezone=Asia%2FShanghai -> {"month":"2026-10","timezone":"Asia/Shanghai","generated_at":"RFC3339","entries":[CalendarEntry],"truncated":false}
 CalendarEntry {"id":"stable identifier","type":"planned|notification|completion","task_id":"...","task_title":"...","at":"RFC3339","state":"upcoming|pending|completed|expired|notified","cycle_key":"...","cycle_end":"RFC3339 or empty"}. Notification entries retain scheduled_at/sent_at/status/error; completion entries retain created_at/text/media_ids. Planned entries are projections, never persisted notifications and never evidence that mail was sent.

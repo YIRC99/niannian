@@ -1,7 +1,13 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#EDF3FF" android:pathData="M24,0L84,0Q108,0 108,24L108,84Q108,108 84,108L24,108Q0,108 0,84L0,24Q0,0 24,0Z"/>
-    <path android:fillColor="#3568E8" android:pathData="M30,29L78,29Q87,29 87,38L87,73Q87,82 78,82L30,82Q21,82 21,73L21,38Q21,29 30,29Z"/>
-    <path android:strokeColor="#F8FBFF" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="@android:color/transparent" android:pathData="M29,39L54,58L79,39"/>
-    <path android:fillColor="#F5BE77" android:pathData="M70,15a14,14 0,1 0,0 28a14,14 0,1 0,0 -28"/>
-    <path android:strokeColor="#704B29" android:strokeWidth="2.5" android:strokeLineCap="round" android:fillColor="@android:color/transparent" android:pathData="M70,22L70,29L75,32"/>
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="108dp" android:height="108dp" />
+            <solid android:color="#E8EFE0" />
+            <corners android:radius="26dp" />
+        </shape>
+    </item>
+    <item android:width="80dp" android:height="80dp" android:gravity="center">
+        <bitmap android:src="@drawable/garden_sprout" android:gravity="fill"
+            android:filter="true" android:mipMap="true" />
+    </item>
+</layer-list>
