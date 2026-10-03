@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108" role="img" aria-label="念念提醒">
+  <path fill="#EDF3FF" d="M24 0h60q24 0 24 24v60q0 24-24 24H24Q0 108 0 84V24Q0 0 24 0Z"/>
+  <path fill="#3568E8" d="M30 29h48q9 0 9 9v35q0 9-9 9H30q-9 0-9-9V38q0-9 9-9Z"/>
+  <path stroke="#F8FBFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" d="m29 39 25 19 25-19"/>
+  <path fill="#F5BE77" d="M70 15a14 14 0 1 0 0 28 14 14 0 1 0 0-28"/>
+  <path stroke="#704B29" stroke-width="2.5" stroke-linecap="round" fill="none" d="M70 22v7l5 3"/>
+</svg>

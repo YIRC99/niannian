@@ -1,0 +1,11 @@
+{
+  "template": "01",
+  "name": "纯白发布",
+  "product": "念念提醒",
+  "basis_version": "1.2.0",
+  "format": "16:9 animated HTML",
+  "pages": ["cover", "intent", "cycle", "records", "mail", "closing"],
+  "media": {"brand_mark": "assets/mark.svg"},
+  "evidence": "流程及记录均为规则示意，非实机截图或邮件投递实测。",
+  "entry": "index.html"
+}
