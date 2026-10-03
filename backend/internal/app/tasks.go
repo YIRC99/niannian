@@ -1,0 +1,463 @@
+package app
+
+import (
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"niannian/internal/schedule"
+	"strings"
+	"time"
+	"unicode/utf8"
+)
+
+const taskColumns = `id,user_id,title,description,rule,paused,archived,created_at,updated_at,snooze_until,snooze_cycle`
+
+type scanner interface{ Scan(...any) error }
+
+func scanTask(row scanner) (task, error) {
+	var t task
+	var rule string
+	err := row.Scan(&t.ID, &t.UserID, &t.Title, &t.Description, &rule, &t.Paused, &t.Archived, &t.CreatedAt, &t.UpdatedAt, &t.SnoozeUntil, &t.SnoozeCycle)
+	if err != nil {
+		return t, err
+	}
+	err = json.Unmarshal([]byte(rule), &t.Rule)
+	return t, err
+}
+func (a *App) findTask(id, userID string) (task, error) {
+	return scanTask(a.db.QueryRow(`SELECT `+taskColumns+` FROM tasks WHERE id=? AND user_id=? AND archived=0`, id, userID))
+}
+func (a *App) allTasks(userID string, includeArchived bool) ([]task, error) {
+	query := `SELECT ` + taskColumns + ` FROM tasks WHERE user_id=?`
+	if !includeArchived {
+		query += ` AND archived=0`
+	}
+	query += ` ORDER BY created_at DESC,id`
+	rows, err := a.db.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []task{}
+	for rows.Next() {
+		t, e := scanTask(rows)
+		if e != nil {
+			return nil, e
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+func (a *App) cycleCounts(id, key string) (complete bool, sent int, err error) {
+	var n int
+	err = a.db.QueryRow(`SELECT (SELECT COUNT(*) FROM completions WHERE task_id=? AND cycle_key=?),(SELECT COUNT(*) FROM notifications WHERE task_id=? AND cycle_key=? AND status='sent')`, id, key, id, key).Scan(&n, &sent)
+	return n > 0, sent, err
+}
+func stopForRule(rule schedule.Rule, complete bool, sent int) bool {
+	return complete || (rule.Mode == "notify_once" && sent >= 1) || (rule.MaxReminders > 0 && sent >= rule.MaxReminders)
+}
+func (a *App) view(t task) task {
+	t.Summary = schedule.Summary(t.Rule)
+	now := a.now()
+	cycle, active := schedule.CycleAt(t.Rule, now)
+	if active {
+		t.CycleKey = cycle.Key
+	}
+	if t.Archived {
+		t.Status = "expired"
+		return t
+	}
+	if t.Paused {
+		t.Status = "paused"
+		return t
+	}
+	t.Status = "upcoming"
+	if active {
+		t.Status = "pending"
+		complete, sent, e := a.cycleCounts(t.ID, cycle.Key)
+		if e == nil && (complete || (t.Rule.Mode == "notify_once" && sent > 0)) {
+			t.Status = "done"
+		}
+	}
+	// Skip completed cycles while finding the next actual eligible reminder.
+	cursor := now
+	for i := 0; i < 600; i++ {
+		next, ok := schedule.Next(t.Rule, cursor)
+		if !ok {
+			break
+		}
+		c, ok := schedule.CycleAt(t.Rule, next)
+		if !ok {
+			break
+		}
+		complete, sent, err := a.cycleCounts(t.ID, c.Key)
+		if err != nil {
+			break
+		}
+		if !stopForRule(t.Rule, complete, sent) {
+			t.NextReminder = stamp(next)
+			break
+		}
+		cursor = c.End.Add(-time.Nanosecond)
+		if !cursor.After(next) {
+			cursor = next
+		}
+	}
+	if t.SnoozeUntil != "" {
+		until, e := time.Parse(time.RFC3339Nano, t.SnoozeUntil)
+		if e == nil && until.After(now) {
+			c, ok := schedule.CycleAt(t.Rule, until)
+			complete, sent, err := a.cycleCounts(t.ID, c.Key)
+			if ok && c.Key == t.SnoozeCycle && err == nil && !stopForRule(t.Rule, complete, sent) {
+				t.NextReminder = stamp(until)
+			}
+		}
+	}
+	if !active && t.NextReminder == "" {
+		t.Status = "expired"
+	}
+	return t
+}
+
+type taskInput struct {
+	Title       string        `json:"title"`
+	Description string        `json:"description"`
+	Rule        schedule.Rule `json:"rule"`
+	Paused      bool          `json:"paused"`
+}
+
+func validTask(in *taskInput) error {
+	in.Title = strings.Join(strings.Fields(in.Title), " ")
+	in.Description = strings.TrimSpace(in.Description)
+	if utf8.RuneCountInString(in.Title) < 1 || utf8.RuneCountInString(in.Title) > 100 {
+		return errors.New("任务名称请填写 1–100 个字")
+	}
+	if utf8.RuneCountInString(in.Description) > 4000 {
+		return errors.New("说明不能超过 4000 字")
+	}
+	return schedule.Validate(in.Rule)
+}
+func (a *App) listTasks(w http.ResponseWriter, r *http.Request) {
+	tasks, err := a.allTasks(currentUser(r).ID, false)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	for i := range tasks {
+		tasks[i] = a.view(tasks[i])
+	}
+	writeJSON(w, 200, map[string]any{"tasks": tasks})
+}
+func (a *App) createTask(w http.ResponseWriter, r *http.Request) {
+	var in taskInput
+	if !decode(w, r, &in) {
+		return
+	}
+	if err := validTask(&in); err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	if _, ok := schedule.Next(in.Rule, a.now()); !ok {
+		writeError(w, 400, "没有未来提醒时间，请调整日期或时间")
+		return
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	user := currentUser(r)
+	var count int
+	if err := a.db.QueryRow(`SELECT COUNT(*) FROM tasks WHERE user_id=? AND archived=0`, user.ID).Scan(&count); err != nil {
+		dbFailure(w)
+		return
+	}
+	if count >= 500 {
+		writeError(w, 400, "最多保留 500 个有效任务，请先归档一些任务")
+		return
+	}
+	id := randomID()
+	now := stamp(a.now())
+	rule, _ := json.Marshal(in.Rule)
+	_, err := a.db.Exec(`INSERT INTO tasks(id,user_id,title,description,rule,paused,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)`, id, user.ID, in.Title, in.Description, string(rule), in.Paused, now, now)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	t, err := a.findTask(id, user.ID)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	writeJSON(w, 201, a.view(t))
+}
+func (a *App) getTask(w http.ResponseWriter, r *http.Request) {
+	t, err := a.findTask(r.PathValue("id"), currentUser(r).ID)
+	if err == sql.ErrNoRows {
+		writeError(w, 404, "任务不存在")
+		return
+	}
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	writeJSON(w, 200, a.view(t))
+}
+func (a *App) updateTask(w http.ResponseWriter, r *http.Request) {
+	var in taskInput
+	if !decode(w, r, &in) {
+		return
+	}
+	if err := validTask(&in); err != nil {
+		writeError(w, 400, err.Error())
+		return
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	t, err := a.findTask(r.PathValue("id"), currentUser(r).ID)
+	if err == sql.ErrNoRows {
+		writeError(w, 404, "任务不存在")
+		return
+	}
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	rule, _ := json.Marshal(in.Rule)
+	previousRule, _ := json.Marshal(t.Rule)
+	if string(rule) != string(previousRule) {
+		if _, ok := schedule.Next(in.Rule, a.now()); !ok {
+			writeError(w, 400, "没有未来提醒时间，请调整日期或时间")
+			return
+		}
+	}
+	_, err = a.db.Exec(`UPDATE tasks SET title=?,description=?,rule=?,paused=?,updated_at=?,snooze_until='',snooze_cycle='' WHERE id=?`, in.Title, in.Description, string(rule), in.Paused, stamp(a.now()), t.ID)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	t, err = a.findTask(t.ID, t.UserID)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	writeJSON(w, 200, a.view(t))
+}
+func (a *App) archiveTask(w http.ResponseWriter, r *http.Request) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	res, err := a.db.Exec(`UPDATE tasks SET archived=1,updated_at=? WHERE id=? AND user_id=? AND archived=0`, stamp(a.now()), r.PathValue("id"), currentUser(r).ID)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		writeError(w, 404, "任务不存在")
+		return
+	}
+	writeJSON(w, 200, map[string]bool{"ok": true})
+}
+func scanCompletion(row scanner) (Completion, error) {
+	var c Completion
+	var media string
+	err := row.Scan(&c.ID, &c.TaskID, &c.TaskTitle, &c.CycleKey, &c.Text, &media, &c.CreatedAt)
+	if err == nil {
+		err = json.Unmarshal([]byte(media), &c.MediaIDs)
+	}
+	return c, err
+}
+
+const completionColumns = `id,task_id,task_title,cycle_key,text,media_ids,created_at`
+
+func (a *App) completeTask(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Text     string   `json:"text"`
+		MediaIDs []string `json:"media_ids"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	in.Text = strings.TrimSpace(in.Text)
+	if utf8.RuneCountInString(in.Text) > 4000 || len(in.MediaIDs) > 8 {
+		writeError(w, 400, "完成说明最多 4000 字、8 张照片")
+		return
+	}
+	if in.MediaIDs == nil {
+		in.MediaIDs = []string{}
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	user := currentUser(r)
+	t, err := a.findTask(r.PathValue("id"), user.ID)
+	if err == sql.ErrNoRows {
+		writeError(w, 404, "任务不存在")
+		return
+	}
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	cycle, ok := schedule.CycleAt(t.Rule, a.now())
+	if !ok {
+		writeError(w, 409, "当前不在任务执行范围内，请在任务日期内完成")
+		return
+	}
+	previous, err := scanCompletion(a.db.QueryRow(`SELECT `+completionColumns+` FROM completions WHERE task_id=? AND cycle_key=?`, t.ID, cycle.Key))
+	if err == nil {
+		writeJSON(w, 200, previous)
+		return
+	}
+	if err != sql.ErrNoRows {
+		dbFailure(w)
+		return
+	}
+	seen := map[string]bool{}
+	for _, id := range in.MediaIDs {
+		if seen[id] {
+			writeError(w, 400, "照片不能重复")
+			return
+		}
+		seen[id] = true
+		var owner string
+		if err := a.db.QueryRow(`SELECT user_id FROM media WHERE id=?`, id).Scan(&owner); err != nil || owner != user.ID {
+			writeError(w, 400, "照片不存在或不属于当前账号")
+			return
+		}
+	}
+	c := Completion{ID: randomID(), TaskID: t.ID, TaskTitle: t.Title, CycleKey: cycle.Key, Text: in.Text, MediaIDs: in.MediaIDs, CreatedAt: stamp(a.now())}
+	media, _ := json.Marshal(c.MediaIDs)
+	tx, err := a.db.Begin()
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	defer tx.Rollback()
+	if _, err = tx.Exec(`INSERT INTO completions(id,user_id,task_id,task_title,cycle_key,text,media_ids,created_at) VALUES(?,?,?,?,?,?,?,?)`, c.ID, user.ID, c.TaskID, c.TaskTitle, c.CycleKey, c.Text, string(media), c.CreatedAt); err != nil {
+		dbFailure(w)
+		return
+	}
+	if _, err = tx.Exec(`UPDATE tasks SET snooze_until='',snooze_cycle='' WHERE id=?`, t.ID); err != nil {
+		dbFailure(w)
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		dbFailure(w)
+		return
+	}
+	writeJSON(w, 200, c)
+}
+func (a *App) snoozeTask(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Minutes int `json:"minutes"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	if in.Minutes < 1 || in.Minutes > 1440 {
+		writeError(w, 400, "稍后提醒需为 1–1440 分钟")
+		return
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	t, err := a.findTask(r.PathValue("id"), currentUser(r).ID)
+	if err == sql.ErrNoRows {
+		writeError(w, 404, "任务不存在")
+		return
+	}
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	now := a.now()
+	cycle, ok := schedule.CycleAt(t.Rule, now)
+	until := now.Add(time.Duration(in.Minutes) * time.Minute)
+	future, valid := schedule.CycleAt(t.Rule, until)
+	if !ok || !valid || cycle.Key != future.Key || t.Paused {
+		writeError(w, 409, "稍后提醒时间必须在当前有效周期内")
+		return
+	}
+	complete, sent, err := a.cycleCounts(t.ID, cycle.Key)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	if stopForRule(t.Rule, complete, sent) {
+		writeError(w, 409, "本期已完成或已达到提醒次数上限")
+		return
+	}
+	if _, err = a.db.Exec(`UPDATE tasks SET snooze_until=?,snooze_cycle=? WHERE id=?`, stamp(until), cycle.Key, t.ID); err != nil {
+		dbFailure(w)
+		return
+	}
+	writeJSON(w, 200, map[string]bool{"ok": true})
+}
+func (a *App) allCompletions(userID string) ([]Completion, error) {
+	rows, err := a.db.Query(`SELECT `+completionColumns+` FROM completions WHERE user_id=? ORDER BY created_at DESC,id`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []Completion{}
+	for rows.Next() {
+		c, e := scanCompletion(rows)
+		if e != nil {
+			return nil, e
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+func (a *App) allNotifications(userID string) ([]Notification, error) {
+	rows, err := a.db.Query(`SELECT id,task_title,scheduled_at,sent_at,CASE WHEN status='sending' THEN 'pending' ELSE status END,error FROM notifications WHERE user_id=? ORDER BY scheduled_at DESC,id`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []Notification{}
+	for rows.Next() {
+		var n Notification
+		if err := rows.Scan(&n.ID, &n.TaskTitle, &n.ScheduledAt, &n.SentAt, &n.Status, &n.Error); err != nil {
+			return nil, err
+		}
+		out = append(out, n)
+	}
+	return out, rows.Err()
+}
+func (a *App) history(w http.ResponseWriter, r *http.Request) {
+	records, err := a.allCompletions(currentUser(r).ID)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	writeJSON(w, 200, map[string]any{"records": records})
+}
+func (a *App) notifications(w http.ResponseWriter, r *http.Request) {
+	records, err := a.allNotifications(currentUser(r).ID)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	writeJSON(w, 200, map[string]any{"notifications": records})
+}
+func (a *App) export(w http.ResponseWriter, r *http.Request) {
+	user := currentUser(r)
+	tasks, err := a.allTasks(user.ID, true)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	for i := range tasks {
+		tasks[i] = a.view(tasks[i])
+	}
+	records, err := a.allCompletions(user.ID)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	notifications, err := a.allNotifications(user.ID)
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	w.Header().Set("Content-Disposition", `attachment; filename="niannian-export.json"`)
+	writeJSON(w, 200, map[string]any{"tasks": tasks, "records": records, "notifications": notifications})
+}

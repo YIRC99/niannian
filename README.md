@@ -56,7 +56,7 @@
 
 配置文件必须是合法 JSON，未知字段会报错。可用 `NIANNIAN_CONFIG` 指定文件路径。环境变量包含 `NIANNIAN_ADDR`、`NIANNIAN_DATA_DIR`、`NIANNIAN_ALLOWED_EMAILS`（逗号分隔）、`NIANNIAN_DEEPSEEK_API_KEY`、`NIANNIAN_SMTP_USER`、`NIANNIAN_SMTP_PASSWORD` 等。
 
-公网使用建议通过 Caddy/Nginx 的 HTTPS 反向代理访问；应用也允许局域网 HTTP，方便本地与线上切换。切换地址会清除当前登录态并取消旧请求，需要在新服务器重新登录。
+公网使用建议通过 Caddy/Nginx 的 HTTPS 反向代理访问；应用也允许局域网 HTTP，方便本地与线上切换。切换地址会清除当前页面与登录态，旧连接的返回结果不会进入新页面，需要在新服务器重新登录。已经提交给旧服务器的操作仍可能完成。
 
 长期运行和备份见 `deploy/README.md`。接口约定见 `docs/API.md`。
 
