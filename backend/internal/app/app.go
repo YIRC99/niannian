@@ -151,7 +151,7 @@ CREATE INDEX IF NOT EXISTS notification_user ON notifications(user_id,scheduled_
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 200, map[string]string{"status": "ok", "version": "1.1.0"})
+		writeJSON(w, 200, map[string]string{"status": "ok", "version": "1.2.0"})
 	})
 	mux.HandleFunc("POST /api/v1/auth/code", a.requestCode)
 	mux.HandleFunc("POST /api/v1/auth/verify", a.verifyCode)
@@ -162,11 +162,13 @@ func (a *App) Handler() http.Handler {
 	secured("POST /api/v1/tasks", a.createTask)
 	secured("GET /api/v1/tasks/{id}", a.getTask)
 	secured("PUT /api/v1/tasks/{id}", a.updateTask)
+	secured("PUT /api/v1/tasks/{id}/paused", a.setTaskPaused)
 	secured("DELETE /api/v1/tasks/{id}", a.archiveTask)
 	secured("POST /api/v1/tasks/{id}/complete", a.completeTask)
 	secured("POST /api/v1/tasks/{id}/snooze", a.snoozeTask)
 	secured("GET /api/v1/history", a.history)
 	secured("GET /api/v1/notifications", a.notifications)
+	secured("GET /api/v1/calendar", a.calendar)
 	secured("POST /api/v1/media", a.uploadMedia)
 	secured("GET /api/v1/media/{id}", a.getMedia)
 	secured("POST /api/v1/ai/parse", a.parseAI)

@@ -242,6 +242,44 @@ func (a *App) updateTask(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, 200, a.view(t))
 }
+func (a *App) setTaskPaused(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Paused *bool `json:"paused"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	if in.Paused == nil {
+		writeError(w, 400, "请提供 paused 布尔值")
+		return
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	t, err := a.findTask(r.PathValue("id"), currentUser(r).ID)
+	if err == sql.ErrNoRows {
+		writeError(w, 404, "任务不存在")
+		return
+	}
+	if err != nil {
+		dbFailure(w)
+		return
+	}
+	// A switch changes only its own state: a stale editor cannot overwrite a
+	// newer rule, description, or an already requested snooze.
+	if t.Paused != *in.Paused {
+		if _, err = a.db.Exec(`UPDATE tasks SET paused=?,updated_at=? WHERE id=? AND user_id=? AND archived=0`, *in.Paused, stamp(a.now()), t.ID, t.UserID); err != nil {
+			dbFailure(w)
+			return
+		}
+		t, err = a.findTask(t.ID, t.UserID)
+		if err != nil {
+			dbFailure(w)
+			return
+		}
+	}
+	writeJSON(w, 200, a.view(t))
+}
+
 func (a *App) archiveTask(w http.ResponseWriter, r *http.Request) {
 	a.mu.Lock()
 	defer a.mu.Unlock()

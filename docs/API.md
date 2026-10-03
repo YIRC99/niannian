@@ -2,7 +2,7 @@
 
 Base URL entered in Android is origin e.g. http://192.168.1.10:56507. All paths below include /api/v1. JSON UTF-8. Bearer opaque token except health/auth. Errors {"error":"human readable Chinese"}. Timestamps RFC3339. IDs strings. Unknown fields rejected for writes. Server owns user identity, recipients and media.
 
-GET /health -> {"status":"ok","version":"1.1.0"}
+GET /health -> {"status":"ok","version":"1.2.0"}
 POST /api/v1/auth/code {"email":"..."} -> {"message":"验证码已发送"}
 POST /api/v1/auth/verify {"email":"...","code":"123456"} -> {"token":"...","user":{"id":"...","email":"..."}}
 Registration is open: any syntactically valid email can request a code, and the first successful verification creates its account. Repeat verification reuses the same account. Legacy allowed_emails configuration is ignored across login, sessions, and reminder delivery. OTP expiry/rate limits and user-data isolation still apply.
@@ -19,6 +19,7 @@ GET /api/v1/tasks -> {"tasks":[TaskView]}
 POST /api/v1/tasks {"title":"...","description":"...","rule":Rule} -> TaskView
 GET /api/v1/tasks/{id} -> TaskView (owner can also read archived:true tasks for history navigation; all mutations still reject archived tasks)
 PUT /api/v1/tasks/{id} {"title":"...","description":"...","rule":Rule,"paused":false} -> TaskView
+PUT /api/v1/tasks/{id}/paused {"paused":true} -> TaskView (owner only, rejects archived tasks; changes only paused/updated_at, preserves the rule and snooze state)
 DELETE /api/v1/tasks/{id} -> {"ok":true} (soft archive, preserve history)
 POST /api/v1/tasks/{id}/complete {"text":"...","media_ids":["..."]} -> Completion
 POST /api/v1/tasks/{id}/snooze {"minutes":60} -> {"ok":true} (1..1440, durable)
@@ -26,7 +27,14 @@ TaskView {"id":"...","title":"...","description":"...","rule":Rule,"paused":fals
 Completion {"id":"...","task_id":"...","task_title":"...","cycle_key":"...","text":"...","media_ids":[],"created_at":"..."}
 GET /api/v1/history -> {"records":[Completion]}
 GET /api/v1/notifications -> {"notifications":[{"id":"...","task_id":"...","task_title":"...","scheduled_at":"...","sent_at":"...","status":"sent|failed|pending","error":"..."}]}
-Android calendar combines these actual notifications (scheduled_at date) and /history completions (created_at date), converting timestamps into the phone's local timezone. It does not synthesize sent records from future schedules. task_id provides owner-authenticated navigation to the reminder, including read-only archived reminders.
+GET /api/v1/calendar?month=2026-10&timezone=Asia%2FShanghai -> {"month":"2026-10","timezone":"Asia/Shanghai","generated_at":"RFC3339","entries":[CalendarEntry],"truncated":false}
+CalendarEntry {"id":"stable identifier","type":"planned|notification|completion","task_id":"...","task_title":"...","at":"RFC3339","state":"upcoming|pending|completed|expired|notified","cycle_key":"...","cycle_end":"RFC3339 or empty"}. Notification entries retain scheduled_at/sent_at/status/error; completion entries retain created_at/text/media_ids. Planned entries are projections, never persisted notifications and never evidence that mail was sent.
+
+The calendar endpoint accepts one valid YYYY-MM month and explicit IANA display timezone, returns only the authenticated user's entries, and bounds the response at 20,000 entries or a 6 MiB serialization budget, with an explicit truncated flag. Both actual records and projected times are grouped by their instant in that display timezone. Projection uses the same schedule rules as delivery, excludes times before task creation, honors completed cycles, notification caps and snoozing, and suppresses unsent plans for paused/archived tasks. Actual notifications override the projected entry at the same task+instant; actual completions and their text/photos remain available. Every-third-day rules use start_date as their calendar anchor.
+
+Calendar states: upcoming = future reminder; pending = due but its completion cycle has not ended; expired = cycle ended without completion; completed = actual completion or an earlier reminder in a completed cycle; notified = a successful notify_once reminder (no completion required). Mail transport failures do not determine completion or expiry. Historical notifications use their saved rule snapshot; historical completions with no reliable cycle boundary leave cycle_end empty. Unsent past projections use the current rule only from max(created_at,updated_at), conservatively avoiding fabricated history after edits. Future forecasts may change when the user completes, pauses or edits a task.
+
+Android loads the selected month, filters selected days locally, and rejects stale responses after month/account/page changes. Old servers without the endpoint show an explicit update notice instead of pretending an empty calendar is complete; stored records remain unchanged on the server. task_id provides owner-authenticated navigation to the reminder, including read-only archived reminders.
 POST /api/v1/media multipart field file (jpeg/png/webp, max 10MB) -> {"id":"...","url":"/api/v1/media/{id}"}
 GET /api/v1/media/{id} -> authenticated bytes
 POST /api/v1/ai/parse {"text":"每月1到15号提醒申报，完成就不提醒"} -> {"title":"申报财务信息","description":"...","rule":Rule,"summary":"...","warnings":[]}. Draft only, validate before returning, no silent save.
