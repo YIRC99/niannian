@@ -13,6 +13,11 @@ final class GardenArtCache {
             return bitmap.getAllocationByteCount();
         }
     };
+    private static final LruCache<Integer, Bitmap> SCENES = new LruCache<Integer, Bitmap>(12 * 1024 * 1024) {
+        @Override protected int sizeOf(Integer key, Bitmap bitmap) {
+            return bitmap.getAllocationByteCount();
+        }
+    };
 
     private GardenArtCache() { }
 
@@ -39,6 +44,26 @@ final class GardenArtCache {
                 bitmap = trim(bitmap);
                 ART.put(resource, bitmap);
             }
+            return bitmap;
+        }
+    }
+
+    /** Scenery preserves its full composition and is never decoded through the small icon cache. */
+    static Bitmap backdrop(Resources resources, int resource) {
+        synchronized (SCENES) {
+            Bitmap cached = SCENES.get(resource);
+            if (cached != null) return cached;
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            options.inScaled = false;
+            BitmapFactory.decodeResource(resources, resource, options);
+            int longest = Math.max(options.outWidth, options.outHeight);
+            options.inSampleSize = 1;
+            while (longest / options.inSampleSize > 1536) options.inSampleSize *= 2;
+            options.inJustDecodeBounds = false;
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            Bitmap bitmap = BitmapFactory.decodeResource(resources, resource, options);
+            if (bitmap != null) SCENES.put(resource, bitmap);
             return bitmap;
         }
     }
