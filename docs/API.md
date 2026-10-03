@@ -2,7 +2,7 @@
 
 Base URL entered in Android is origin e.g. http://192.168.1.10:56507. All paths below include /api/v1. JSON UTF-8. Bearer opaque token except health/auth. Errors {"error":"human readable Chinese"}. Timestamps RFC3339. IDs strings. Unknown fields rejected for writes. Server owns user identity, recipients and media.
 
-GET /health -> {"status":"ok","version":"1.3.0"}
+GET /health -> {"status":"ok","version":"1.3.1"}
 POST /api/v1/auth/code {"email":"..."} -> {"message":"验证码已发送"}
 POST /api/v1/auth/verify {"email":"...","code":"123456"} -> {"token":"...","user":{"id":"...","email":"..."}}
 Registration is open: any syntactically valid email can request a code, and the first successful verification creates its account. Repeat verification reuses the same account. Legacy allowed_emails configuration is ignored across login, sessions, and reminder delivery. OTP expiry/rate limits and user-data isolation still apply.
@@ -21,10 +21,13 @@ GET /api/v1/tasks/{id} -> TaskView (owner can also read archived:true tasks for 
 PUT /api/v1/tasks/{id} {"title":"...","description":"...","rule":Rule,"paused":false} -> TaskView
 PUT /api/v1/tasks/{id}/paused {"paused":true} -> TaskView (owner only, rejects archived tasks; changes only paused/updated_at, preserves the rule and snooze state)
 DELETE /api/v1/tasks/{id} -> {"ok":true} (soft archive, preserve history)
-POST /api/v1/tasks/{id}/complete {"text":"...","media_ids":["..."]} -> Completion
+POST /api/v1/tasks/{id}/complete {"text":"...","media_ids":["..."]} -> Completion fields plus "growth":{"from_count":0,"to_count":1,"from_stage":"seed","to_stage":"sprout","added":true}
 POST /api/v1/tasks/{id}/snooze {"minutes":60} -> {"ok":true} (1..1440, durable)
 TaskView {"id":"...","title":"...","description":"...","rule":Rule,"paused":false,"created_at":"...","updated_at":"...","summary":"每月 1—15 日，每天 09:00，完成后停止本月提醒","status":"pending|done|upcoming|paused|expired","next_reminder":"RFC3339 or empty","cycle_key":"..."}
 Completion {"id":"...","task_id":"...","task_title":"...","cycle_key":"...","text":"...","media_ids":[],"created_at":"..."}
+
+Only the complete mutation response includes growth. Counts are the current user's actual lifetime completion rows for this task; stages use the same thresholds as the garden: 0 seed, 1–2 sprout, 3–6 leaf, 7+ bloom. A newly committed completion returns added=true with counts immediately before and after that write. Retrying an already completed cycle returns the original Completion fields, added=false, and the actual current count/stage in both from and to fields; it never invents an additional growth step. Failed writes or commits return an error without growth. Clients animate only an added=true response; same-stage completions may still show a small growth reaction. History, export, and garden recent_completions keep the unchanged Completion schema. Completing a foreign or archived task remains rejected.
+
 GET /api/v1/history -> {"records":[Completion]}
 GET /api/v1/garden?timezone=Asia%2FShanghai -> {"timezone":"Asia/Shanghai","generated_at":"RFC3339","week_start_date":"2026-09-28","total_completions":20,"week_completions":3,"total_plants":2,"plants":[GardenPlant],"recent_completions":[Completion],"truncated":false,"plant_limit":2000}
 GardenPlant {"task_id":"...","title":"...","completion_count":7,"last_completed_at":"RFC3339 or empty","archived":false,"stage":"seed|sprout|leaf|bloom"}

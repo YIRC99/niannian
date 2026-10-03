@@ -2,6 +2,10 @@
 
 原生 Java + Android Views，Android 8.0 及以上。仅使用 AndroidX Core 的 FileProvider，无 WebView，不需要手机后台常驻。应用内不包含 DeepSeek 或 SMTP 凭据。
 
+## 1.3.1 生长动画
+
+正式包 versionCode 为 5。完成后播放约 2.5 秒的浇水、养分与植物展开动画；阶段门槛才发芽、长叶或开花，同阶段完成只呈现吸收养分。前台可见的庭院有轻微枝叶摇摆，离开页面或切后台即停止。尊重系统关闭动画设置，支持手动重看插画。后端需更新到 1.3.1 才会返回准确的生长结果；旧后端使用中性完成反馈。
+
 ## 1.3.0 卡通成长花园
 
 界面统一为暖白柔绿的二次元卡通风，底部为今天、花园、日历、我的。任务创建为播种、完成为补充养分；1 次发芽、3 次长叶、7 次开花。漏做不会扣除累计成长。图片生成素材内置在安装包，阶段由服务器真实完成次数决定。
@@ -69,4 +73,12 @@ New-Item -ItemType Directory -Force build/record-dates-tests | Out-Null
 
 已构建并签名正式 APK，执行 Android Lint。没有给真实邮箱发送测试邮件，没有在手机上执行视觉验收。
 
-请在实际手机快速验收：白蓝界面与键盘显示、服务器切换、验证码登录、AI 草稿编辑、完成后停止本期提醒、相机与相册上传、记录中的照片。相机由设备系统应用提供，需要有可用相机应用。
+请在实际手机快速验收：卡通界面与生长动画、键盘显示、服务器切换、验证码登录、AI 草稿编辑、完成后停止本期提醒、相机与相册上传、记录中的照片。相机由设备系统应用提供，需要有可用相机应用。
+
+生长播放状态检查（18 项断言，覆盖首次播放、页面返回、旋转恢复、真实阶段、重复响应及账号清理）：
+
+```powershell
+New-Item -ItemType Directory -Force build/growth-tests | Out-Null
+& "$env:JAVA_HOME/bin/javac.exe" -encoding UTF-8 --release 17 -d build/growth-tests app/src/main/java/dev/niannian/reminder/GrowthAnimationState.java tests/GrowthAnimationStateTest.java
+& "$env:JAVA_HOME/bin/java.exe" -cp build/growth-tests dev.niannian.reminder.GrowthAnimationStateTest
+```

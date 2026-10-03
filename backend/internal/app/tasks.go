@@ -307,6 +307,20 @@ func scanCompletion(row scanner) (Completion, error) {
 
 const completionColumns = `id,task_id,task_title,cycle_key,text,media_ids,created_at`
 
+// Growth belongs to this mutation response, never to a saved completion record.
+type completionResponse struct {
+	Completion
+	Growth completionGrowth `json:"growth"`
+}
+
+type completionGrowth struct {
+	FromCount int    `json:"from_count"`
+	ToCount   int    `json:"to_count"`
+	FromStage string `json:"from_stage"`
+	ToStage   string `json:"to_stage"`
+	Added     bool   `json:"added"`
+}
+
 func (a *App) completeTask(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Text     string   `json:"text"`
@@ -340,9 +354,16 @@ func (a *App) completeTask(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 409, "当前不在任务执行范围内，请在任务日期内完成")
 		return
 	}
-	previous, err := scanCompletion(a.db.QueryRow(`SELECT `+completionColumns+` FROM completions WHERE task_id=? AND cycle_key=?`, t.ID, cycle.Key))
+	previous, err := scanCompletion(a.db.QueryRow(`SELECT `+completionColumns+` FROM completions WHERE task_id=? AND cycle_key=? AND user_id=?`, t.ID, cycle.Key, user.ID))
 	if err == nil {
-		writeJSON(w, 200, previous)
+		var count int
+		if err := a.db.QueryRow(`SELECT COUNT(*) FROM completions WHERE task_id=? AND user_id=?`, t.ID, user.ID).Scan(&count); err != nil {
+			dbFailure(w)
+			return
+		}
+		writeJSON(w, 200, completionResponse{Completion: previous, Growth: completionGrowth{
+			FromCount: count, ToCount: count, FromStage: gardenStage(count), ToStage: gardenStage(count), Added: false,
+		}})
 		return
 	}
 	if err != sql.ErrNoRows {
@@ -370,6 +391,11 @@ func (a *App) completeTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
+	var fromCount, toCount int
+	if err = tx.QueryRow(`SELECT COUNT(*) FROM completions WHERE task_id=? AND user_id=?`, t.ID, user.ID).Scan(&fromCount); err != nil {
+		dbFailure(w)
+		return
+	}
 	if _, err = tx.Exec(`INSERT INTO completions(id,user_id,task_id,task_title,cycle_key,text,media_ids,created_at) VALUES(?,?,?,?,?,?,?,?)`, c.ID, user.ID, c.TaskID, c.TaskTitle, c.CycleKey, c.Text, string(media), c.CreatedAt); err != nil {
 		dbFailure(w)
 		return
@@ -378,11 +404,17 @@ func (a *App) completeTask(w http.ResponseWriter, r *http.Request) {
 		dbFailure(w)
 		return
 	}
+	if err = tx.QueryRow(`SELECT COUNT(*) FROM completions WHERE task_id=? AND user_id=?`, t.ID, user.ID).Scan(&toCount); err != nil {
+		dbFailure(w)
+		return
+	}
 	if err = tx.Commit(); err != nil {
 		dbFailure(w)
 		return
 	}
-	writeJSON(w, 200, c)
+	writeJSON(w, 200, completionResponse{Completion: c, Growth: completionGrowth{
+		FromCount: fromCount, ToCount: toCount, FromStage: gardenStage(fromCount), ToStage: gardenStage(toCount), Added: true,
+	}})
 }
 func (a *App) snoozeTask(w http.ResponseWriter, r *http.Request) {
 	var in struct {

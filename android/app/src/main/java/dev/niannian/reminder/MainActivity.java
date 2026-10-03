@@ -1,6 +1,7 @@
 package dev.niannian.reminder;
 
 import android.app.*;
+import android.animation.ValueAnimator;
 import android.content.*;
 import android.content.res.ColorStateList;
 import android.graphics.*;
@@ -68,6 +69,10 @@ public class MainActivity extends Activity {
     private boolean gardenLoading = false;
     private JSONObject completedRecord = new JSONObject();
     private final Map<Integer, Bitmap> artCache = new HashMap<>();
+    private final GrowthAnimationState growthAnimationState = new GrowthAnimationState();
+    private GardenGrowthView growthView;
+    private GardenSceneView gardenScene;
+    private boolean motionHostActive;
     private long codeAvailableAt;
 
     @Override public void onCreate(Bundle state) {
@@ -83,6 +88,7 @@ public class MainActivity extends Activity {
             detailBack=state.getString("detailBack","home"); photoBack=state.getString("photoBack","record"); photoId=state.getString("photoId",""); photoTitle=state.getString("photoTitle",""); recordPage=state.getInt("recordPage");
             recordBack=state.getString("recordBack","history"); gardenPage=state.getInt("gardenPage");
             try { completedRecord=new JSONObject(state.getString("completedRecord","{}")); } catch(Exception ignored) {}
+            growthAnimationState.restore(state.getString("consumedGrowthId", ""));
             try { calendarDate=LocalDate.parse(state.getString("calendarDate",LocalDate.now().toString())); calendarMonth=YearMonth.parse(state.getString("calendarMonth",YearMonth.now().toString())); selectedRecord=new JSONObject(state.getString("selectedRecord","{}")); } catch(Exception ignored) {}
             aiText = state.getString("aiText", ""); aiWarning = state.getString("aiWarning", ""); completionText = state.getString("completionText", "");
             String p = state.getString("photo", ""), c = state.getString("camera", "");
@@ -101,12 +107,26 @@ public class MainActivity extends Activity {
         out.putBoolean("rulesExpanded",rulesExpanded); out.putBoolean("advancedExpanded",advancedExpanded); out.putBoolean("aiExpanded",aiExpanded);
         out.putString("detailBack",detailBack); out.putString("photoBack",photoBack); out.putString("photoId",photoId); out.putString("photoTitle",photoTitle);
         out.putString("recordBack",recordBack); out.putInt("gardenPage",gardenPage); out.putString("completedRecord",completedRecord.toString());
+        out.putString("consumedGrowthId",growthAnimationState.savedId());
         out.putString("calendarDate",calendarDate.toString()); out.putString("calendarMonth",calendarMonth.toString()); out.putInt("recordPage",recordPage); out.putString("selectedRecord",selectedRecord.toString());
         out.putString("aiText", aiText); out.putString("aiWarning", aiWarning); out.putString("completionText", completionText);
         out.putString("photo", photoFile == null ? "" : photoFile.getAbsolutePath()); out.putString("camera", cameraFile == null ? "" : cameraFile.getAbsolutePath());
         out.putLong("codeAvailableAt", codeAvailableAt); super.onSaveInstanceState(out);
     }
-    @Override public void onDestroy() { super.onDestroy(); workers.shutdownNow(); ui.removeCallbacksAndMessages(null); }
+    @Override protected void onResume() { super.onResume(); setMotionHostActive(true); }
+    @Override protected void onPause() { setMotionHostActive(false); super.onPause(); }
+    @Override public void onDestroy() { stopPageMotion(); super.onDestroy(); workers.shutdownNow(); ui.removeCallbacksAndMessages(null); }
+    private void setMotionHostActive(boolean active) {
+        motionHostActive=active;
+        if(growthView!=null)growthView.setHostActive(active);
+        if(gardenScene!=null)gardenScene.setHostActive(active);
+        if(!active&&body!=null){body.animate().cancel();body.setAlpha(1f);body.setTranslationY(0f);}
+    }
+    private void stopPageMotion() {
+        if(growthView!=null){growthView.setOnPhaseChangedListener(null);growthView.setHostActive(false);growthView=null;}
+        if(gardenScene!=null){gardenScene.setHostActive(false);gardenScene=null;}
+        if(body!=null)body.animate().cancel();
+    }
     @Override public void onBackPressed() {
         if (screen.equals("home") || screen.equals("login") || (screen.equals("server") && session.base.isEmpty())) { super.onBackPressed(); return; }
         if (screen.equals("editor")) {
@@ -115,7 +135,13 @@ public class MainActivity extends Activity {
         }
         navigate(screen.equals("photo") ? photoBack : screen.equals("record") ? recordBack : screen.equals("detail") ? detailBack : screen.equals("complete") ? "detail" : session.token.isEmpty() ? "login" : "home");
     }
-    private void navigate(String next) { captureTransient(); screen = next; render(); }
+    private void navigate(String next) {
+        boolean changed=!screen.equals(next);captureTransient();screen=next;render();
+        if(changed&&motionHostActive&&!next.equals("grown")&&ValueAnimator.areAnimatorsEnabled()){
+            body.setAlpha(0f);body.setTranslationY(dp(5));body.animate().alpha(1f).translationY(0f).setDuration(180)
+                    .setInterpolator(new android.view.animation.PathInterpolator(.22f,1f,.36f,1f)).start();
+        }
+    }
     private void captureTransient() {
         if (screen.equals("editor")) {
             restoredForm = new JSONObject();
@@ -131,6 +157,7 @@ public class MainActivity extends Activity {
         if (screen.equals("complete") && fields.containsKey("completion")) completionText = value("completion");
     }
     private void render() {
+        stopPageMotion();
         pageEpoch++; taskBusy = false; fields.clear(); kindPicker = null; modePicker = null; weekdays = null;
         root = column(); root.setBackgroundColor(BG); setContentView(root);
         root.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -291,7 +318,7 @@ public class MainActivity extends Activity {
         }
         JSONArray plants=gardenData.optJSONArray("plants");int total=plants.length();
         int[] stages=new int[Math.min(total,6)];for(int i=0;i<stages.length;i++)stages[i]=stageIndex(plants.optJSONObject(i).optString("stage"));
-        GardenSceneView scene=new GardenSceneView(this);scene.setStages(stages);scene.setBackground(shape(PALE,26));scene.setClipToOutline(true);gardenContent.addView(scene,new LinearLayout.LayoutParams(-1,dp(204)));gap(gardenContent,12);
+        GardenSceneView scene=new GardenSceneView(this);gardenScene=scene;scene.setHostActive(motionHostActive);scene.setStages(stages);scene.setBackground(shape(PALE,26));scene.setClipToOutline(true);gardenContent.addView(scene,new LinearLayout.LayoutParams(-1,dp(204)));gap(gardenContent,12);
         if(total>6)note(gardenContent,"庭院里展示前 6 株，所有植物都在下面。");
         LinearLayout stats=row();stats.setGravity(Gravity.CENTER);addGardenStat(stats,"种下 "+gardenData.optInt("total_plants")+" 株");addGardenStat(stats,"本周 +"+gardenData.optInt("week_completions")+" 份养分");addGardenStat(stats,"累计 "+gardenData.optInt("total_completions")+" 次完成");gardenContent.addView(stats);gap(gardenContent,14);
         if(gardenLoading)note(gardenContent,"正在更新花园…");
@@ -329,8 +356,22 @@ public class MainActivity extends Activity {
         ImageView image=new ImageView(this);image.setImageBitmap(bitmap);image.setScaleType(ImageView.ScaleType.FIT_CENTER);image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);image.setLayoutParams(new LinearLayout.LayoutParams(dp(size),dp(size)));return image;
     }
     private void renderGrown(){
-        gap(body,20);LinearLayout imageRow=row();imageRow.setGravity(Gravity.CENTER);imageRow.addView(art(R.drawable.garden_watering,150));body.addView(imageRow);gap(body,18);
-        TextView title=text("小事完成，养分已收下",24,INK,true);title.setGravity(Gravity.CENTER);body.addView(title);gap(body,10);TextView message=text(selected.optString("title"),16,INK,true);message.setGravity(Gravity.CENTER);body.addView(message);gap(body,8);TextView hint=text("这次完成已存进花园。\n慢慢来，你做过的每一步都算数。",14,MUTED,false);hint.setGravity(Gravity.CENTER);body.addView(hint);gap(body,28);
+        JSONObject receipt=completedRecord.optJSONObject("growth");String completionId=completedRecord.optString("id");
+        int from=receipt==null?-1:receipt.optInt("from_count",-1),to=receipt==null?-1:receipt.optInt("to_count",-1);
+        boolean added=receipt!=null&&receipt.optBoolean("added");
+        boolean known=receipt!=null&&receipt.opt("added") instanceof Boolean&&receipt.opt("from_count") instanceof Number&&receipt.opt("to_count") instanceof Number&&GrowthAnimationState.validReceipt(completionId,from,to,added);
+        gap(body,8);TextView overline=text("一件小事，认真完成",12,BLUE,true);overline.setGravity(Gravity.CENTER);body.addView(overline);gap(body,12);
+        GardenGrowthView animation=new GardenGrowthView(this);growthView=animation;animation.setHostActive(motionHostActive);animation.setBackground(shape(PALE,28));animation.setClipToOutline(true);body.addView(animation,new LinearLayout.LayoutParams(-1,dp(280)));gap(body,18);
+        String celebration=!known||!added?"这次完成，已经记下":to==1?"小芽，探出头啦":to==3?"新叶，慢慢舒展开来":to==7?"这件小事，开花了":"又添了一份小小的努力";
+        TextView title=text(celebration,23,INK,true);title.setGravity(Gravity.CENTER);body.addView(title);gap(body,8);TextView message=text(completedRecord.optString("task_title",selected.optString("title")),16,INK,true);message.setGravity(Gravity.CENTER);body.addView(message);gap(body,8);
+        TextView phase=text("",13,MUTED,false);phase.setGravity(Gravity.CENTER);phase.setMinHeight(dp(42));body.addView(phase);int page=pageEpoch;
+        animation.setOnPhaseChangedListener(caption->{if(page==pageEpoch&&screen.equals("grown"))phase.setText(caption);});
+        if(known){
+            animation.showGrowth(from,to,added,growthAnimationState.consume(completionId,from,to,added));
+            TextView count=text(added?"养分 +1 · 已累计 "+to+" 份养分":"已累计 "+to+" 份养分",12,BLUE,true);count.setGravity(Gravity.CENTER);body.addView(count);
+            if(added){gap(body,6);Button replay=smallButton("再看一次生长");replay.setEnabled(ValueAnimator.areAnimatorsEnabled());LinearLayout replayRow=row();replayRow.setGravity(Gravity.CENTER);replayRow.addView(replay);body.addView(replayRow);replay.setOnClickListener(v->{if(growthView!=null)growthView.replay();});}
+        }else{animation.showRecorded();TextView compatibility=text("完成记录已保存。后端更新到 1.3.1 后，\n这里会展示这株植物的真实生长过程。",12,MUTED,false);compatibility.setGravity(Gravity.CENTER);body.addView(compatibility);}
+        gap(body,18);
         Button garden=button("去看看我的花园",true);body.addView(garden);garden.setOnClickListener(v->navigate("garden"));gap(body,10);Button next=button("回到今天的小事",false);body.addView(next);next.setOnClickListener(v->navigate("home"));gap(body,16);
         Button memory=smallButton("回看这次完成记录");body.addView(memory);memory.setOnClickListener(v->{selectedRecord=copy(completedRecord);try{selectedRecord.put("_type","completion");selectedRecord.put("_at",completedRecord.optString("created_at"));selectedRecord.put("state","completed");}catch(JSONException ignored){}recordBack="grown";navigate("record");});
     }
@@ -626,12 +667,12 @@ public class MainActivity extends Activity {
         Button check=button("检查连接和登录状态",false);body.addView(check);check.setOnClickListener(v->run(check,a->{a.json("GET","/health",null);return a.json("GET","/api/v1/me",null);},r->toast("连接正常，当前登录："+r.optString("email"))));gap(body,12);
         Button export=button("导出我的全部文字记录",false);body.addView(export);export.setOnClickListener(v->run(export,a->{JSONObject data=a.json("GET","/api/v1/export",null);File dir=new File(getCacheDir(),"exports");if(!dir.exists()&&!dir.mkdirs())throw new IOException("无法创建导出文件");File file=new File(dir,"念念记录-"+LocalDate.now()+"-"+UUID.randomUUID()+".json");try(OutputStream out=new FileOutputStream(file)){out.write(data.toString(2).getBytes(StandardCharsets.UTF_8));}return file;},file->{Uri uri=FileProvider.getUriForFile(this,getPackageName()+".files",file);Intent i=new Intent(Intent.ACTION_SEND);i.setType("application/json");i.putExtra(Intent.EXTRA_STREAM,uri);i.setClipData(ClipData.newRawUri("念念记录",uri));i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"保存或分享记录"));}));gap(body,12);
         note(body,"导出包含提醒规则、完成文字和邮件记录。照片原文件保存在服务器的数据目录，完整备份时请一起保存该目录。");
-        section(body,"关于念念");body.addView(text("念念 1.3.0 · 小事生长的地方",15,INK,true));gap(body,8);note(body,"创建任务就是播种，真实完成才会增加养分。已经拥有的成长，不会因为漏做而消失。邮件按时发送，手机无需后台常驻。");
+        section(body,"关于念念");body.addView(text("念念 1.3.1 · 小事生长的地方",15,INK,true));gap(body,8);note(body,"创建任务就是播种，真实完成才会增加养分。已经拥有的成长，不会因为漏做而消失。邮件按时发送，手机无需后台常驻。");
         Button logout=button("退出登录",false);logout.setTextColor(RED);body.addView(logout);logout.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("退出当前账号？").setMessage("服务器上的提醒仍会照常发送，任务和记录不会删除。").setNegativeButton("取消",null).setPositiveButton("退出",(d,w)->{
             Api old=new Api(session.base,session.token);accountEpoch++;session.clear();clearAccountData();navigate("login");workers.submit(()->{try{old.json("POST","/api/v1/auth/logout",object());}catch(Exception ignored){}});
         }).show());
     }
-    private void clearAccountData(){gardenPage=0;gardenContent=null;gardenPreview=null;recordBack="history";completedRecord=new JSONObject();taskData=new JSONArray();taskLoadRequest++;pauseInFlight.clear();selected=new JSONObject();draft=new JSONObject();selectedRecord=new JSONObject();invalidateCalendar();calendarDate=LocalDate.now();calendarMonth=YearMonth.now();recordPage=0;detailBack="home";photoBack="record";photoId="";photoTitle="";calendarGrid=null;calendarRecords=null;calendarCaption=null;calendarRefresh=null;restoredForm=null;photoFile=null;cameraFile=null;search="";filter="全部";aiText="";aiWarning="";completionText="";taskList=null;manualVisible=false;rulesExpanded=false;advancedExpanded=false;aiExpanded=true;}
+    private void clearAccountData(){growthAnimationState.clear();gardenPage=0;gardenContent=null;gardenPreview=null;recordBack="history";completedRecord=new JSONObject();taskData=new JSONArray();taskLoadRequest++;pauseInFlight.clear();selected=new JSONObject();draft=new JSONObject();selectedRecord=new JSONObject();invalidateCalendar();calendarDate=LocalDate.now();calendarMonth=YearMonth.now();recordPage=0;detailBack="home";photoBack="record";photoId="";photoTitle="";calendarGrid=null;calendarRecords=null;calendarCaption=null;calendarRefresh=null;restoredForm=null;photoFile=null;cameraFile=null;search="";filter="全部";aiText="";aiWarning="";completionText="";taskList=null;manualVisible=false;rulesExpanded=false;advancedExpanded=false;aiExpanded=true;}
     private interface Job<T>{T run(Api api)throws Exception;}
     private interface Result<T>{void accept(T value);}
     private <T> void run(Button trigger,Job<T> job,Result<T> success){
