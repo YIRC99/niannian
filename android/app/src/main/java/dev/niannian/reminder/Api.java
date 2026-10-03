@@ -19,7 +19,7 @@ final class Api {
             if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme())) || uri.getHost() == null
                     || uri.getUserInfo() != null || uri.getQuery() != null || uri.getFragment() != null
                     || (uri.getPath() != null && !uri.getPath().isEmpty() && !uri.getPath().equals("/")))
-                throw new IOException("请填写完整的服务器地址，例如 https://提醒.example.com 或 http://192.168.1.10:8080，不包含接口路径");
+                throw new IOException("请填写完整的服务器地址，例如 https://提醒.example.com 或 http://192.168.1.10:56507，不包含接口路径");
             return uri.getScheme().toLowerCase(java.util.Locale.ROOT) + "://" + uri.getRawAuthority();
         } catch (URISyntaxException e) { throw new IOException("服务器地址格式不正确，请检查 http:// 或 https://"); }
     }

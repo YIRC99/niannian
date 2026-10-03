@@ -137,7 +137,7 @@ public class MainActivity extends Activity {
     private void renderServer() {
         ImageView logo = new ImageView(this); logo.setImageResource(R.drawable.ic_launcher); body.addView(logo, new LinearLayout.LayoutParams(dp(76), dp(76))); gap(body,24);
         header("NIANNIAN", "把惦记的事，交给念念", "连接你的提醒服务，邮件会按时到达。手机不用一直开着。");
-        field(body,"server","服务器地址",session.base,"https://你的域名 或 http://局域网IP:8080",1);
+        field(body,"server","服务器地址",session.base,"https://你的域名 或 http://局域网IP:56507",1);
         note(body,"本地调试：手机和电脑连接同一个 Wi-Fi，填写电脑的局域网 IP；手机上的 localhost 指向手机自己。");
         Button test = button("测试连接", false); body.addView(test); test.setOnClickListener(v -> {
             String address;

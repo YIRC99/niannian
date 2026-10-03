@@ -11,7 +11,7 @@ chmod +x niannian
 ./niannian
 ```
 
-默认端口 8080。手机填 `http://服务器IP:8080`，云服务器需要允许该端口或使用反向代理。应用中的“我的”随时可以修改服务器地址。生产环境建议使用 HTTPS，验证码和登录令牌不应在公网明文传输。
+默认端口 56507。手机填 `http://服务器IP:56507`，云服务器需要允许该端口或使用反向代理。应用中的“我的”随时可以修改服务器地址。生产环境建议使用 HTTPS，验证码和登录令牌不应在公网明文传输。
 
 ## 开机启动（推荐）
 
@@ -43,14 +43,14 @@ sudo systemctl start niannian
 
 ## 健康检查
 
-`curl http://127.0.0.1:8080/health` 返回 `status: ok` 表示服务正在响应，不代表 SMTP 最终投递成功。任务的发送历史会记录成功或失败。
+`curl http://127.0.0.1:56507/health` 返回 `status: ok` 表示服务正在响应，不代表 SMTP 最终投递成功。任务的发送历史会记录成功或失败。
 
 ## Caddy 示例（可选）
 
 ```text
 reminder.example.com {
-    reverse_proxy 127.0.0.1:8080
+    reverse_proxy 127.0.0.1:56507
 }
 ```
 
-自行替换域名并配置解析，Android 填 `https://reminder.example.com`。用了反向代理后可在配置中将 `addr` 设为 `127.0.0.1:8080`。
+自行替换域名并配置解析，Android 填 `https://reminder.example.com`。用了反向代理后可在配置中将 `addr` 设为 `127.0.0.1:56507`。

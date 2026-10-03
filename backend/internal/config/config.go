@@ -42,7 +42,7 @@ func EmbeddedDefaults() []byte {
 }
 
 func Load(embedded []byte) (Config, error) {
-	c := Config{Addr: ":8080", DataDir: "data", DeepSeekBaseURL: "https://api.deepseek.com", DeepSeekModel: "deepseek-flash", SMTPHost: "hwsmtp.qiye.163.com", SMTPPort: 465, AllowedEmails: []string{"yirc99@163.com"}}
+	c := Config{Addr: ":56507", DataDir: "data", DeepSeekBaseURL: "https://api.deepseek.com", DeepSeekModel: "deepseek-flash", SMTPHost: "hwsmtp.qiye.163.com", SMTPPort: 465, AllowedEmails: []string{"yirc99@163.com"}}
 	apply := func(data []byte) error {
 		if len(bytes.TrimSpace(data)) == 0 {
 			return nil
