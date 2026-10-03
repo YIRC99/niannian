@@ -4,10 +4,55 @@ import (
 	"encoding/json"
 	"niannian/internal/ai"
 	"niannian/internal/config"
+	"niannian/internal/schedule"
 	"os"
 	"testing"
 	"time"
 )
+
+func TestLiveAssistantDraftNeedsConfirmation(t *testing.T) {
+	if os.Getenv("NIANNIAN_LIVE_AI") != "1" {
+		t.Skip("opt-in real Flash proposal and confirmation boundary")
+	}
+	cfg, err := config.Load(config.EmbeddedDefaults())
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, m, now := setup(t)
+	token := login(t, a, m, "one@example.com")
+	m.messages = nil
+	*now = time.Date(2026, 10, 3, 20, 25, 37, 0, now.Location())
+	parsedAt := *now
+	a.parser = ai.New(cfg)
+	code, out := request(t, a, "POST", "/api/v1/ai/parse", token, map[string]string{"text": "等会儿提醒我搞卫生"})
+	if code != 200 {
+		t.Fatalf("proposal failed: %d %+v", code, out)
+	}
+	encoded, _ := json.Marshal(out)
+	var draft ai.Draft
+	if err := json.Unmarshal(encoded, &draft); err != nil {
+		t.Fatal(err)
+	}
+	next, ok := schedule.Next(draft.Rule, *now)
+	if !ok || len(draft.Warnings) == 0 {
+		t.Fatalf("expected proposal and explanation: %+v", draft)
+	}
+	*now = next.Add(time.Hour)
+	tickMinutes(t, a, m, 0)
+	var taskCount int
+	if err := a.db.QueryRow("SELECT COUNT(*) FROM tasks").Scan(&taskCount); err != nil {
+		t.Fatal(err)
+	}
+	if taskCount != 0 || len(m.messages) != 0 {
+		t.Fatalf("unconfirmed draft had side effects: tasks=%d mail=%d", taskCount, len(m.messages))
+	}
+	*now = parsedAt.Add(20 * time.Second)
+	code, out = request(t, a, "POST", "/api/v1/tasks", token, map[string]any{"title": draft.Title, "description": draft.Description, "rule": draft.Rule})
+	if code != 201 {
+		t.Fatalf("could not confirm proposal: %d %+v", code, out)
+	}
+	t.Logf("draft had no task/mail until confirmation; feedback=%v", draft.Warnings)
+}
 
 // Only the parser reaches a real service. Accounts, tasks and notifications use
 // a temporary database and fakeMailer; no server or SMTP connection is started.

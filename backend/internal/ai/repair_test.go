@@ -14,6 +14,49 @@ import (
 const repairInput = "十分钟之后提醒我收衣服"
 const validRepairedDraft = `{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":7},"warnings":["未指定间隔，安排每7分钟提醒直到完成，可在草稿中调整。"]}`
 
+func TestModelClarificationGetsOneChanceToProposeDraft(t *testing.T) {
+	const input = "等会儿提醒我搞卫生"
+	const refused = `{"error":"请补充具体提醒时间，例如10分钟后提醒我搞卫生"}`
+	const proposed = `{"title":"搞卫生","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T20:35:37+08:00","repeat_minutes":15},"warnings":["我先把等会儿安排为10分钟后，之后每15分钟提醒，做完就停；你看一下，确认后才会创建。"]}`
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		var p struct {
+			Messages []struct{ Role, Content string } `json:"messages"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+			t.Error(err)
+			return
+		}
+		content := refused
+		if calls == 2 {
+			content = proposed
+			if len(p.Messages) != 4 || p.Messages[1].Content != input || p.Messages[2].Content != refused || !strings.Contains(p.Messages[0].Content, "2026-10-03T20:25:37+08:00") {
+				t.Error("lost original intent, refusal or reference time during proposal")
+			}
+		}
+		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": content}}}})
+	}))
+	defer server.Close()
+	d, err := New(config.Config{DeepSeekAPIKey: "test", DeepSeekBaseURL: server.URL}).Parse(context.Background(), input, time.Date(2026, 10, 3, 12, 25, 37, 0, time.UTC))
+	if err != nil || calls != 2 || d.Title != "搞卫生" || d.Rule.RepeatMinutes != 15 || len(d.Warnings) != 1 {
+		t.Fatalf("vague time should get an AI proposal with assumptions: calls=%d draft=%+v err=%v", calls, d, err)
+	}
+}
+
+func TestRepeatedModelRefusalIsBounded(t *testing.T) {
+	calls := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": `{"error":"请补充具体提醒时间"}`}}}})
+	}))
+	defer server.Close()
+	d, err := New(config.Config{DeepSeekAPIKey: "test", DeepSeekBaseURL: server.URL}).Parse(context.Background(), "等会儿提醒我搞卫生", time.Now())
+	if calls != 2 || err == nil || d.Title != "" || strings.Contains(err.Error(), "补充具体提醒时间") {
+		t.Fatalf("must stop after one re-plan and report generation failure, not demand an exact time: calls=%d draft=%+v err=%v", calls, d, err)
+	}
+}
+
 func TestInvalidDraftIsRepairedByFlashWithOriginalContext(t *testing.T) {
 	for _, invalid := range []string{
 		`{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":0}}`,

@@ -51,14 +51,20 @@ func TestInvalidOrTruncatedModelOutputRejected(t *testing.T) {
 	}
 }
 
-func TestUnsupportedRequestReturnsUsefulMessage(t *testing.T) {
+func TestUnsupportedRequestGetsAnExplainedAlternative(t *testing.T) {
+	calls := 0
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": `{"error":"暂不支持按农历提醒，请改用公历日期"}`}}}})
+		calls++
+		content := `{"error":"暂不支持按农历提醒，请改用公历日期"}`
+		if calls == 2 {
+			content = `{"title":"确认农历提醒日期","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":60},"warnings":["暂不能按农历每月循环，我先建议10分钟后提醒你核对公历日期；这是单次待办，确认后才创建。"]}`
+		}
+		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": content}}}})
 	}))
 	defer s.Close()
-	_, err := New(config.Config{DeepSeekBaseURL: s.URL, DeepSeekAPIKey: "test"}).Parse(context.Background(), "农历每月初一", time.Now())
-	if err == nil || !strings.Contains(err.Error(), "农历") {
-		t.Fatal("unsupported rule not explained")
+	d, err := New(config.Config{DeepSeekBaseURL: s.URL, DeepSeekAPIKey: "test"}).Parse(context.Background(), "农历每月初一", time.Date(2026, 10, 3, 4, 0, 37, 0, time.UTC))
+	if err != nil || calls != 2 || len(d.Warnings) != 1 || !strings.Contains(d.Warnings[0], "农历") {
+		t.Fatalf("alternative must explain unsupported conditions: calls=%d draft=%+v err=%v", calls, d, err)
 	}
 }
 
