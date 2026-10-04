@@ -124,6 +124,23 @@ public final class GardenIconView extends View {
                 path.moveTo(19, 3); path.lineTo(19, 7); path.lineTo(15, 7);
                 canvas.drawPath(path, paint);
                 break;
+            case "lock":
+                rect.set(5,10,19,21);canvas.drawRoundRect(rect,2,2,paint);
+                path.moveTo(8,10);path.lineTo(8,7);path.cubicTo(8,1.5f,16,1.5f,16,7);path.lineTo(16,10);canvas.drawPath(path,paint);
+                canvas.drawCircle(12,15,1,paint);canvas.drawLine(12,16,12,18,paint);
+                break;
+            case "globe":
+                canvas.drawCircle(12,12,9,paint);rect.set(8,3,16,21);canvas.drawOval(rect,paint);
+                canvas.drawLine(3,12,21,12,paint);canvas.drawLine(5,7,19,7,paint);canvas.drawLine(5,17,19,17,paint);
+                break;
+            case "gear":
+                for(int i=0;i<24;i++){
+                    double angle=Math.PI*2*i/24;float radius=i%3==1?10:8;
+                    float x=12+(float)Math.cos(angle)*radius,y=12+(float)Math.sin(angle)*radius;
+                    if(i==0)path.moveTo(x,y);else path.lineTo(x,y);
+                }
+                path.close();canvas.drawPath(path,paint);canvas.drawCircle(12,12,3,paint);
+                break;
             case "clock":
                 canvas.drawCircle(12, 12, 8.5f, paint);
                 path.moveTo(12, 6.5f); path.lineTo(12, 12); path.lineTo(16, 14);

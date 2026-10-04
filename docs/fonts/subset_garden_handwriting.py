@@ -10,6 +10,7 @@ from fontTools.ttLib import TTFont
 CHARACTERS = (
     "花园里，已种下 株走进我的花园花园暂未更新，点此查看0123456789-"
     "小小的一件事也会长出美好的花让生活的每一件小事都被温柔记住念念"
+    "种下小小的种子收获更好的自己把小事种成美好的自己"
 )
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "android/app/src/main/res/font/garden_handwriting.ttf"
