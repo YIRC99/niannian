@@ -1,0 +1,10 @@
+Use case: illustration-story
+Asset type: original promotional illustration for a gentle reminder app, inserted into a cream-white social-media page.
+Primary request: A small reminder garden with one friendly, round seed assistant. The seed has a pale warm cream teardrop-shaped body, two simple dark brown oval eyes, a little smiling mouth, subtle peach cheeks, tiny feet, and a fresh two-leaf green sprout on its head. Beside it are a delicate envelope-shaped mailbox on a short post, a small analog clock with simple hands and NO numerals or marks, a little watering can, and several small clusters of tulips and daisies.
+Scene/backdrop: solid warm cream-white background, approximately #FFF9EE, with a small pale sage patch of garden below; no horizon, no room, no framed panel.
+Style/medium: polished 2D Japanese-inspired cute anime/cartoon illustration, clean thin softly brown outlines, flat pastel color fills, very restrained soft shading. Crisp, smooth, gentle.
+Composition/framing: landscape 3:2 composition. Objects and character arranged as one coherent scene concentrated in the bottom two-thirds, with generous calm negative space above and around the scene. All flowers, mailbox, clock, and watering can fully within frame. Make the character the clear focal point.
+Lighting/mood: gentle, reassuring, warm, quiet joy; a visual feeling of tending to small everyday things until they blossom.
+Color palette: cream white, soft fresh green, muted sage, gentle butter yellow, with small pale peach and blush accents.
+Text: none.
+Constraints: brand-new image; one seed character only. No letters, no numbers, no captions, no text, no logos, no watermark, no QR codes, no phone, no screen, no UI. No watercolor texture, no paper grain, no rough brushwork, no 3D rendering, no photorealism, no strong gradients.
