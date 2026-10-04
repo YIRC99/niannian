@@ -1,0 +1,16 @@
+2026-10-04 · 日历实现素材 · 内置 image_gen 生成
+
+所有素材仅承载插画，不包含按钮、真实任务、日期、统计或照片记录。
+输出目录：android/app/src/main/res/drawable-nodpi/
+
+calendar_empty_journal.png · transparent_background=true
+Create a single transparent PNG asset for a native Android Chinese cozy garden reminder app. A small closed sage-green hardcover journal with ivory page edges and a thin warm ochre bookmark lying at a gentle diagonal on a tiny sunlit patch of pale grass, to its left one charming fresh sprout with two leaves. A few loose leaves, delicate light golden ground accents. Clean 2D Japanese anime garden illustration, thin warm olive outlines, simple layered cel shading, fresh soft greens and buttery cream, bright peaceful sunny mood. Horizontal compact composition, all artwork concentrated centrally with clear padding, transparent background outside the small grassy patch. No text, letters, numbers, logos, border, UI, photography, realistic 3D, paper texture or watercolor wash. This is decorative empty-calendar artwork, not a user-grown plant.
+
+calendar_mail.png · transparent_background=true
+A single isolated decorative illustration asset for a cozy garden reminder Android app: a cream ivory closed envelope tilted slightly counterclockwise, with a tiny two-leaf sprout seal at the center, nestled among a few fresh sage green leaves and 3 small white daisies with butter-yellow centers. Thin warm olive and beige outlines, elegant clean 2D anime illustration, simple layered cel shading, soft sunny garden palette. Horizontal composition with generous transparent padding. No letters, no text, no icons, no UI, no border, no stamps, no paper texture, no watercolor texture, no photography, no 3D. True transparent background, crisp clean edges. Envelope remains the unmistakable main object.
+
+calendar_header.png · transparent_background=false
+参考输入：android/app/src/main/res/drawable-nodpi/garden_home_hero_v3.png
+Create a new wide 1536x640 horizontal calendar header illustration for the same Android app as reference. Recompose the reference sunny anime cottage garden into a wide panorama; keep matching clean 2D cel painted garden style, colors, ivory picket fence and little center-right garden gate, white and yellow daisies, pink flowers, small orange-and-white cat sleeping bottom right. Composition essential: top left 45 percent of canvas is simple light blue sky with a couple faint white clouds so native dark title text will be overlaid there later; fence, gate, blossoms and cat arranged densely in the lower half, no tall building occupying right edge, leaves hanging sparsely from upper right. Keep full cat visible and gate visible within the wide image. Bottom 5 percent fades into solid warm ivory #FFFCF5. No text, no UI, no buttons, no numbers, no watermark, no signs. It is an environmental background, no user task plants.
+
+实际输出尺寸：书本、信封均为 1536×1024 RGBA；庭院横幅为 1942×809 RGB。原图直接内置，不修改首页素材。书本与信封的角落 alpha=0，保留生成透明通道；运行时分别通过小素材缓存和场景缓存采样。

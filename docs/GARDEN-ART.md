@@ -72,3 +72,9 @@ Create one polished 2D ANIME CARTOON game inventory icon for a cozy growth-garde
 ### anime_seed
 
 Create one polished 2D ANIME CARTOON game inventory icon for a cozy growth-garden Android app. Strictly flat Japanese anime / kawaii game art, clean confident dark sage outlines, simple flat pastel colors with just 1 or 2 cel-shaded tones, round friendly silhouette, chibi proportions. NO realism, NO gouache, NO watercolor, NO paper grain, NO photorealistic texture, NO 3D render, NO detailed natural veins. Looks like an asset in an adorable anime farming game. Pastel sage green, buttery yellow, peach brown. Square canvas, single centered subject filling about 75 percent of frame, full silhouette visible, true transparent background. No text, numbers, UI, border, watermark or checkerboard. A single plump peach-colored SEED nestled in a small soft brown oval mound of soil, with a tiny heart-shaped leaf marking on the seed. A simple planted seed icon, not yet sprouted. Cute anime farming-game shape.
+# 日历素材补充 · 2026-10-04
+
+- `calendar_header.png`：日历庭院横幅，沿用首页庭院画风，单独生成横向构图，保留小门、花丛与睡猫，原首页图片未修改。
+- `calendar_empty_journal.png`：空日历的书本与幼芽，透明 PNG。
+- `calendar_mail.png`：邮件记录的花叶信封，透明 PNG。
+- 均位于 `android/app/src/main/res/drawable-nodpi/`，使用内置 image_gen 生成，完整提示词见 `UI设计/prompts/calendar-implementation-assets.txt`。运行时沿用采样缓存，插画不表示真实完成记录或成长值；照片仍只读取服务端附件。

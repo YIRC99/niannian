@@ -62,7 +62,7 @@ public class MainActivity extends Activity {
     private YearMonth calendarMonth = YearMonth.now();
     private int recordPage = 0, plannedTaskRequest = 0;
     private String detailBack = "home", photoBack = "record", photoId = "", photoTitle = "";
-    private LinearLayout calendarGrid, calendarRecords;
+    private LinearLayout calendarGrid, calendarRecords, calendarFeedback;
     private TextView calendarCaption;
     private Button calendarRefresh;
     private JSONObject gardenData;
@@ -190,17 +190,17 @@ public class MainActivity extends Activity {
             return insets;
         });
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setClipToPadding(false); scroll.setVerticalScrollBarEnabled(false);
-        if(screen.equals("editor")){
+        if(screen.equals("editor")||screen.equals("record")||screen.equals("photo")){
             FrameLayout page=new FrameLayout(this);root.addView(page,new LinearLayout.LayoutParams(-1,0,1));
             ImageView leaves=new ImageView(this);leaves.setImageBitmap(GardenArtCache.load(getResources(),R.drawable.sowing_corner_leaves));leaves.setScaleType(ImageView.ScaleType.FIT_END);leaves.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             page.addView(leaves,new FrameLayout.LayoutParams(dp(160),dp(108),Gravity.TOP|Gravity.END));page.addView(scroll,new FrameLayout.LayoutParams(-1,-1));
         }else root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         body = column(); body.setPadding(dp(16), dp(12), dp(16), dp(20));
         if(screen.equals("editor"))body.setPadding(dp(16),dp(4),dp(16),0);
-        if((screen.equals("home")&&!session.token.isEmpty())||screen.equals("garden"))body.setPadding(0,0,0,0); scroll.addView(body, new ScrollView.LayoutParams(-1, -2));
+        if((screen.equals("home")&&!session.token.isEmpty())||screen.equals("garden")||screen.equals("history"))body.setPadding(0,0,0,0); scroll.addView(body, new ScrollView.LayoutParams(-1, -2));
         gardenContent=null; gardenPreview=null; gardenSelection=null;
         if (!Arrays.asList("home", "garden", "history", "settings", "login", "server").contains(screen)) {
-            if(screen.equals("editor")){
+            if(screen.equals("editor")||screen.equals("record")||screen.equals("photo")){
                 LinearLayout back=row();back.setMinimumHeight(dp(48));back.addView(new GardenIconView(this,"back",INK),new LinearLayout.LayoutParams(dp(20),dp(20)));gapHorizontal(back,5);back.addView(text("返回",14,INK,false));back.setContentDescription("返回");back.setFocusable(true);back.setOnClickListener(v->onBackPressed());body.addView(back,new LinearLayout.LayoutParams(dp(80),dp(48)));
             }else{
                 TextView back = text("‹  返回", 15, BLUE, true); back.setMinHeight(dp(48)); back.setGravity(Gravity.CENTER_VERTICAL); back.setOnClickListener(v -> onBackPressed()); body.addView(back);
@@ -969,14 +969,64 @@ public class MainActivity extends Activity {
         if(out.length()>10*1024*1024)throw new IOException("照片太大，请换一张小一点的图片");return out;
     }
     private void renderHistory(){
-        LinearLayout heading=row();heading.addView(text("日历安排",22,INK,true),new LinearLayout.LayoutParams(0,-2,1));calendarRefresh=smallButton("刷新");heading.addView(calendarRefresh);body.addView(heading);gap(body,10);
-        LinearLayout controls=row();Button previous=smallButton("‹");previous.setContentDescription("上个月");Button next=smallButton("›");next.setContentDescription("下个月");Button today=smallButton("今天");
-        controls.addView(previous,new LinearLayout.LayoutParams(dp(48),dp(48)));calendarCaption=text("",17,INK,true);calendarCaption.setGravity(Gravity.CENTER);controls.addView(calendarCaption,new LinearLayout.LayoutParams(0,dp(48),1));controls.addView(next,new LinearLayout.LayoutParams(dp(48),dp(48)));gapHorizontal(controls,4);controls.addView(today);body.addView(controls);
-        calendarGrid=column();body.addView(calendarGrid);gap(body,6);
-        LinearLayout legendTop=row(),legendBottom=row();legendTop.addView(text("● 待提醒 / 已提醒",12,INFO,false),new LinearLayout.LayoutParams(0,-2,1));legendTop.addView(text("● 已完成",12,GREEN,false),new LinearLayout.LayoutParams(0,-2,1));legendBottom.addView(text("● 未完成",12,YELLOW,false),new LinearLayout.LayoutParams(0,-2,1));legendBottom.addView(text("● 已过期",12,RED,false),new LinearLayout.LayoutParams(0,-2,1));body.addView(legendTop);gap(body,5);body.addView(legendBottom);gap(body,8);body.addView(text("到点未完成为黄色，周期结束仍未完成为红色。",11,MUTED,false));gap(body,4);body.addView(text("按手机时区显示 · "+ZoneId.systemDefault().getId(),11,MUTED,false));gap(body,14);
-        calendarRecords=column();body.addView(calendarRecords);
-        previous.setOnClickListener(v->changeMonth(-1));next.setOnClickListener(v->changeMonth(1));today.setOnClickListener(v->{plannedTaskRequest++;YearMonth previousMonth=calendarMonth;calendarDate=LocalDate.now();calendarMonth=YearMonth.from(calendarDate);recordPage=0;if(!calendarMonth.equals(previousMonth))loadCalendar(null);else drawCalendar();});
+        FrameLayout hero=new FrameLayout(this);
+        hero.addView(scenery(R.drawable.calendar_header),new FrameLayout.LayoutParams(-1,-1));
+        View fade=new View(this);fade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,new int[]{0x00fffcf5,BG}));
+        hero.addView(fade,new FrameLayout.LayoutParams(-1,dp(20),Gravity.BOTTOM));
+        LinearLayout heading=row(),titles=column();heading.setGravity(Gravity.TOP);
+        TextView brand=homeTitle("念念",30);brand.setShadowLayer(dp(1),0,dp(1),0xccfffdf8);titles.addView(brand);
+        gap(titles,5);titles.addView(text("日历安排",14,HOME_TITLE,false));
+        heading.addView(titles,new LinearLayout.LayoutParams(0,-2,1));
+        calendarRefresh=iconButton("refresh","刷新日历");
+        calendarRefresh.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),shape(0xeefffdf8,24),null));
+        heading.addView(calendarRefresh);
+        FrameLayout.LayoutParams titleLp=new FrameLayout.LayoutParams(-1,-2,Gravity.TOP);
+        titleLp.setMargins(dp(22),dp(14),dp(16),0);hero.addView(heading,titleLp);
+        int height=Math.max(154,Math.min(192,Math.round(getResources().getConfiguration().screenWidthDp*.45f)));
+        body.addView(hero,new LinearLayout.LayoutParams(-1,dp(height)));
+        LinearLayout content=column();content.setPadding(dp(16),0,dp(16),dp(16));body.addView(content);
+        calendarFeedback=column();content.addView(calendarFeedback);
+        LinearLayout controls=row(),month=row();month.setBackground(shape(0xfff2f3ed,24));
+        Button previous=iconButton("back","上个月"),next=iconButton("chevron_right","下个月");
+        month.addView(previous);calendarCaption=text("",16,HOME_TITLE,true);calendarCaption.setGravity(Gravity.CENTER);
+        month.addView(calendarCaption,new LinearLayout.LayoutParams(0,dp(48),1));month.addView(next);
+        controls.addView(month,new LinearLayout.LayoutParams(0,-2,1));gapHorizontal(controls,12);
+        Button today=smallButton("今天");today.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),shape(0xffdff0df,24),null));
+        controls.addView(today,new LinearLayout.LayoutParams(dp(62),dp(48)));content.addView(controls);gap(content,8);
+        calendarGrid=column();content.addView(calendarGrid);gap(content,6);
+        LinearLayout legend=row();String[] labels={"待提醒","已完成","未完成","已过期"};
+        int[] colors={0xff3984ef,0xff5da977,0xffffad32,0xffeb6571};
+        for(int i=0;i<labels.length;i++){
+            LinearLayout item=row();item.setGravity(Gravity.CENTER);
+            View dot=new View(this);dot.setBackground(shape(colors[i],5));item.addView(dot,new LinearLayout.LayoutParams(dp(8),dp(8)));gapHorizontal(item,5);
+            item.addView(text(labels[i],11,MUTED,false));legend.addView(item,new LinearLayout.LayoutParams(0,-2,1));
+        }
+        legend.setPadding(0,dp(8),0,dp(8));legend.setMinimumHeight(dp(48));legend.setFocusable(true);
+        legend.setContentDescription("日历状态说明，点击查看");legend.setBackground(new RippleDrawable(ColorStateList.valueOf(0x15527a58),null,shape(PAPER,8)));
+        legend.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("日历里的颜色")
+                .setMessage("蓝色：待提醒，或仅通知类的已提醒。\n绿色：本期已完成。\n黄色：到点后还未完成。\n红色：本期截止后仍未完成。\n\n邮件是否发送成功，在提醒记录中单独显示。\n时间按手机时区显示："+ZoneId.systemDefault().getId())
+                .setPositiveButton("知道了",null).show());
+        content.addView(legend);calendarDivider(content);gap(content,12);
+        calendarRecords=column();content.addView(calendarRecords);
+        previous.setOnClickListener(v->changeMonth(-1));next.setOnClickListener(v->changeMonth(1));
+        today.setOnClickListener(v->{plannedTaskRequest++;YearMonth previousMonth=calendarMonth;calendarDate=LocalDate.now();calendarMonth=YearMonth.from(calendarDate);recordPage=0;if(!calendarMonth.equals(previousMonth))loadCalendar(null);else drawCalendar();});
         calendarRefresh.setOnClickListener(v->loadCalendar(null));drawCalendar();loadCalendar(null);
+    }
+    private void calendarDivider(LinearLayout parent){
+        View line=new View(this);line.setBackgroundColor(0xffe9ece3);parent.addView(line,new LinearLayout.LayoutParams(-1,dp(1)));
+    }
+    private void drawCalendarFeedback(){
+        calendarFeedback.removeAllViews();
+        if(calendarNotice.isEmpty()&&!calendarLoading)return;
+        LinearLayout banner=row();banner.setPadding(dp(10),dp(4),dp(8),dp(4));
+        boolean failed=!calendarNotice.isEmpty();
+        banner.setBackground(shape(failed?0xffffedbd:0xffedf2e8,12));
+        banner.addView(new GardenIconView(this,failed?"info":"clock",failed?YELLOW:BLUE),new LinearLayout.LayoutParams(dp(20),dp(20)));gapHorizontal(banner,8);
+        String message=failed?(calendarLoaded()?"没有刷新成功，显示上次读取的安排":calendarNotice):(calendarLoaded()?"正在更新这个月的安排…":"正在读取这个月的安排…");
+        TextView label=text(message,12,failed?YELLOW:MUTED,false);label.setMinHeight(dp(40));label.setGravity(Gravity.CENTER_VERTICAL);
+        banner.addView(label,new LinearLayout.LayoutParams(0,-2,1));
+        if(failed){Button retry=smallButton("重试");retry.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),shape(PAPER,24),null));banner.addView(retry);retry.setOnClickListener(v->loadCalendar(null));}
+        calendarFeedback.addView(banner);gap(calendarFeedback,10);
     }
     private void changeMonth(int delta){calendarMonth=calendarMonth.plusMonths(delta);calendarDate=calendarMonth.atDay(Math.min(calendarDate.getDayOfMonth(),calendarMonth.lengthOfMonth()));recordPage=0;loadCalendar(null);}
     private String calendarKey(){return calendarMonth+"|"+ZoneId.systemDefault().getId();}
@@ -1000,45 +1050,239 @@ public class MainActivity extends Activity {
         for(int i=0;i<calendarData.length();i++){JSONObject raw=calendarData.optJSONObject(i);if(raw==null)continue;JSONObject entry=copy(raw);try{entry.put("_type",raw.optString("type"));entry.put("_at",raw.optString("at"));}catch(JSONException ignored){}result.add(entry);}return result;
     }
     private void drawCalendar(){
-        if(calendarGrid==null||calendarRecords==null)return;calendarCaption.setText(calendarMonth.getYear()+" 年 "+calendarMonth.getMonthValue()+" 月");calendarGrid.removeAllViews();
-        Map<LocalDate,int[]> marks=new HashMap<>();List<JSONObject> chosen=new ArrayList<>();int invalid=0;ZoneId zone=ZoneId.systemDefault();
-        for(JSONObject entry:calendarEntries()){LocalDate day=RecordDates.localDate(entry.optString("_at"),zone);if(day==null){invalid++;continue;}int[] counts=marks.computeIfAbsent(day,k->new int[4]);counts[calendarStateIndex(entry)]++;if(day.equals(calendarDate))chosen.add(entry);}
-        LinearLayout weekdays=row();for(String day:new String[]{"一","二","三","四","五","六","日"}){TextView label=text(day,12,MUTED,false);label.setGravity(Gravity.CENTER);weekdays.addView(label,new LinearLayout.LayoutParams(0,dp(32),1));}calendarGrid.addView(weekdays);
-        int blanks=RecordDates.mondayLeadingBlanks(calendarMonth),days=RecordDates.daysInMonth(calendarMonth),count=((blanks+days+6)/7)*7;LinearLayout week=null;
-        for(int cell=0;cell<count;cell++){if(cell%7==0){week=row();calendarGrid.addView(week);}int day=cell-blanks+1;LinearLayout dateCell=column();dateCell.setGravity(Gravity.CENTER);LinearLayout.LayoutParams cellSize=new LinearLayout.LayoutParams(0,dp(48),1);cellSize.setMargins(dp(1),dp(2),dp(1),dp(2));week.addView(dateCell,cellSize);if(day<1||day>days)continue;
-            LocalDate date=calendarMonth.atDay(day);boolean chosenDate=date.equals(calendarDate);int[] counts=marks.getOrDefault(date,new int[4]);GradientDrawable tile=shape(chosenDate?PALE:BG,12);if(chosenDate||date.equals(LocalDate.now()))tile.setStroke(dp(chosenDate?2:1),BLUE);dateCell.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),tile,null));TextView dayText=text(String.valueOf(day),14,chosenDate?BLUE:INK,chosenDate);dayText.setGravity(Gravity.CENTER);dateCell.addView(dayText);LinearLayout dots=row();dots.setGravity(Gravity.CENTER);int[] colors={INFO,GREEN,YELLOW,RED};for(int state=0;state<4;state++)if(counts[state]>0){if(dots.getChildCount()>0)gapHorizontal(dots,3);dots.addView(text("●",8,colors[state],false));}dateCell.addView(dots,new LinearLayout.LayoutParams(-1,dp(12)));dateCell.setContentDescription(date+"，待提醒或已提醒 "+counts[0]+" 条，已完成 "+counts[1]+" 条，未完成 "+counts[2]+" 条，已过期 "+counts[3]+" 条"+(chosenDate?"，已选择":""));dateCell.setSelected(chosenDate);dateCell.setOnClickListener(v->{plannedTaskRequest++;calendarDate=date;recordPage=0;drawCalendar();});
+        if(calendarGrid==null||calendarRecords==null)return;
+        calendarCaption.setText(calendarMonth.getYear()+" 年 "+calendarMonth.getMonthValue()+" 月");
+        drawCalendarFeedback();calendarGrid.removeAllViews();
+        ZoneId zone=ZoneId.systemDefault();Map<LocalDate,int[]> marks=new HashMap<>();List<JSONObject> chosen=new ArrayList<>();int invalid=0;
+        for(JSONObject entry:calendarEntries()){
+            LocalDate day=RecordDates.localDate(entry.optString("_at"),zone);
+            if(day==null){invalid++;continue;}
+            int[] counts=marks.computeIfAbsent(day,k->new int[4]);counts[calendarStateIndex(entry)]++;
+            if(day.equals(calendarDate))chosen.add(entry);
         }
-        chosen.sort((a,b)->{Instant first=RecordDates.parseInstant(a.optString("_at")),second=RecordDates.parseInstant(b.optString("_at"));int order=second.compareTo(first);return order!=0?order:a.optString("id").compareTo(b.optString("id"));});drawCalendarRecords(chosen,invalid);
+        LinearLayout weekdays=row();
+        for(String day:new String[]{"一","二","三","四","五","六","日"}){
+            TextView label=text(day,12,HOME_TITLE,false);label.setGravity(Gravity.CENTER);
+            weekdays.addView(label,new LinearLayout.LayoutParams(0,dp(30),1));
+        }
+        calendarGrid.addView(weekdays);
+        int blanks=RecordDates.mondayLeadingBlanks(calendarMonth),days=RecordDates.daysInMonth(calendarMonth),count=((blanks+days+6)/7)*7;
+        LinearLayout week=null;
+        for(int cell=0;cell<count;cell++){
+            if(cell%7==0){week=row();calendarGrid.addView(week);}
+            int day=cell-blanks+1;
+            FrameLayout hit=new FrameLayout(this);week.addView(hit,new LinearLayout.LayoutParams(0,dp(48),1));
+            if(day<1||day>days)continue;
+            LocalDate date=calendarMonth.atDay(day);boolean chosenDate=date.equals(calendarDate),isToday=date.equals(LocalDate.now());
+            int[] counts=marks.getOrDefault(date,new int[4]);
+            LinearLayout tile=column();tile.setGravity(Gravity.CENTER);
+            GradientDrawable surface=shape(chosenDate?0xff65946a:Color.TRANSPARENT,13);
+            if(isToday&&!chosenDate)surface.setStroke(dp(1),0xffa9c4a0);
+            tile.setBackground(surface);hit.addView(tile,new FrameLayout.LayoutParams(dp(38),dp(40),Gravity.CENTER));
+            TextView number=text(String.valueOf(day),14,chosenDate?PAPER:INK,chosenDate);number.setGravity(Gravity.CENTER);tile.addView(number);
+            LinearLayout dots=row();dots.setGravity(Gravity.CENTER);
+            int[] colors={0xff3984ef,0xff5da977,0xffffad32,0xffeb6571};
+            for(int state=0;state<4;state++)if(counts[state]>0){
+                if(dots.getChildCount()>0)gapHorizontal(dots,2);
+                View dot=new View(this);dot.setBackground(shape(colors[state],3));dots.addView(dot,new LinearLayout.LayoutParams(dp(5),dp(5)));
+            }
+            tile.addView(dots,new LinearLayout.LayoutParams(-1,dp(8)));
+            hit.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),null,shape(PAPER,13)));
+            hit.setContentDescription(date+"，待提醒或已提醒 "+counts[0]+" 条，已完成 "+counts[1]+" 条，未完成 "+counts[2]+" 条，已过期 "+counts[3]+" 条"+(isToday?"，今天":"")+(chosenDate?"，已选择":""));
+            hit.setSelected(chosenDate);hit.setFocusable(true);
+            hit.setOnClickListener(v->{plannedTaskRequest++;calendarDate=date;recordPage=0;drawCalendar();});
+        }
+        chosen.sort((a,b)->{Instant first=RecordDates.parseInstant(a.optString("_at")),second=RecordDates.parseInstant(b.optString("_at"));int order=second.compareTo(first);return order!=0?order:a.optString("id").compareTo(b.optString("id"));});
+        drawCalendarRecords(chosen,invalid);
     }
     private void drawCalendarRecords(List<JSONObject> entries,int invalid){
-        calendarRecords.removeAllViews();LinearLayout heading=row();heading.addView(text(calendarDate.format(DateTimeFormatter.ofPattern("M 月 d 日 EEEE",Locale.CHINA)),15,INK,true),new LinearLayout.LayoutParams(0,-2,1));heading.addView(text(entries.size()+" 条",12,MUTED,false));calendarRecords.addView(heading);gap(calendarRecords,10);
-        if(calendarLoading)note(calendarRecords,calendarLoaded()?"正在更新这个月的安排…":"正在读取这个月的安排…");
-        if(!calendarNotice.isEmpty()){TextView notice=text(calendarNotice,13,RED,false);calendarRecords.addView(notice);gap(calendarRecords,8);if(calendarLoaded())note(calendarRecords,"下方是上次读取的安排，状态可能已变化。");}
+        calendarRecords.removeAllViews();
+        boolean stale=calendarLoaded()&&!calendarNotice.isEmpty();
+        LinearLayout heading=row();
+        heading.addView(text(calendarDate.format(DateTimeFormatter.ofPattern("M月d日 EEEE",Locale.CHINA)),17,HOME_TITLE,true),new LinearLayout.LayoutParams(0,-2,1));
+        heading.addView(text(stale?"上次读取":calendarLoaded()?entries.size()+" 条":"",12,MUTED,false));
+        calendarRecords.addView(heading);gap(calendarRecords,10);
         if(calendarTruncated)note(calendarRecords,"这个月的安排较多，目前只显示部分内容。");
         if(invalid>0)note(calendarRecords,invalid+" 条记录的时间无法识别，未归入日历。");
-        if(entries.isEmpty()){if(calendarLoading||!calendarNotice.isEmpty())return;TextView empty=text(calendarLoaded()?calendarTruncated?"当前结果中没有这一天的安排，整月数据尚未显示完整。":"这一天没有提醒安排或完成记录。":"点击刷新，读取这个月的安排。",13,MUTED,false);empty.setPadding(0,dp(16),0,dp(24));calendarRecords.addView(empty);return;}
-        int pageCount=(entries.size()+19)/20;recordPage=Math.max(0,Math.min(recordPage,pageCount-1));
-        for(int i=recordPage*20;i<Math.min(entries.size(),(recordPage+1)*20);i++){JSONObject entry=entries.get(i);boolean reminder=entry.optString("_type").equals("notification");LinearLayout card=card(calendarRecords),top=row();TextView time=text(RecordDates.localTime(entry.optString("_at"),ZoneId.systemDefault()),12,MUTED,true);top.addView(time,new LinearLayout.LayoutParams(dp(52),-2));TextView title=text(entry.optString("task_title","已归档的提醒"),15,INK,true);title.setMaxLines(2);title.setEllipsize(TextUtils.TruncateAt.END);top.addView(title,new LinearLayout.LayoutParams(0,-2,1));gapHorizontal(top,6);top.addView(text("›",20,MUTED,false));card.addView(top);gap(card,5);
-            boolean planned=entry.optString("_type").equals("planned");String summary="● "+calendarStateLabel(entry)+(planned?" · 计划安排":reminder?" · 提醒记录":" · 完成记录");TextView subtitle=text(summary,12,calendarStateColor(entry),false);card.addView(subtitle);
-            if(reminder){gap(card,3);card.addView(text(notificationLabel(entry),12,MUTED,false));}
-            if(!planned&&!reminder){String message=entry.optString("text");JSONArray photos=entry.optJSONArray("media_ids");String details=message.replace('\n',' ');if(photos!=null&&photos.length()>0)details+=(details.isEmpty()?"":" · ")+photos.length()+" 张照片";if(!details.isEmpty()){TextView note=text(details,12,MUTED,false);note.setMaxLines(2);note.setEllipsize(TextUtils.TruncateAt.END);gap(card,3);card.addView(note);}}
-            if(planned){card.setOnClickListener(v->{String taskId=entry.optString("task_id"),monthKey=calendarKey();LocalDate day=calendarDate;int request=++plannedTaskRequest;card.setEnabled(false);run(null,a->a.json("GET","/api/v1/tasks/"+taskId,null),result->{card.setEnabled(true);if(request!=plannedTaskRequest||!monthKey.equals(calendarKey())||!day.equals(calendarDate))return;selected=result;detailBack="history";navigate("detail");},failure->{card.setEnabled(true);if(request!=plannedTaskRequest||!monthKey.equals(calendarKey())||!day.equals(calendarDate))return;showError(failure.getMessage()==null?"无法读取这条提醒，请重试":failure.getMessage());});});}else card.setOnClickListener(v->{selectedRecord=entry;recordBack="history";navigate("record");});
+        if(entries.isEmpty()){
+            if(calendarLoading&&!calendarLoaded()){calendarSkeleton();return;}
+            if(!calendarNotice.isEmpty()){
+                if(stale)note(calendarRecords,"上次读取时，这一天没有记录，当前状态可能已变化。");
+                return;
+            }
+            if(calendarLoaded()){
+                gap(calendarRecords,20);calendarArt(calendarRecords,R.drawable.calendar_empty_journal,142);
+                gap(calendarRecords,12);
+                TextView empty=text(calendarTruncated?"当前结果中没有这一天的安排，整月数据尚未显示完整。":"这一天没有提醒安排或完成记录",13,MUTED,false);
+                empty.setGravity(Gravity.CENTER);calendarRecords.addView(empty);gap(calendarRecords,24);
+            }
+            return;
         }
-        if(pageCount>1){LinearLayout paging=row();Button previous=smallButton("上一页"),next=smallButton("下一页");previous.setEnabled(recordPage>0);next.setEnabled(recordPage+1<pageCount);paging.addView(previous);TextView count=text((recordPage+1)+" / "+pageCount,12,MUTED,false);count.setGravity(Gravity.CENTER);paging.addView(count,new LinearLayout.LayoutParams(0,-2,1));paging.addView(next);calendarRecords.addView(paging);previous.setOnClickListener(v->{recordPage--;drawCalendarRecords(entries,invalid);});next.setOnClickListener(v->{recordPage++;drawCalendarRecords(entries,invalid);});}
+        int pageCount=(entries.size()+19)/20;recordPage=Math.max(0,Math.min(recordPage,pageCount-1));
+        for(int i=recordPage*20;i<Math.min(entries.size(),(recordPage+1)*20);i++){
+            JSONObject entry=entries.get(i);boolean reminder=entry.optString("_type").equals("notification"),planned=entry.optString("_type").equals("planned");
+            LinearLayout card=column();card.setPadding(dp(10),dp(10),dp(10),dp(10));card.setMinimumHeight(dp(64));
+            GradientDrawable surface=shape(PAPER,12);surface.setStroke(dp(1),0xffe8ebe2);
+            card.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),surface,null));
+            LinearLayout.LayoutParams cardLp=new LinearLayout.LayoutParams(-1,-2);cardLp.bottomMargin=dp(7);calendarRecords.addView(card,cardLp);
+            LinearLayout line=row();line.addView(art(calendarRecordArt(entry),32));gapHorizontal(line,10);
+            LinearLayout words=column(),top=row();
+            TextView time=text(RecordDates.localTime(entry.optString("_at"),ZoneId.systemDefault()),13,INK,false);
+            top.addView(time,new LinearLayout.LayoutParams(dp(48),-2));
+            TextView title=text(entry.optString("task_title","已归档的提醒"),15,INK,true);title.setMaxLines(2);title.setEllipsize(TextUtils.TruncateAt.END);
+            top.addView(title,new LinearLayout.LayoutParams(0,-2,1));words.addView(top);gap(words,5);
+            String summary=calendarStateLabel(entry)+(planned?" · 计划安排":reminder?" · 提醒记录":" · 完成记录");
+            words.addView(text(summary,11,calendarStateColor(entry),false));
+            if(reminder&&!entry.optString("status").equals("sent")){
+                gap(words,3);words.addView(text(notificationLabel(entry),11,entry.optString("status").equals("failed")?RED:MUTED,false));
+            }
+            if(!planned&&!reminder){
+                String message=entry.optString("text").replace('\n',' ');JSONArray photos=entry.optJSONArray("media_ids");
+                if(photos!=null&&photos.length()>0)message+=(message.isEmpty()?"":" · ")+photos.length()+" 张照片";
+                if(!message.isEmpty()){TextView preview=text(message,11,MUTED,false);preview.setMaxLines(1);preview.setEllipsize(TextUtils.TruncateAt.END);gap(words,4);words.addView(preview);}
+            }
+            line.addView(words,new LinearLayout.LayoutParams(0,-2,1));gapHorizontal(line,6);
+            line.addView(new GardenIconView(this,"chevron_right",INK),new LinearLayout.LayoutParams(dp(16),dp(16)));card.addView(line);card.setFocusable(true);
+            if(planned){
+                card.setOnClickListener(v->{String taskId=entry.optString("task_id"),monthKey=calendarKey();LocalDate day=calendarDate;int request=++plannedTaskRequest;card.setEnabled(false);
+                    run(null,a->a.json("GET","/api/v1/tasks/"+taskId,null),result->{card.setEnabled(true);if(request!=plannedTaskRequest||!monthKey.equals(calendarKey())||!day.equals(calendarDate))return;selected=result;detailBack="history";navigate("detail");},
+                        failure->{card.setEnabled(true);if(request!=plannedTaskRequest||!monthKey.equals(calendarKey())||!day.equals(calendarDate))return;showError(failure.getMessage()==null?"无法读取这条提醒，请重试":failure.getMessage());});
+                });
+            }else card.setOnClickListener(v->{selectedRecord=entry;recordBack="history";navigate("record");});
+        }
+        if(stale){gap(calendarRecords,8);note(calendarRecords,"上次读取的状态可能已变化。");}
+        if(pageCount>1){
+            TextView limit=text("每页最多 20 条",11,MUTED,false);limit.setGravity(Gravity.CENTER);calendarRecords.addView(limit);gap(calendarRecords,4);
+            LinearLayout paging=row();Button previous=smallButton("‹ 上一页"),next=smallButton("下一页 ›");
+            previous.setEnabled(recordPage>0);next.setEnabled(recordPage+1<pageCount);previous.setAlpha(recordPage>0?1f:.4f);next.setAlpha(recordPage+1<pageCount?1f:.4f);
+            paging.addView(previous);TextView count=text((recordPage+1)+" / "+pageCount,14,HOME_TITLE,false);count.setGravity(Gravity.CENTER);
+            paging.addView(count,new LinearLayout.LayoutParams(0,-2,1));paging.addView(next);calendarRecords.addView(paging);
+            previous.setOnClickListener(v->{recordPage--;drawCalendarRecords(entries,invalid);calendarRecords.requestRectangleOnScreen(new Rect(0,0,calendarRecords.getWidth(),dp(90)),false);});
+            next.setOnClickListener(v->{recordPage++;drawCalendarRecords(entries,invalid);calendarRecords.requestRectangleOnScreen(new Rect(0,0,calendarRecords.getWidth(),dp(90)),false);});
+        }else{
+            gap(calendarRecords,14);TextView hint=text("点击安排或记录，回看每一件小事",11,MUTED,false);hint.setGravity(Gravity.CENTER);calendarRecords.addView(hint);
+        }
+    }
+    // Record artwork is an identity decoration, never an inferred growth stage.
+    private int calendarRecordArt(JSONObject entry){
+        return entry.optString("_type").equals("notification")?R.drawable.calendar_mail:GardenFlowers.resourceFor(entry.optString("task_id"));
+    }
+    private void calendarArt(LinearLayout parent,int resource,int height){
+        ImageView image=art(resource,height);parent.addView(image,new LinearLayout.LayoutParams(-1,dp(height)));
+    }
+    private void calendarSkeleton(){
+        for(int i=0;i<3;i++){
+            LinearLayout row=row();row.setPadding(dp(12),dp(14),dp(12),dp(14));row.setBackground(shape(0xfff1f2ec,12));
+            View icon=new View(this);icon.setBackground(shape(0xffe2e7dc,16));row.addView(icon,new LinearLayout.LayoutParams(dp(32),dp(32)));gapHorizontal(row,12);
+            LinearLayout bars=column();View title=new View(this);title.setBackground(shape(0xffe2e7dc,5));bars.addView(title,new LinearLayout.LayoutParams(dp(108),dp(12)));gap(bars,9);
+            View subtitle=new View(this);subtitle.setBackground(shape(0xffe7eadf,4));bars.addView(subtitle,new LinearLayout.LayoutParams(dp(156),dp(8)));row.addView(bars);
+            row.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
+            LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.bottomMargin=dp(8);calendarRecords.addView(row,lp);
+        }
     }
     private int calendarStateIndex(JSONObject entry){switch(entry.optString("state")){case "completed":return 1;case "pending":return 2;case "expired":return 3;default:return 0;}}
     private int calendarStateColor(JSONObject entry){return new int[]{INFO,GREEN,YELLOW,RED}[calendarStateIndex(entry)];}
     private String calendarStateLabel(JSONObject entry){switch(entry.optString("state")){case "completed":return "已完成";case "pending":return "未完成";case "expired":return "已过期";case "notified":return "已提醒";default:return "待提醒";}}
     private String notificationLabel(JSONObject item){switch(item.optString("status")){case "sent":return "邮件已发送";case "failed":return "邮件发送失败";case "pending":case "sending":return "邮件等待发送";default:return "邮件状态："+item.optString("status","未知");}}
     private void renderRecord(){
-        boolean reminder=selectedRecord.optString("_type").equals("notification");header(reminder?"提醒记录":"完成记录",selectedRecord.optString("task_title","提醒详情"),formatFull(selectedRecord.optString("_at")));
-        if(selectedRecord.has("state")){body.addView(text("● "+calendarStateLabel(selectedRecord),13,calendarStateColor(selectedRecord),true));gap(body,12);}
-        if(reminder){LinearLayout info=card(body);info.addView(text(notificationLabel(selectedRecord),15,selectedRecord.optString("status").equals("failed")?RED:BLUE,true));gap(info,8);info.addView(text("计划提醒："+formatFull(selectedRecord.optString("scheduled_at")),13,MUTED,false));if(!selectedRecord.optString("sent_at").isEmpty()){gap(info,5);info.addView(text("实际发送："+formatFull(selectedRecord.optString("sent_at")),13,MUTED,false));}if(!selectedRecord.optString("error").isEmpty()){gap(info,8);info.addView(text(selectedRecord.optString("error"),13,RED,false));}if(selectedRecord.optString("status").equals("sent")){gap(info,8);info.addView(text("服务器已发出邮件，收件情况请以邮箱为准。",12,MUTED,false));}}
-        else {String message=selectedRecord.optString("text");if(!message.isEmpty()){TextView note=text(message,14,INK,false);note.setTextIsSelectable(true);body.addView(note);gap(body,14);}else note(body,"这次完成没有填写文字备注。");JSONArray photos=selectedRecord.optJSONArray("media_ids");if(photos!=null)for(int i=0;i<photos.length();i++){String id=photos.optString(i);ImageView image=new ImageView(this);image.setContentDescription("完成凭证照片，点击查看大图");image.setScaleType(ImageView.ScaleType.CENTER_CROP);image.setBackground(shape(PALE,12));body.addView(image,new LinearLayout.LayoutParams(-1,dp(200)));loadImage(image,id);image.setOnClickListener(v->{photoId=id;photoTitle=selectedRecord.optString("task_title");photoBack="record";navigate("photo");});gap(body,10);}}
-        Button task=button("查看这条提醒",false);body.addView(task);String taskId=selectedRecord.optString("task_id");if(taskId.isEmpty()){task.setEnabled(false);gap(body,8);note(body,"这条记录没有关联的提醒编号，记录本身仍可查看。更新服务器后可关联提醒详情。");return;}
-        task.setOnClickListener(v->run(task,a->{try{return a.json("GET","/api/v1/tasks/"+taskId,null);}catch(Api.Failure failure){if(failure.status==404)return object("_missing",true);throw failure;}},result->{if(result.optBoolean("_missing")){showError("暂时无法读取这条提醒。记录和照片仍保留在这里；已归档详情需要新版服务器。");return;}selected=result;detailBack="record";navigate("detail");}));
+        boolean reminder=selectedRecord.optString("_type").equals("notification");
+        String title=selectedRecord.optString("task_title","提醒详情"),status=selectedRecord.optString("status");
+        boolean sent=status.equals("sent"),failed=status.equals("failed"),waiting=status.equals("pending")||status.equals("sending");
+        gap(body,18);body.addView(homeTitle(reminder?"提醒记录":"完成记录",28));gap(body,10);
+        body.addView(text(reminder?(sent?"这一件小事，已经发送提醒":failed?"这次提醒，暂时没有发出":waiting?"提醒已安排，正在等待发送":"回看这一次邮件提醒"):"这一件小事，已经完成啦",14,HOME_TITLE,false));gap(body,22);
+        LinearLayout info=card(body),identity=row();
+        identity.addView(art(calendarRecordArt(selectedRecord),52));gapHorizontal(identity,12);
+        LinearLayout words=column();TextView taskTitle=homeTitle(title,20);words.addView(taskTitle);
+        if(!reminder){gap(words,8);words.addView(text(formatFull(selectedRecord.optString("_at")),13,MUTED,false));}
+        identity.addView(words,new LinearLayout.LayoutParams(0,-2,1));info.addView(identity);gap(info,12);
+        String badge=reminder?(sent?"已发送":failed?"发送失败":waiting?"等待发送":notificationLabel(selectedRecord)):"已完成";
+        int color=reminder?(failed?RED:sent?INFO:YELLOW):GREEN;
+        LinearLayout statusRow=row();statusRow.addView(recordBadge(badge,color,reminder?(failed?"info":sent?"send":"clock"):"circle_check"));
+        if(reminder&&selectedRecord.has("state")){gapHorizontal(statusRow,10);statusRow.addView(text(calendarStateLabel(selectedRecord),12,calendarStateColor(selectedRecord),false));}
+        info.addView(statusRow);
+        if(reminder){
+            gap(info,14);calendarDivider(info);
+            recordInfoRow(info,"clock","计划提醒",formatFull(selectedRecord.optString("scheduled_at")));
+            calendarDivider(info);
+            String actual=selectedRecord.optString("sent_at");
+            recordInfoRow(info,"send","实际发送",!actual.isEmpty()?formatFull(actual):failed?"未发送成功":sent?"未记录发送时间":"尚未发送");
+            if(failed||waiting){
+                gap(info,8);LinearLayout message=column();message.setPadding(dp(12),dp(12),dp(12),dp(12));message.setBackground(shape(failed?0xffffeee5:0xffedf3e7,12));
+                if(failed){message.addView(text("发生了什么",14,RED,true));gap(message,6);}
+                String error=selectedRecord.optString("error");
+                message.addView(text(failed?(error.isEmpty()?"邮件暂未发送成功，请稍后查看发送情况。":error):"提醒已安排，正在等待发送。",13,failed?RED:HOME_TITLE,false));info.addView(message);
+            }
+            gap(body,14);calendarArt(body,R.drawable.calendar_mail,156);gap(body,16);
+            if(sent){
+                TextView delivery=text("服务器已发出邮件，收件情况请以邮箱为准。",13,HOME_TITLE,false);delivery.setGravity(Gravity.CENTER);delivery.setPadding(dp(16),dp(16),dp(16),dp(16));delivery.setBackground(shape(0xffedf3e7,14));body.addView(delivery);gap(body,24);
+            }
+        }else{
+            String message=selectedRecord.optString("text");LinearLayout noteCard=card(body);
+            if(!message.isEmpty()){
+                noteCard.addView(text("备注",12,MUTED,false));gap(noteCard,10);
+                TextView note=text(message,15,INK,false);note.setTextIsSelectable(true);note.setPadding(dp(12),dp(14),dp(12),dp(14));note.setBackground(shape(0xfff5f4ee,12));noteCard.addView(note);
+            }else{
+                noteCard.setGravity(Gravity.CENTER_HORIZONTAL);noteCard.addView(art(R.drawable.garden_sprout_v3,46));gap(noteCard,12);
+                TextView noNote=text("这次完成没有填写文字备注",14,MUTED,false);noNote.setGravity(Gravity.CENTER);noteCard.addView(noNote);gap(noteCard,12);
+            }
+            JSONArray photos=selectedRecord.optJSONArray("media_ids");int photoCount=photos==null?0:photos.length();
+            for(int i=0;i<photoCount;i++){
+                String id=photos.optString(i);if(id.isEmpty())continue;
+                RecordPhotoView image=new RecordPhotoView(this,false);body.addView(image,new LinearLayout.LayoutParams(-1,dp(244)));
+                Runnable open=()->{photoId=id;photoTitle=selectedRecord.optString("task_title");photoBack="record";navigate("photo");};
+                loadRecordPhoto(image,id,open);gap(body,8);
+                LinearLayout hint=row();hint.setGravity(Gravity.CENTER);hint.addView(new GardenIconView(this,"search",MUTED),new LinearLayout.LayoutParams(dp(16),dp(16)));gapHorizontal(hint,5);hint.addView(text("点击照片查看大图",12,MUTED,false));body.addView(hint);gap(body,16);
+            }
+            if(photoCount==0){TextView noPhoto=text("本次没有附上照片",12,MUTED,false);noPhoto.setGravity(Gravity.CENTER);noPhoto.setPadding(0,dp(16),0,dp(24));body.addView(noPhoto);}
+        }
+        Button task=button("查看这条提醒",true);task.setTextSize(16);task.setMinHeight(dp(52));body.addView(task);
+        String taskId=selectedRecord.optString("task_id");
+        if(taskId.isEmpty()){task.setEnabled(false);task.setAlpha(.5f);gap(body,8);note(body,"这条记录没有关联的提醒编号，记录本身仍可查看。更新服务器后可关联提醒详情。");}
+        else task.setOnClickListener(v->run(task,a->{try{return a.json("GET","/api/v1/tasks/"+taskId,null);}catch(Api.Failure failure){if(failure.status==404)return object("_missing",true);throw failure;}},result->{if(result.optBoolean("_missing")){showError("暂时无法读取这条提醒。记录和照片仍保留在这里；已归档详情需要新版服务器。");return;}selected=result;detailBack="record";navigate("detail");}));
+        if(reminder||selectedRecord.optJSONArray("media_ids")==null||selectedRecord.optJSONArray("media_ids").length()==0){
+            gap(body,20);calendarArt(body,R.drawable.sowing_footer_foliage,90);
+        }
     }
-    private void renderPhoto(){header("完成凭证",photoTitle,"");ImageView photo=new ImageView(this);photo.setAdjustViewBounds(true);photo.setScaleType(ImageView.ScaleType.FIT_CENTER);photo.setMinimumHeight(dp(300));body.addView(photo,new LinearLayout.LayoutParams(-1,-2));loadImage(photo,photoId);}
+    private LinearLayout recordBadge(String label,int color,String icon){
+        LinearLayout badge=row();badge.setPadding(dp(12),dp(8),dp(14),dp(8));
+        badge.setBackground(shape((color&0x00ffffff)|0x18000000,22));
+        badge.addView(new GardenIconView(this,icon,color),new LinearLayout.LayoutParams(dp(18),dp(18)));gapHorizontal(badge,6);
+        badge.addView(text(label,13,color,true));return badge;
+    }
+    private void recordInfoRow(LinearLayout parent,String icon,String label,String value){
+        LinearLayout row=row();row.setMinimumHeight(dp(54));row.setPadding(0,dp(10),0,dp(10));
+        row.addView(new GardenIconView(this,icon,HOME_TITLE),new LinearLayout.LayoutParams(dp(22),dp(22)));gapHorizontal(row,10);
+        row.addView(text(label,13,HOME_TITLE,false),new LinearLayout.LayoutParams(0,-2,1));
+        TextView detail=text(value,13,INK,false);detail.setGravity(Gravity.END);
+        row.addView(detail,new LinearLayout.LayoutParams(0,-2,1.6f));parent.addView(row);
+    }
+    private void renderPhoto(){
+        gap(body,18);body.addView(homeTitle("完成凭证",28));gap(body,10);body.addView(text(photoTitle,16,HOME_TITLE,false));gap(body,18);
+        RecordPhotoView photo=new RecordPhotoView(this,true);
+        int height=Math.max(320,Math.min(680,getResources().getConfiguration().screenHeightDp-210));
+        body.addView(photo,new LinearLayout.LayoutParams(-1,dp(height)));loadRecordPhoto(photo,photoId,null);
+    }
+    private void loadRecordPhoto(RecordPhotoView target,String id,Runnable open){
+        int account=accountEpoch,page=pageEpoch,maxSize=screen.equals("photo")?1600:640;
+        Object request=new Object();target.setTag(request);target.loading();Api api=new Api(session.base,session.token);
+        workers.submit(()->{
+            try{
+                byte[] bytes=api.media(id);BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;
+                BitmapFactory.decodeByteArray(bytes,0,bytes.length,options);
+                if(options.outWidth<=0||options.outHeight<=0)throw new IOException("无法读取照片");
+                options.inSampleSize=1;while(Math.max(options.outWidth,options.outHeight)/options.inSampleSize>maxSize)options.inSampleSize*=2;
+                options.inJustDecodeBounds=false;Bitmap bitmap=BitmapFactory.decodeByteArray(bytes,0,bytes.length,options);
+                if(bitmap==null)throw new IOException("无法读取照片");
+                ui.post(()->{
+                    if(!isDestroyed()&&accountEpoch==account&&pageEpoch==page&&target.getTag()==request&&target.isAttachedToWindow())target.ready(bitmap,open);
+                    else bitmap.recycle();
+                });
+            }catch(Exception failure){
+                ui.post(()->{if(!isDestroyed()&&accountEpoch==account&&pageEpoch==page&&target.getTag()==request&&target.isAttachedToWindow())
+                    target.failed(()->loadRecordPhoto(target,id,open));});
+            }
+        });
+    }
     private void renderSettings(){
         LinearLayout hello=row();hello.addView(art(R.drawable.garden_bloom,74));gapHorizontal(hello,12);LinearLayout words=column();words.addView(text("我的小天地",24,INK,true));gap(words,5);words.addView(text("照料生活，也照顾自己。",13,MUTED,false));hello.addView(words,new LinearLayout.LayoutParams(0,-2,1));body.addView(hello);gap(body,18);
         LinearLayout account=card(body);account.addView(text("接收提醒的邮箱",13,MUTED,false));gap(account,8);TextView email=text(session.email,19,INK,true);email.setTextIsSelectable(true);account.addView(email);gap(account,12);account.addView(text("登录状态已安全保存在这台手机上。",13,MUTED,false));
@@ -1053,7 +1297,7 @@ public class MainActivity extends Activity {
             Api old=new Api(session.base,session.token);try{session.logout();}catch(Exception e){showError("退出登录未保存，请重试");return;}accountEpoch++;clearAccountData();homeNotice="已退出登录。账号信息仍记在这台手机上，点登录即可继续。";navigate("home");workers.submit(()->{try{old.json("POST","/api/v1/auth/logout",object());}catch(Exception ignored){}});
         }).show());
     }
-    private void clearAccountData(){gardenSelection=null;homeSearchExpanded=false;growthAnimationState.clear();gardenPage=0;gardenSelectedPlantId="";gardenMemoriesExpanded=false;gardenContent=null;gardenPreview=null;recordBack="history";completedRecord=new JSONObject();taskData=new JSONArray();taskLoadRequest++;pauseInFlight.clear();selected=new JSONObject();draft=new JSONObject();selectedRecord=new JSONObject();invalidateCalendar();calendarDate=LocalDate.now();calendarMonth=YearMonth.now();recordPage=0;detailBack="home";photoBack="record";photoId="";photoTitle="";calendarGrid=null;calendarRecords=null;calendarCaption=null;calendarRefresh=null;restoredForm=null;photoFile=null;cameraFile=null;search="";filter="全部";aiText="";aiWarning="";completionText="";taskList=null;manualVisible=false;rulesExpanded=false;advancedExpanded=false;aiExpanded=true;}
+    private void clearAccountData(){gardenSelection=null;homeSearchExpanded=false;growthAnimationState.clear();gardenPage=0;gardenSelectedPlantId="";gardenMemoriesExpanded=false;gardenContent=null;gardenPreview=null;recordBack="history";completedRecord=new JSONObject();taskData=new JSONArray();taskLoadRequest++;pauseInFlight.clear();selected=new JSONObject();draft=new JSONObject();selectedRecord=new JSONObject();invalidateCalendar();calendarDate=LocalDate.now();calendarMonth=YearMonth.now();recordPage=0;detailBack="home";photoBack="record";photoId="";photoTitle="";calendarGrid=null;calendarRecords=null;calendarFeedback=null;calendarCaption=null;calendarRefresh=null;restoredForm=null;photoFile=null;cameraFile=null;search="";filter="全部";aiText="";aiWarning="";completionText="";taskList=null;manualVisible=false;rulesExpanded=false;advancedExpanded=false;aiExpanded=true;}
     private interface Job<T>{T run(Api api)throws Exception;}
     private interface Result<T>{void accept(T value);}
     private <T> void run(Button trigger,Job<T> job,Result<T> success){
@@ -1064,9 +1308,6 @@ public class MainActivity extends Activity {
         workers.submit(()->{try{T result=job.run(api);ui.post(()->{if(isDestroyed()||account!=accountEpoch||page!=pageEpoch)return;if(trigger!=null){trigger.setEnabled(true);trigger.setText(caption);}success.accept(result);});}
             catch(Exception e){ui.post(()->{if(isDestroyed()||account!=accountEpoch||page!=pageEpoch)return;taskBusy=false;if(trigger!=null){trigger.setEnabled(true);trigger.setText(caption);}if(e instanceof Api.Failure&&((Api.Failure)e).status==401&&!session.token.isEmpty()){loginExpired();}else if(failure!=null)failure.accept(e);else showError(e.getMessage()==null?"操作未完成，请重试":e.getMessage());});}
         });
-    }
-    private void loadImage(ImageView target,String id){
-        int a=accountEpoch,p=pageEpoch,maxSize=screen.equals("photo")?1600:640;Api api=new Api(session.base,session.token);workers.submit(()->{try{byte[] bytes=api.media(id);BitmapFactory.Options opt=new BitmapFactory.Options();opt.inJustDecodeBounds=true;BitmapFactory.decodeByteArray(bytes,0,bytes.length,opt);opt.inSampleSize=1;while(Math.max(opt.outWidth,opt.outHeight)/opt.inSampleSize>maxSize)opt.inSampleSize*=2;opt.inJustDecodeBounds=false;Bitmap bitmap=BitmapFactory.decodeByteArray(bytes,0,bytes.length,opt);ui.post(()->{if(!isDestroyed()&&accountEpoch==a&&pageEpoch==p&&target.isAttachedToWindow()){target.setImageBitmap(bitmap);}else if(bitmap!=null)bitmap.recycle();});}catch(Exception e){ui.post(()->{if(!isDestroyed()&&accountEpoch==a&&pageEpoch==p){target.setContentDescription("照片加载失败，点击重试");target.setImageResource(android.R.drawable.ic_menu_report_image);target.setOnClickListener(v->loadImage(target,id));}});}});
     }
     private void loadLocalImage(ImageView target,File file){int p=pageEpoch;workers.submit(()->{Bitmap bitmap=BitmapFactory.decodeFile(file.getAbsolutePath());ui.post(()->{if(!isDestroyed()&&pageEpoch==p)target.setImageBitmap(bitmap);else if(bitmap!=null)bitmap.recycle();});});}
     private void bottomNav(){

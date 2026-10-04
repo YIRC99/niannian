@@ -51,6 +51,24 @@ public final class GardenIconView extends View {
         canvas.scale(size / 24f, size / 24f);
         path.reset();
         switch (kind) {
+            case "send":
+                path.moveTo(3, 10); path.lineTo(21, 3); path.lineTo(16, 21);
+                path.lineTo(11, 14); path.lineTo(3, 10); path.moveTo(11, 14); path.lineTo(21, 3);
+                canvas.drawPath(path, paint);
+                break;
+            case "info":
+                canvas.drawCircle(12, 12, 9, paint);
+                canvas.drawLine(12, 10, 12, 16, paint);canvas.drawPoint(12, 7, paint);
+                break;
+            case "photo_error":
+                rect.set(2, 3, 19, 20);canvas.drawRoundRect(rect, 2, 2, paint);
+                canvas.drawCircle(7, 8, 1.5f, paint);
+                path.moveTo(3, 17);path.lineTo(8, 12);path.lineTo(12, 16);path.lineTo(15, 13);
+                canvas.drawPath(path, paint);
+                paint.setStyle(Paint.Style.FILL);paint.setColor(0xfff5f4ef);canvas.drawCircle(18, 18, 5, paint);
+                paint.setStyle(Paint.Style.STROKE);paint.setColor(0xff969f94);canvas.drawCircle(18, 18, 4.5f, paint);
+                canvas.drawLine(18, 15.5f, 18, 18, paint);canvas.drawPoint(18, 20.5f, paint);
+                break;
             case "back":
                 path.moveTo(15, 5); path.lineTo(8, 12); path.lineTo(15, 19);
                 canvas.drawPath(path, paint);
