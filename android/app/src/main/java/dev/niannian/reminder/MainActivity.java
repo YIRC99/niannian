@@ -1145,7 +1145,7 @@ public class MainActivity extends Activity {
                 return;
             }
             if(calendarLoaded()){
-                gap(calendarRecords,20);calendarArt(calendarRecords,R.drawable.calendar_empty_journal,142);
+                gap(calendarRecords,20);calendarArt(calendarRecords,R.drawable.calendar_empty_journal,114);
                 gap(calendarRecords,12);
                 TextView empty=text(calendarTruncated?"当前结果中没有这一天的安排，整月数据尚未显示完整。":"这一天没有提醒安排或完成记录",13,MUTED,false);
                 empty.setGravity(Gravity.CENTER);calendarRecords.addView(empty);gap(calendarRecords,24);
@@ -1202,8 +1202,10 @@ public class MainActivity extends Activity {
         return entry.optString("_type").equals("notification")?R.drawable.calendar_mail:GardenFlowers.resourceFor(entry.optString("task_id"));
     }
     private void calendarArt(LinearLayout parent,int resource,int height){
-        ImageView image=art(resource,height);
-        if(resource==R.drawable.calendar_mail)image.setImageBitmap(GardenArtCache.backdrop(getResources(),resource));
+        ImageView image=new ImageView(this);
+        boolean illustration=resource==R.drawable.calendar_mail||resource==R.drawable.calendar_empty_journal;
+        image.setImageBitmap(illustration?GardenArtCache.backdrop(getResources(),resource):GardenArtCache.load(getResources(),resource));
+        image.setScaleType(ImageView.ScaleType.FIT_CENTER);image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         parent.addView(image,new LinearLayout.LayoutParams(-1,dp(height)));
     }
     private void calendarSkeleton(){
