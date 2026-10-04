@@ -184,18 +184,40 @@ public class MainActivity extends Activity {
         GardenFlowers.configure(this,session.base,session.email);
         if(session.token.isEmpty()&&!Arrays.asList("home","login","server").contains(screen))screen="home";
         pageEpoch++; taskBusy = false; fields.clear(); kindPicker = null; modePicker = null; weekdays = null;
-        root = column(); root.setBackgroundColor(BG); setContentView(root);
+        boolean edgeDecoration=screen.equals("record")||screen.equals("photo");
+        boolean recordFooter=screen.equals("record")&&hasRecordFooter();
+        // Only decoration enters system-bar space; interactive content keeps its safe insets.
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),!edgeDecoration&&Build.VERSION.SDK_INT<35);
+        getWindow().setStatusBarColor(edgeDecoration?Color.TRANSPARENT:BG);
+        getWindow().setNavigationBarColor(edgeDecoration?Color.TRANSPARENT:BG);
+        if(Build.VERSION.SDK_INT>=29)getWindow().setNavigationBarContrastEnforced(!edgeDecoration);
+        root = column();root.setBackgroundColor(edgeDecoration?Color.TRANSPARENT:BG);
+        if(edgeDecoration){
+            FrameLayout page=new FrameLayout(this);page.setBackgroundColor(BG);
+            ImageView leaves=new ImageView(this);
+            leaves.setImageBitmap(GardenArtCache.backdrop(getResources(),R.drawable.sowing_corner_leaves));
+            leaves.setScaleType(ImageView.ScaleType.FIT_START);leaves.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            page.addView(leaves,new FrameLayout.LayoutParams(dp(196),dp(131),Gravity.TOP|Gravity.END));
+            page.addView(root,new FrameLayout.LayoutParams(-1,-1));setContentView(page);
+        }else setContentView(root);
         root.setOnApplyWindowInsetsListener((v, insets) -> {
-            if (Build.VERSION.SDK_INT >= 35) { android.graphics.Insets i = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout() | WindowInsets.Type.ime()); v.setPadding(i.left, i.top, i.right, i.bottom); }
+            if(Build.VERSION.SDK_INT>=30&&(edgeDecoration||Build.VERSION.SDK_INT>=35)){
+                android.graphics.Insets i=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout()|WindowInsets.Type.ime());
+                v.setPadding(i.left,i.top,i.right,recordFooter&&!insets.isVisible(WindowInsets.Type.ime())?0:i.bottom);
+            }else if(edgeDecoration){
+                int bottom=insets.getSystemWindowInsetBottom();
+                v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),recordFooter&&bottom<dp(100)?0:bottom);
+            }
             return insets;
         });
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setClipToPadding(false); scroll.setVerticalScrollBarEnabled(false);
-        if(screen.equals("editor")||screen.equals("record")||screen.equals("photo")){
+        if(screen.equals("editor")){
             FrameLayout page=new FrameLayout(this);root.addView(page,new LinearLayout.LayoutParams(-1,0,1));
             ImageView leaves=new ImageView(this);leaves.setImageBitmap(GardenArtCache.load(getResources(),R.drawable.sowing_corner_leaves));leaves.setScaleType(ImageView.ScaleType.FIT_END);leaves.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             page.addView(leaves,new FrameLayout.LayoutParams(dp(160),dp(108),Gravity.TOP|Gravity.END));page.addView(scroll,new FrameLayout.LayoutParams(-1,-1));
         }else root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         body = column(); body.setPadding(dp(16), dp(12), dp(16), dp(20));
+        if(recordFooter){body.setPadding(dp(16),dp(12),dp(16),0);body.setClipToPadding(false);}
         if(screen.equals("editor"))body.setPadding(dp(16),dp(4),dp(16),0);
         if((screen.equals("home")&&!session.token.isEmpty())||screen.equals("garden")||screen.equals("history"))body.setPadding(0,0,0,0); scroll.addView(body, new ScrollView.LayoutParams(-1, -2));
         gardenContent=null; gardenPreview=null; gardenSelection=null;
@@ -1168,7 +1190,9 @@ public class MainActivity extends Activity {
         return entry.optString("_type").equals("notification")?R.drawable.calendar_mail:GardenFlowers.resourceFor(entry.optString("task_id"));
     }
     private void calendarArt(LinearLayout parent,int resource,int height){
-        ImageView image=art(resource,height);parent.addView(image,new LinearLayout.LayoutParams(-1,dp(height)));
+        ImageView image=art(resource,height);
+        if(resource==R.drawable.calendar_mail)image.setImageBitmap(GardenArtCache.backdrop(getResources(),resource));
+        parent.addView(image,new LinearLayout.LayoutParams(-1,dp(height)));
     }
     private void calendarSkeleton(){
         for(int i=0;i<3;i++){
@@ -1212,7 +1236,7 @@ public class MainActivity extends Activity {
                 String error=selectedRecord.optString("error");
                 message.addView(text(failed?(error.isEmpty()?"邮件暂未发送成功，请稍后查看发送情况。":error):"提醒已安排，正在等待发送。",13,failed?RED:HOME_TITLE,false));info.addView(message);
             }
-            gap(body,14);calendarArt(body,R.drawable.calendar_mail,156);gap(body,16);
+            gap(body,10);calendarArt(body,R.drawable.calendar_mail,132);gap(body,12);
             if(sent){
                 TextView delivery=text("服务器已发出邮件，收件情况请以邮箱为准。",13,HOME_TITLE,false);delivery.setGravity(Gravity.CENTER);delivery.setPadding(dp(16),dp(16),dp(16),dp(16));delivery.setBackground(shape(0xffedf3e7,14));body.addView(delivery);gap(body,24);
             }
@@ -1239,9 +1263,20 @@ public class MainActivity extends Activity {
         String taskId=selectedRecord.optString("task_id");
         if(taskId.isEmpty()){task.setEnabled(false);task.setAlpha(.5f);gap(body,8);note(body,"这条记录没有关联的提醒编号，记录本身仍可查看。更新服务器后可关联提醒详情。");}
         else task.setOnClickListener(v->run(task,a->{try{return a.json("GET","/api/v1/tasks/"+taskId,null);}catch(Api.Failure failure){if(failure.status==404)return object("_missing",true);throw failure;}},result->{if(result.optBoolean("_missing")){showError("暂时无法读取这条提醒。记录和照片仍保留在这里；已归档详情需要新版服务器。");return;}selected=result;detailBack="record";navigate("detail");}));
-        if(reminder||selectedRecord.optJSONArray("media_ids")==null||selectedRecord.optJSONArray("media_ids").length()==0){
-            gap(body,20);calendarArt(body,R.drawable.sowing_footer_foliage,90);
+        if(hasRecordFooter()){
+            gap(body,16);
+            body.addView(new View(this),new LinearLayout.LayoutParams(-1,0,1));
+            ImageView foliage=new ImageView(this);
+            foliage.setImageBitmap(GardenArtCache.backdrop(getResources(),R.drawable.sowing_footer_foliage));
+            foliage.setAdjustViewBounds(true);foliage.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            foliage.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            LinearLayout.LayoutParams foliageLp=new LinearLayout.LayoutParams(-1,-2);
+            foliageLp.setMargins(-dp(16),0,-dp(16),0);body.addView(foliage,foliageLp);
         }
+    }
+    private boolean hasRecordFooter(){
+        JSONArray photos=selectedRecord.optJSONArray("media_ids");
+        return selectedRecord.optString("_type").equals("notification")||photos==null||photos.length()==0;
     }
     private LinearLayout recordBadge(String label,int color,String icon){
         LinearLayout badge=row();badge.setPadding(dp(12),dp(8),dp(14),dp(8));
