@@ -185,7 +185,8 @@ public class MainActivity extends Activity {
         if(session.token.isEmpty()&&!Arrays.asList("home","login","server").contains(screen))screen="home";
         pageEpoch++; taskBusy = false; fields.clear(); kindPicker = null; modePicker = null; weekdays = null;
         boolean edgeDecoration=screen.equals("record")||screen.equals("photo");
-        boolean recordFooter=screen.equals("record")&&hasRecordFooter();
+        boolean fixedMail=isFixedMailRecord();
+        boolean recordFooter=screen.equals("record")&&hasRecordFooter()&&!fixedMail;
         // Only decoration enters system-bar space; interactive content keeps its safe insets.
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),!edgeDecoration&&Build.VERSION.SDK_INT<35);
         getWindow().setStatusBarColor(edgeDecoration?Color.TRANSPARENT:BG);
@@ -194,10 +195,19 @@ public class MainActivity extends Activity {
         root = column();root.setBackgroundColor(edgeDecoration?Color.TRANSPARENT:BG);
         if(edgeDecoration){
             FrameLayout page=new FrameLayout(this);page.setBackgroundColor(BG);
+            if(fixedMail){
+                ImageView grass=new ImageView(this);
+                grass.setImageBitmap(GardenArtCache.backdrop(getResources(),R.drawable.sowing_footer_foliage));
+                grass.setAdjustViewBounds(true);grass.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                grass.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+                page.addView(grass,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
+            }
             ImageView leaves=new ImageView(this);
             leaves.setImageBitmap(GardenArtCache.backdrop(getResources(),R.drawable.sowing_corner_leaves));
             leaves.setScaleType(ImageView.ScaleType.FIT_START);leaves.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-            page.addView(leaves,new FrameLayout.LayoutParams(dp(196),dp(131),Gravity.TOP|Gravity.END));
+            FrameLayout.LayoutParams leavesLp=new FrameLayout.LayoutParams(dp(196),dp(131),Gravity.TOP|Gravity.END);
+            if(fixedMail)leavesLp.topMargin=dp(31); // About 100 physical pixels on the user's 520dpi phone.
+            page.addView(leaves,leavesLp);
             page.addView(root,new FrameLayout.LayoutParams(-1,-1));setContentView(page);
         }else setContentView(root);
         root.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -215,11 +225,13 @@ public class MainActivity extends Activity {
             FrameLayout page=new FrameLayout(this);root.addView(page,new LinearLayout.LayoutParams(-1,0,1));
             ImageView leaves=new ImageView(this);leaves.setImageBitmap(GardenArtCache.load(getResources(),R.drawable.sowing_corner_leaves));leaves.setScaleType(ImageView.ScaleType.FIT_END);leaves.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             page.addView(leaves,new FrameLayout.LayoutParams(dp(160),dp(108),Gravity.TOP|Gravity.END));page.addView(scroll,new FrameLayout.LayoutParams(-1,-1));
-        }else root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        }else if(!fixedMail)root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         body = column(); body.setPadding(dp(16), dp(12), dp(16), dp(20));
         if(recordFooter){body.setPadding(dp(16),dp(12),dp(16),0);body.setClipToPadding(false);}
         if(screen.equals("editor"))body.setPadding(dp(16),dp(4),dp(16),0);
-        if((screen.equals("home")&&!session.token.isEmpty())||screen.equals("garden")||screen.equals("history"))body.setPadding(0,0,0,0); scroll.addView(body, new ScrollView.LayoutParams(-1, -2));
+        if((screen.equals("home")&&!session.token.isEmpty())||screen.equals("garden")||screen.equals("history"))body.setPadding(0,0,0,0);
+        if(fixedMail)root.addView(body,new LinearLayout.LayoutParams(-1,0,1));
+        else scroll.addView(body,new ScrollView.LayoutParams(-1,-2));
         gardenContent=null; gardenPreview=null; gardenSelection=null;
         if (!Arrays.asList("home", "garden", "history", "settings", "login", "server").contains(screen)) {
             if(screen.equals("editor")||screen.equals("record")||screen.equals("photo")){
@@ -1216,7 +1228,9 @@ public class MainActivity extends Activity {
         body.addView(text(reminder?(sent?"这一件小事，已经发送提醒":failed?"这次提醒，暂时没有发出":waiting?"提醒已安排，正在等待发送":"回看这一次邮件提醒"):"这一件小事，已经完成啦",14,HOME_TITLE,false));gap(body,22);
         LinearLayout info=card(body),identity=row();
         identity.addView(art(calendarRecordArt(selectedRecord),52));gapHorizontal(identity,12);
-        LinearLayout words=column();TextView taskTitle=homeTitle(title,20);words.addView(taskTitle);
+        LinearLayout words=column();TextView taskTitle=homeTitle(title,20);
+        if(isFixedMailRecord()){taskTitle.setMaxLines(2);taskTitle.setEllipsize(TextUtils.TruncateAt.END);taskTitle.setContentDescription(title);}
+        words.addView(taskTitle);
         if(!reminder){gap(words,8);words.addView(text(formatFull(selectedRecord.optString("_at")),13,MUTED,false));}
         identity.addView(words,new LinearLayout.LayoutParams(0,-2,1));info.addView(identity);gap(info,12);
         String badge=reminder?(sent?"已发送":failed?"发送失败":waiting?"等待发送":notificationLabel(selectedRecord)):"已完成";
@@ -1236,7 +1250,15 @@ public class MainActivity extends Activity {
                 String error=selectedRecord.optString("error");
                 message.addView(text(failed?(error.isEmpty()?"邮件暂未发送成功，请稍后查看发送情况。":error):"提醒已安排，正在等待发送。",13,failed?RED:HOME_TITLE,false));info.addView(message);
             }
-            gap(body,10);calendarArt(body,R.drawable.calendar_mail,132);gap(body,12);
+            gap(body,10);
+            if(isFixedMailRecord()){
+                // The illustration gives up height first; the delivery message and action stay visible.
+                ImageView mail=new ImageView(this);
+                mail.setImageBitmap(GardenArtCache.backdrop(getResources(),R.drawable.calendar_mail));
+                mail.setScaleType(ImageView.ScaleType.FIT_CENTER);mail.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+                body.addView(mail,new LinearLayout.LayoutParams(-1,0,1));
+            }else calendarArt(body,R.drawable.calendar_mail,132);
+            gap(body,12);
             if(sent){
                 TextView delivery=text("服务器已发出邮件，收件情况请以邮箱为准。",13,HOME_TITLE,false);delivery.setGravity(Gravity.CENTER);delivery.setPadding(dp(16),dp(16),dp(16),dp(16));delivery.setBackground(shape(0xffedf3e7,14));body.addView(delivery);gap(body,24);
             }
@@ -1263,7 +1285,7 @@ public class MainActivity extends Activity {
         String taskId=selectedRecord.optString("task_id");
         if(taskId.isEmpty()){task.setEnabled(false);task.setAlpha(.5f);gap(body,8);note(body,"这条记录没有关联的提醒编号，记录本身仍可查看。更新服务器后可关联提醒详情。");}
         else task.setOnClickListener(v->run(task,a->{try{return a.json("GET","/api/v1/tasks/"+taskId,null);}catch(Api.Failure failure){if(failure.status==404)return object("_missing",true);throw failure;}},result->{if(result.optBoolean("_missing")){showError("暂时无法读取这条提醒。记录和照片仍保留在这里；已归档详情需要新版服务器。");return;}selected=result;detailBack="record";navigate("detail");}));
-        if(hasRecordFooter()){
+        if(hasRecordFooter()&&!isFixedMailRecord()){
             gap(body,16);
             body.addView(new View(this),new LinearLayout.LayoutParams(-1,0,1));
             ImageView foliage=new ImageView(this);
@@ -1277,6 +1299,9 @@ public class MainActivity extends Activity {
     private boolean hasRecordFooter(){
         JSONArray photos=selectedRecord.optJSONArray("media_ids");
         return selectedRecord.optString("_type").equals("notification")||photos==null||photos.length()==0;
+    }
+    private boolean isFixedMailRecord(){
+        return screen.equals("record")&&selectedRecord.optString("_type").equals("notification")&&selectedRecord.optString("status").equals("sent");
     }
     private LinearLayout recordBadge(String label,int color,String icon){
         LinearLayout badge=row();badge.setPadding(dp(12),dp(8),dp(14),dp(8));
