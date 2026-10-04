@@ -20,8 +20,6 @@ public final class GardenGrowthView extends View {
 
     private static final long DURATION_MS = 2500L;
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-    private final Path landscape = new Path();
-    private final Path circle = new Path();
     private final Path droplet = new Path();
     private final Path sparkle = new Path();
     private final RectF art = new RectF();
@@ -29,6 +27,9 @@ public final class GardenGrowthView extends View {
     private final Rect visible = new Rect();
     private final Bitmap[] plants = new Bitmap[4];
     private final Bitmap watering;
+    private final Bitmap courtyard;
+    private final Rect backdropSource = new Rect();
+    private android.graphics.Shader edgeFade;
     private final ValueAnimator ceremony;
     private final float density;
     private final ViewTreeObserver.OnScrollChangedListener scrollListener = this::updateVisibility;
@@ -55,6 +56,8 @@ public final class GardenGrowthView extends View {
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
         for (int i = 0; i < plants.length; i++) plants[i] = GardenArtCache.plant(getResources(), i, taskId);
         watering = GardenArtCache.load(getResources(), R.drawable.garden_watering);
+        courtyard = GardenArtCache.backdrop(getResources(), R.drawable.garden_courtyard_v3);
+        backdropSource.set(0,0,courtyard.getWidth(),Math.round(courtyard.getHeight()*.62f));
         ceremony = ValueAnimator.ofFloat(0f, 1f);
         ceremony.setDuration(DURATION_MS);
         ceremony.setInterpolator(new LinearInterpolator());
@@ -237,6 +240,10 @@ public final class GardenGrowthView extends View {
     @Override protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         setMeasuredDimension(resolveSize(dp(320), widthMeasureSpec), resolveSize(dp(280), heightMeasureSpec));
     }
+    @Override protected void onSizeChanged(int w,int h,int oldw,int oldh){
+        super.onSizeChanged(w,h,oldw,oldh);
+        if(h>0)edgeFade=new android.graphics.LinearGradient(0,0,0,h,new int[]{0xfffffcf5,0x00fffcf5,0x00fffcf5,0xfffffcf5},new float[]{0,.26f,.82f,1},android.graphics.Shader.TileMode.CLAMP);
+    }
 
     @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -263,34 +270,8 @@ public final class GardenGrowthView extends View {
 
     private void drawLandscape(Canvas canvas, float cx, float cy, float radius, float baseline) {
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0xffedf3e6);
-        canvas.drawCircle(cx, cy, radius, paint);
-        circle.reset();
-        circle.addCircle(cx, cy, radius, Path.Direction.CW);
-        canvas.save();
-        canvas.clipPath(circle);
-        paint.setColor(0xfff6e7b0);
-        canvas.drawCircle(cx + radius * .59f, cy - radius * .54f, radius * .17f, paint);
-        paint.setColor(0xfff7f8ee);
-        ellipse.set(cx - radius * .91f, cy - radius * .42f, cx - radius * .29f, cy - radius * .27f);
-        canvas.drawOval(ellipse, paint);
-        landscape.reset();
-        landscape.moveTo(cx - radius, cy + radius * .26f);
-        landscape.cubicTo(cx - radius * .32f, cy - radius * .02f, cx + radius * .25f, cy + radius * .61f, cx + radius, cy + radius * .29f);
-        landscape.lineTo(cx + radius, cy + radius);
-        landscape.lineTo(cx - radius, cy + radius);
-        landscape.close();
-        paint.setColor(0xffdee9d4);
-        canvas.drawPath(landscape, paint);
-        landscape.reset();
-        landscape.moveTo(cx - radius, baseline - radius * .12f);
-        landscape.cubicTo(cx - radius * .35f, baseline - radius * .30f, cx + radius * .35f, baseline - radius * .02f, cx + radius, baseline - radius * .24f);
-        landscape.lineTo(cx + radius, cy + radius);
-        landscape.lineTo(cx - radius, cy + radius);
-        landscape.close();
-        paint.setColor(0xffd1e0c5);
-        canvas.drawPath(landscape, paint);
-        canvas.restore();
+        paint.setAlpha(255);art.set(0,0,getWidth(),getHeight());canvas.drawBitmap(courtyard,backdropSource,art,paint);
+        paint.setShader(edgeFade);canvas.drawRect(art,paint);paint.setShader(null);
         paint.setColor(0x16738859);
         ellipse.set(cx - radius * .54f, baseline - radius * .08f, cx + radius * .54f, baseline + radius * .075f);
         canvas.drawOval(ellipse, paint);

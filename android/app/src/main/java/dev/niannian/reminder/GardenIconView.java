@@ -51,6 +51,14 @@ public final class GardenIconView extends View {
         canvas.scale(size / 24f, size / 24f);
         path.reset();
         switch (kind) {
+            case "edit":
+                path.moveTo(4,16);path.lineTo(16,4);path.lineTo(21,9);path.lineTo(9,21);path.lineTo(3,22);path.close();path.moveTo(14,6);path.lineTo(19,11);canvas.drawPath(path,paint);
+                break;
+            case "eye":
+            case "eye_off":
+                path.moveTo(2,12);path.cubicTo(7,3,17,3,22,12);path.cubicTo(17,21,7,21,2,12);canvas.drawPath(path,paint);canvas.drawCircle(12,12,3,paint);
+                if(kind.equals("eye_off"))canvas.drawLine(4,3,20,21,paint);
+                break;
             case "mail":
                 rect.set(2,4,22,20);canvas.drawRoundRect(rect,2,2,paint);
                 path.moveTo(3,5);path.lineTo(12,13);path.lineTo(21,5);canvas.drawPath(path,paint);

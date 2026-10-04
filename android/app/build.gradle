@@ -9,6 +9,7 @@ android {
         targetSdk 35
         versionCode 22
         versionName '1.8.9'
+        testInstrumentationRunner 'dev.niannian.reminder.UiAudit'
     }
     signingConfigs {
         localRelease {
@@ -19,6 +20,9 @@ android {
         }
     }
     buildTypes {
+        debug {
+            applicationIdSuffix '.audit'
+        }
         release {
             minifyEnabled false
             signingConfig signingConfigs.localRelease
