@@ -23,8 +23,13 @@ public final class UiAudit extends Instrumentation {
         Bundle result=new Bundle();int resultCode=Activity.RESULT_CANCELED;
         try {
             if(!getTargetContext().getPackageName().endsWith(".audit"))throw new AssertionError("Isolated package required");
-            Intent intent=new Intent(getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            activity=(MainActivity)startActivitySync(intent);
+            // OEM background-launch rules can silently block startActivitySync forever.
+            // Use the same foreground launch as the device runner, with a bounded wait.
+            ActivityMonitor launch=addMonitor(MainActivity.class.getName(),null,false);
+            try(ParcelFileDescriptor command=getUiAutomation().executeShellCommand("am start -W -n "+getTargetContext().getPackageName()+"/"+MainActivity.class.getName())){
+                activity=(MainActivity)waitForMonitorWithTimeout(launch,15000);
+                if(activity==null)throw new AssertionError("Test app did not open within 15 seconds; unlock the device and retry");
+            } finally {removeMonitor(launch);}
             fixtures=new UiFixtures();
             output=new File(getTargetContext().getExternalFilesDir(null),"ui-audit/"+System.currentTimeMillis());
             if(!output.isDirectory()&&!output.mkdirs())throw new IOException("Screenshot directory unavailable");
