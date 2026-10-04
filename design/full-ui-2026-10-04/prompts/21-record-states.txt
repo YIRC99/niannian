@@ -1,0 +1,31 @@
+Use case: ui-mockup
+Create a NEW high-fidelity Chinese Android app UI design board for “念念”. Input image1 is STYLE REFERENCE ONLY: preserve its warm ivory background, dark forest green typography, gentle sage-green buttons, thin simple icons, beautiful clean 2D anime garden plants and restrained sunny garden fragments. No watercolor, no photorealism, no3D.
+Landscape1536x1024, three equally wide complete phone screens side by side with thin rounded frames and gentle shadow. Board title “念念 · 记录详情状态”, subtitle “UI设计稿 · 示例数据”. Below frames label “61 邮件发送失败”, “62 等待发送”, “63 完成记录 · 无备注照片”.
+Every status bar16:00. These are SECONDARY record-detail pages: back chevron “返回” on top left, NO bottom tab navigation.
+Screen61:
+Small header “提醒记录” and a little outlined envelope icon. Large task title “收衣服”.
+Prominent but gentle warm terracotta status pill with alert icon “发送失败”.
+Slim ivory detail surface divided into labeled rows:
+“计划发送” → “10月4日 16:15”
+“实际发送” → “未发送成功”.
+Warm terracotta inline explanation card headed “发生了什么”, exact explanatory text “邮件服务暂时不可用，稍后会再试”.
+Clear green full-width button “查看这条提醒”.
+No manual email send/resend/test button. No success/checkmark indication. No claim delivered. Lower area calm with lovely little watering can resting beside daisies and garden gate fragment, illustration never hides information. Lots of breathing room.
+Screen62:
+Same secondary page header “提醒记录” with envelope icon, title “收衣服”.
+Pale amber status pill with clock icon “等待发送”.
+Same aligned detail rows:
+“计划发送” → “10月4日 16:15”
+“实际发送” → “尚未发送”.
+Subtle informational text “提醒已安排，正在等待发送”.
+Green full-width button “查看这条提醒”.
+Do not show 已发送 or 已收信 or 已送达 anywhere. No fake progress percentage, no countdown. Little illustrated seedling next to closed envelope at bottom, warm ivory space, same visual grid as screen61.
+Screen63:
+Back “返回”. Header “完成记录”. Large task title “读书” with delicate illustrated blooming tulip near heading.
+Green check status pill “已完成”.
+Date row with calendar icon and exact text “2026年10月4日 20:40”.
+A simple spacious cream record area with fine leaf ornament and exact clear copy “这次完成没有填写文字备注”.
+Below, small text “本次没有附上照片”. No actual photo, no fake photo thumbnails or gray pretend attachment frames.
+Green full-width button “查看这条提醒”.
+Lower gentle illustrated grass, small daisies and a clean leaf sprig to give a natural empty state. Do not invent achievement count, user note, remembered event, location or any photo.
+Typography accurate simplified Chinese, sharp readable text, warm but professional UI. Consistent screen headings, rows, margins, icon strokes and button proportions. Do not duplicate tab navigation or add unnecessary buttons. All three screens fully visible with no clipped content.

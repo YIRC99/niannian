@@ -1,0 +1,32 @@
+Use case: ui-mockup
+Create a NEW high-fidelity Chinese Android app UI design board for “念念”. Input image 1 is STYLE REFERENCE ONLY: warm ivory paper, dark forest green typography, gentle sage buttons, thin line icons and beautifully detailed clean 2D anime garden with white picket gates, trees and flowers. Do not edit original reference. No watercolor, 3D or photorealism.
+Landscape 1536 x 1024. Three equal-width COMPLETE phone screens side by side, thin rounded frames and gentle shadows, enough margin. Header exactly “念念 · 账号状态”, subtitle “UI设计稿 · 示例数据”. Labels below screens “49 登录密码错误”, “50 验证码已发送”, “51 登录过期”. Each status bar16:00. None of these auth screens has bottom navigation.
+Screen49:
+Back chevron “返回首页”. Heading “欢迎来到念念”, subtitle “你的小花园，在等你”. Modest lovely tulip illustration near heading.
+Field label “接收提醒的邮箱” value “hello@example.com”.
+Field “登录密码” retains masked password dots with eye icon. Directly below field, small warm terracotta inline alert with icon “邮箱或密码不正确”. Do not erase entered fields.
+Sage information strip “账号密码加密保存在这台手机，下次自动登录”.
+Large green ACTIVE button “登录念念”; clear “忘记密码” link and “注册 / 首次设置密码” link.
+Current server “https://reminder.example.com” and “更换服务器”.
+Small garden gate and flower illustration decorates bottom without covering controls.
+Screen50:
+Back “返回登录”. Heading “种下你的第一份期待”, subtitle “注册 / 首次设置密码”. Tiny smiling sprouting seed illustration near heading.
+Field “接收提醒的邮箱” value “hello@example.com”.
+Green subtle check message “验证码已发送至 hello@example.com”.
+Field “邮箱验证码” placeholder “输入 6 位验证码”, adjacent disabled gray button “60秒后重发”. Make disabled appearance clear. No resend active button while countdown runs.
+Field “设置密码” placeholder “至少 8 个字符”.
+Small note “已有账号首次设密，原来的记录继续保留”.
+Large sage-green active button “验证邮箱并继续”.
+Secondary text “已有密码，返回登录”.
+Small seedling pot and garden flowers at lower edge.
+No confirm-password extra field. This is only a design mockup, no actual code email sent.
+Screen51:
+Upper45% stunning sunlit garden white gate, lush flowers and sleeping white/orange cat, matching reference composition. Lower creamy area heading “你的小花园，还在等你”.
+Clearly visible inline warm muted terracotta notice with clock/shield icon and exact text “登录已过期，请重新登录”.
+Supporting text “重新登录后，继续照料你种下的小事”.
+Large sage-green button “登录我的花园”.
+Outline button “注册 / 首次设置密码”.
+Text link “更换服务器”.
+Tiny seedling and soft floral edge bottom.
+Important this is logged-out state: no previous account task list, no previous email/account card, no task statistics, no bottom tabs.
+All typography sharp legible simplified Chinese. All three phones use same grid, input sizing, icon stroke and button proportions. Error states must be gentle, clear and actionable. No text overlaps, cropped screen parts or gibberish.

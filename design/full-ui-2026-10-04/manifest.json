@@ -1,0 +1,679 @@
+{
+  "title": "念念 · 晴日小庭院",
+  "date": "2026-10-04",
+  "type": "图片设计稿",
+  "generator": "内置 image_gen",
+  "reference": "../../work/ui-review-2026-10-03/niannian-ui-proposal-v1.png",
+  "scope": "当前 Android App 全部12个页面分支，含主要展开层、弹窗、8种规则、关键状态与系统界面衔接。共24张整板、72个页面和状态；不是72个独立路由。",
+  "notice": "示例邮箱、地址、任务、日期与数量仅用于设计。系统相机、选图、日期时间和分享界面为衔接示意，实际随手机系统变化。尚未将本套稿应用到App代码。",
+  "boards": [
+    {
+      "id": "01-account",
+      "title": "账号与安全",
+      "category": "账号",
+      "image": "images/01-account.png",
+      "prompt": "prompts/01-account.txt",
+      "pages": [
+        {
+          "id": "01",
+          "title": "密码登录"
+        },
+        {
+          "id": "02",
+          "title": "注册与首次设密"
+        },
+        {
+          "id": "03",
+          "title": "重置密码"
+        }
+      ]
+    },
+    {
+      "id": "02-connection",
+      "title": "欢迎与连接",
+      "category": "账号",
+      "image": "images/02-connection.png",
+      "prompt": "prompts/02-connection.txt",
+      "pages": [
+        {
+          "id": "04",
+          "title": "未登录欢迎"
+        },
+        {
+          "id": "05",
+          "title": "首次连接"
+        },
+        {
+          "id": "06",
+          "title": "更换连接失败"
+        }
+      ]
+    },
+    {
+      "id": "03-profile",
+      "title": "我的与账号操作",
+      "category": "我的",
+      "image": "images/03-profile.png",
+      "prompt": "prompts/03-profile.txt",
+      "pages": [
+        {
+          "id": "07",
+          "title": "我的"
+        },
+        {
+          "id": "08",
+          "title": "导出系统分享"
+        },
+        {
+          "id": "09",
+          "title": "退出确认"
+        }
+      ]
+    },
+    {
+      "id": "04-sowing",
+      "title": "播种流程",
+      "category": "播种",
+      "image": "images/04-sowing.png",
+      "prompt": "prompts/04-sowing.txt",
+      "pages": [
+        {
+          "id": "10",
+          "title": "播种初始"
+        },
+        {
+          "id": "11",
+          "title": "AI安排中"
+        },
+        {
+          "id": "12",
+          "title": "提醒草稿"
+        }
+      ]
+    },
+    {
+      "id": "05-rules-basic",
+      "title": "基础提醒规则",
+      "category": "规则",
+      "image": "images/05-rules-basic.png",
+      "prompt": "prompts/05-rules-basic.txt",
+      "pages": [
+        {
+          "id": "13",
+          "title": "单次提醒"
+        },
+        {
+          "id": "14",
+          "title": "每日提醒"
+        },
+        {
+          "id": "15",
+          "title": "每周提醒"
+        }
+      ]
+    },
+    {
+      "id": "06-rules-cycle",
+      "title": "周期提醒规则",
+      "category": "规则",
+      "image": "images/06-rules-cycle.png",
+      "prompt": "prompts/06-rules-cycle.txt",
+      "pages": [
+        {
+          "id": "16",
+          "title": "每月窗口"
+        },
+        {
+          "id": "17",
+          "title": "日期范围"
+        },
+        {
+          "id": "18",
+          "title": "间隔天数"
+        }
+      ]
+    },
+    {
+      "id": "07-rules-more",
+      "title": "催办与更多设置",
+      "category": "规则",
+      "image": "images/07-rules-more.png",
+      "prompt": "prompts/07-rules-more.txt",
+      "pages": [
+        {
+          "id": "19",
+          "title": "持续到完成"
+        },
+        {
+          "id": "20",
+          "title": "分钟催办"
+        },
+        {
+          "id": "21",
+          "title": "编辑与更多设置"
+        }
+      ]
+    },
+    {
+      "id": "08-main",
+      "title": "今天、花园、日历",
+      "category": "主页面",
+      "image": "images/08-main.png",
+      "prompt": "prompts/08-main.txt",
+      "pages": [
+        {
+          "id": "22",
+          "title": "今天"
+        },
+        {
+          "id": "23",
+          "title": "花园"
+        },
+        {
+          "id": "24",
+          "title": "日历"
+        }
+      ]
+    },
+    {
+      "id": "09-garden",
+      "title": "花园与成长日记",
+      "category": "花园",
+      "image": "images/09-garden.png",
+      "prompt": "prompts/09-garden.txt",
+      "pages": [
+        {
+          "id": "25",
+          "title": "空花园"
+        },
+        {
+          "id": "26",
+          "title": "成长日记展开"
+        },
+        {
+          "id": "27",
+          "title": "切换花圃"
+        }
+      ]
+    },
+    {
+      "id": "10-task",
+      "title": "小事详情",
+      "category": "任务",
+      "image": "images/10-task.png",
+      "prompt": "prompts/10-task.txt",
+      "pages": [
+        {
+          "id": "28",
+          "title": "待完成详情"
+        },
+        {
+          "id": "29",
+          "title": "本期已完成"
+        },
+        {
+          "id": "30",
+          "title": "已归档详情"
+        }
+      ]
+    },
+    {
+      "id": "11-completion",
+      "title": "完成与生长",
+      "category": "任务",
+      "image": "images/11-completion.png",
+      "prompt": "prompts/11-completion.txt",
+      "pages": [
+        {
+          "id": "31",
+          "title": "完成留念"
+        },
+        {
+          "id": "32",
+          "title": "附一张照片"
+        },
+        {
+          "id": "33",
+          "title": "首次发芽"
+        }
+      ]
+    },
+    {
+      "id": "12-records",
+      "title": "记录与照片",
+      "category": "记录",
+      "image": "images/12-records.png",
+      "prompt": "prompts/12-records.txt",
+      "pages": [
+        {
+          "id": "34",
+          "title": "完成记录"
+        },
+        {
+          "id": "35",
+          "title": "邮件提醒记录"
+        },
+        {
+          "id": "36",
+          "title": "照片大图"
+        }
+      ]
+    },
+    {
+      "id": "13-calendar-states",
+      "title": "日历里的不同日子",
+      "category": "日历",
+      "image": "images/13-calendar-states.png",
+      "prompt": "prompts/13-calendar-states.txt",
+      "pages": [
+        {
+          "id": "37",
+          "title": "未来安排"
+        },
+        {
+          "id": "38",
+          "title": "当日无安排"
+        },
+        {
+          "id": "39",
+          "title": "记录分页"
+        }
+      ]
+    },
+    {
+      "id": "14-dialogs",
+      "title": "提醒操作确认",
+      "category": "弹窗",
+      "image": "images/14-dialogs.png",
+      "prompt": "prompts/14-dialogs.txt",
+      "pages": [
+        {
+          "id": "40",
+          "title": "稍后提醒"
+        },
+        {
+          "id": "41",
+          "title": "归档确认"
+        },
+        {
+          "id": "42",
+          "title": "离开编辑"
+        }
+      ]
+    },
+    {
+      "id": "15-selectors",
+      "title": "日期、时间与规则",
+      "category": "弹窗",
+      "image": "images/15-selectors.png",
+      "prompt": "prompts/15-selectors.txt",
+      "pages": [
+        {
+          "id": "43",
+          "title": "日期选择"
+        },
+        {
+          "id": "44",
+          "title": "24小时时间选择"
+        },
+        {
+          "id": "45",
+          "title": "重复方式选择"
+        }
+      ]
+    },
+    {
+      "id": "16-more-controls",
+      "title": "完成模式与照片选择",
+      "category": "弹窗",
+      "image": "images/16-more-controls.png",
+      "prompt": "prompts/16-more-controls.txt",
+      "pages": [
+        {
+          "id": "46",
+          "title": "完成模式"
+        },
+        {
+          "id": "47",
+          "title": "修改移除时间"
+        },
+        {
+          "id": "48",
+          "title": "系统单张照片选择"
+        }
+      ]
+    },
+    {
+      "id": "17-account-states",
+      "title": "账号的关键状态",
+      "category": "状态",
+      "image": "images/17-account-states.png",
+      "prompt": "prompts/17-account-states.txt",
+      "pages": [
+        {
+          "id": "49",
+          "title": "密码错误"
+        },
+        {
+          "id": "50",
+          "title": "验证码重发等待"
+        },
+        {
+          "id": "51",
+          "title": "登录过期"
+        }
+      ]
+    },
+    {
+      "id": "18-editor-states",
+      "title": "安排遇到问题时",
+      "category": "状态",
+      "image": "images/18-editor-states.png",
+      "prompt": "prompts/18-editor-states.txt",
+      "pages": [
+        {
+          "id": "52",
+          "title": "AI不支持规则"
+        },
+        {
+          "id": "53",
+          "title": "表单验证错误"
+        },
+        {
+          "id": "54",
+          "title": "AI请求失败"
+        }
+      ]
+    },
+    {
+      "id": "19-home-states",
+      "title": "还没种下与暂时没连上",
+      "category": "状态",
+      "image": "images/19-home-states.png",
+      "prompt": "prompts/19-home-states.txt",
+      "pages": [
+        {
+          "id": "55",
+          "title": "首页无任务"
+        },
+        {
+          "id": "56",
+          "title": "搜索无结果"
+        },
+        {
+          "id": "57",
+          "title": "花园刷新失败"
+        }
+      ]
+    },
+    {
+      "id": "20-media-feedback",
+      "title": "照片与完成反馈",
+      "category": "状态",
+      "image": "images/20-media-feedback.png",
+      "prompt": "prompts/20-media-feedback.txt",
+      "pages": [
+        {
+          "id": "58",
+          "title": "系统相机衔接"
+        },
+        {
+          "id": "59",
+          "title": "照片读取失败"
+        },
+        {
+          "id": "60",
+          "title": "重复完成"
+        }
+      ]
+    },
+    {
+      "id": "21-record-states",
+      "title": "记录的不同状态",
+      "category": "记录",
+      "image": "images/21-record-states.png",
+      "prompt": "prompts/21-record-states.txt",
+      "pages": [
+        {
+          "id": "61",
+          "title": "邮件发送失败"
+        },
+        {
+          "id": "62",
+          "title": "等待发送"
+        },
+        {
+          "id": "63",
+          "title": "无文字照片的完成记录"
+        }
+      ]
+    },
+    {
+      "id": "22-task-states",
+      "title": "提醒的不同状态",
+      "category": "任务",
+      "image": "images/22-task-states.png",
+      "prompt": "prompts/22-task-states.txt",
+      "pages": [
+        {
+          "id": "64",
+          "title": "已暂停"
+        },
+        {
+          "id": "65",
+          "title": "未开始"
+        },
+        {
+          "id": "66",
+          "title": "已过期"
+        }
+      ]
+    },
+    {
+      "id": "23-growth-states",
+      "title": "成长的每个阶段",
+      "category": "花园",
+      "image": "images/23-growth-states.png",
+      "prompt": "prompts/23-growth-states.txt",
+      "pages": [
+        {
+          "id": "67",
+          "title": "第三次长叶"
+        },
+        {
+          "id": "68",
+          "title": "第七次开花"
+        },
+        {
+          "id": "69",
+          "title": "旧服务完成反馈"
+        }
+      ]
+    },
+    {
+      "id": "24-loading-states",
+      "title": "等待与连接反馈",
+      "category": "状态",
+      "image": "images/24-loading-states.png",
+      "prompt": "prompts/24-loading-states.txt",
+      "pages": [
+        {
+          "id": "70",
+          "title": "今天首次加载"
+        },
+        {
+          "id": "71",
+          "title": "日历保留旧数据"
+        },
+        {
+          "id": "72",
+          "title": "连接正常与导出中"
+        }
+      ]
+    }
+  ],
+  "coverage": [
+    {
+      "route": "server",
+      "screens": [
+        "05",
+        "06"
+      ],
+      "source": "MainActivity.java renderServer"
+    },
+    {
+      "route": "login/login",
+      "screens": [
+        "01",
+        "49"
+      ],
+      "source": "renderLogin"
+    },
+    {
+      "route": "login/register",
+      "screens": [
+        "02",
+        "50"
+      ],
+      "source": "renderLogin"
+    },
+    {
+      "route": "login/reset",
+      "screens": [
+        "03"
+      ],
+      "source": "renderLogin"
+    },
+    {
+      "route": "home/guest",
+      "screens": [
+        "04",
+        "51"
+      ],
+      "source": "renderGuestHome"
+    },
+    {
+      "route": "home",
+      "screens": [
+        "22",
+        "55",
+        "56",
+        "70"
+      ],
+      "source": "renderHome"
+    },
+    {
+      "route": "garden",
+      "screens": [
+        "23",
+        "25",
+        "26",
+        "27",
+        "57"
+      ],
+      "source": "renderGarden"
+    },
+    {
+      "route": "history",
+      "screens": [
+        "24",
+        "37",
+        "38",
+        "39",
+        "71"
+      ],
+      "source": "renderHistory"
+    },
+    {
+      "route": "settings",
+      "screens": [
+        "07",
+        "08",
+        "09",
+        "72"
+      ],
+      "source": "renderSettings"
+    },
+    {
+      "route": "editor",
+      "screens": [
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "52",
+        "53",
+        "54"
+      ],
+      "source": "renderEditor"
+    },
+    {
+      "route": "detail",
+      "screens": [
+        "28",
+        "29",
+        "30",
+        "40",
+        "41",
+        "64",
+        "65",
+        "66"
+      ],
+      "source": "renderDetail"
+    },
+    {
+      "route": "complete",
+      "screens": [
+        "31",
+        "32",
+        "48",
+        "58"
+      ],
+      "source": "renderComplete"
+    },
+    {
+      "route": "grown",
+      "screens": [
+        "33",
+        "60",
+        "67",
+        "68",
+        "69"
+      ],
+      "source": "renderGrown"
+    },
+    {
+      "route": "record",
+      "screens": [
+        "34",
+        "35",
+        "61",
+        "62",
+        "63"
+      ],
+      "source": "renderRecord"
+    },
+    {
+      "route": "photo",
+      "screens": [
+        "36",
+        "59"
+      ],
+      "source": "renderPhoto"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+Use case: ui-mockup
+Create a NEW high fidelity Chinese Android app UI design board for 念念. Input image 1 is STYLE REFERENCE ONLY: use its beautiful clean 2D anime garden aesthetic, warm ivory paper background, dark forest green titles, sage green controls, thin outlined icons and precision spacing. Do not modify original image. No watercolor, no 3D, no photorealism.
+Canvas 1536 x 1024 landscape, three equal-width complete phone screens side-by-side inside thin soft rounded frames. Board title “念念 · 我的与账号操作”, subtitle “UI设计稿 · 示例数据”. Below phone frames label “07 我的”, “08 导出与系统分享”, “09 退出登录确认”. Each statusbar16:00.
+All three screenshots belong to MY main page: their bottom navigation has FOUR EQUAL-WIDTH slots with vertically stacked simple outline icons and labels EXACTLY “今天”, “花园”, “日历”, “我的”. Icons individually horizontally centered above their labels; last MY icon uses sage selected pill. No more than four items.
+LEFT screen07:
+Header “我的小天地” and subheading “照料生活，也照顾自己” with small lush hydrangea plant illustration at right.
+Compact account card with envelope icon, label “接收提醒的邮箱”, email “hello@example.com”, small green dot “已登录” and helper “账号已安全保存在这台手机”.
+Section “连接与数据” with current server label and “https://reminder.example.com”.
+Five clean icon rows with chevrons, exact labels “更换服务器地址”, “检查连接和登录状态”, “修改登录密码”, “导出我的全部文字记录”; that's FOUR rows, not five. All four visible. Subtle helper below export “包含提醒规则、完成文字和邮件记录”.
+Inline “关于念念” section with two short calm lines “真实完成，才会让花朵生长。” and “邮件按时发送，手机无需后台常驻。” No version number.
+Restrained text button “退出登录” in muted terracotta.
+At bottom tiny flowers above the navigation; enough content space, avoid huge top illustration.
+MIDDLE screen08:
+Same MY page dimmed behind Android system sharing sheet rising over lower 55 percent. Background header remains visible. This is Android system UI, visually generic Android, not custom app dialog.
+Rounded top handle, title “保存或分享记录”.
+File preview with JSON document icon and EXACT filename “念念记录-2026-10-04.json”.
+Small text “文字记录 · JSON 文件”.
+Subtle info “包含提醒规则、完成文字和邮件记录”; next smaller line “照片不包含在此文件中”.
+Two tidy system share target rows with generic symbols and labels “保存到文件”, “蓝牙”, “邮件”, “更多”. Do not invent actual contacts or private recipient identities. Bottom “取消”. Background bottom nav partly naturally covered by system sheet. The full phone frame is still visible.
+RIGHT screen09:
+Same MY page dimmed behind centered cream rounded Android alert, around halfway down viewport.
+Small leaf icon; title “退出当前账号？”.
+Body accurately reads “服务器上的提醒仍会照常发送，任务和记录不会删除。” On two or three easy-to-read lines.
+Optional below muted text “以后可再次登录，继续照料小花园”.
+Buttons aligned horizontally “取消” (outline or neutral) and “退出” (muted terracotta solid).
+No checkbox. No logout successful claim. Full app dimmed with four-slot MY selected navigation still visible.
+Typography: sharp readable simplified Chinese. Accurate email/address/filename. All core MY options must be visible on left screen. Consistent UI grid, balanced spacing, no overlap, no text cut off, no fake login/security settings beyond listed actions.

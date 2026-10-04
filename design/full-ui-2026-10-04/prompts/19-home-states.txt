@@ -1,0 +1,25 @@
+Use case: ui-mockup
+Create a NEW high-fidelity Chinese Android app UI design board for 念念. Input image 1 is STYLE REFERENCE ONLY: match its beautiful clean 2D anime garden, warm ivory, dark forest-green type, gentle sage-green buttons, thin line icons, picket fence and sunny flower borders. Not watercolor, not photorealistic, no3D.
+1536 x1024 landscape, three equal-width COMPLETE phone screens side by side. Thin rounded frames with soft shadows. Board title exactly “念念 · 今天与花园状态”, subtitle “UI设计稿 · 示例数据”. Labels below screen frames “55 今天 · 首次空白”, “56 搜索无结果”, “57 花园 · 刷新失败”.
+Statusbar16:00 on all phones. All three are TOP-LEVEL main pages, NO back arrow. Bottom navigation always four equal-width slots with simple line icons centered above exact labels “今天”, “花园”, “日历”, “我的”. First two screens 今天 selected sage pill; third screen 花园 selected. Accurate simplified Chinese, generous spacing, no overlaps or cropped phone edges.
+Screen55:
+Today main page with stunning full-width sunny garden hero upper33%, white gate, flowers, sleeping orange-white cat. Header logo “念念” and smaller “10月4日 星期日”; slim “＋ 播种” action upper right.
+Below hero heading “今天的小事” and search icon.
+Main empty area has charming small sprouting seed character on small soil patch, heading “从一颗小小的种子开始”, supporting line “把想记住的小事，种在这里”.
+Primary sage-green button “播下第一颗种子”.
+Generous warm cream blank space to communicate genuine new account with zero tasks. No fake task rows, no misleading counts, no pre-existing flowers shown as user plants. Low decorative foliage before bottomnav.
+Screen56:
+Same Today hero upper30%, logo “念念”, date “10月4日 星期日”, “＋ 播种”.
+Heading “今天的小事”.
+Expanded search input with magnifier, retained typed text “运动”, clear x icon.
+Four equal filter pills EXACTLY “全部”, “待完成”, “已完成”, “已暂停”. 全部 selected.
+Empty search-result panel with simple illustrated magnifying glass near a tiny seedling, title “没有找到这件小事”, supportive text “换个关键词试试”, small secondary button “清除搜索”.
+No task rows. Calm cream content keeps input and filters always visible. Bottomnav today selected.
+Screen57:
+Immersive Garden page with blue sky, lush foliage, white garden gate and lawn matching original second screen.
+Centered heading “我的花园”, count “已种3株 · 开花1株”, top right slim “＋ 播种”.
+Below heading a NON-BLOCKING pale amber inline banner over sky/lawn, alert icon plus EXACT clear text “暂时没连上，显示上次的花园”. Include modest outline action “重新连接花园” within banner or directly under, not giant modal. Failure is indicated by words and icon, not color only.
+IMPORTANT retain previous plants visible on lawn; garden must not become blank: exactly THREE USER PLANTS planted visibly spaced in soil: one bloomed pink tulip named “读书”, one leafy green plant named “喝水”, one small sprout named “散步”. Decorative border flowers clearly separate from these three planted task subjects. Reading plant selected with small elegant nameplate.
+Below lawn, compact ivory selected-plant strip “读书 · 已完成7次” with “查看小事 ›”; separate small row “第1/1片” and “成长日记 ›”.
+Four-tab navigation with 花园 selected.
+No offline synchronization promise, no data-loss wording, no fake new network success. This is a refresh failure showing previously loaded garden. The essential garden content remains fully visible.

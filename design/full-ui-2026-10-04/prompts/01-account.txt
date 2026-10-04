@@ -1,0 +1,27 @@
+Use case: ui-mockup
+Create a NEW high-fidelity Chinese Android app UI design board for “念念”. Input image 1 is STYLE REFERENCE ONLY: inherit its beautiful clean anime garden illustration, warm ivory paper, dark forest green typography, gentle sage green buttons, very thin line icons and thoughtful spacing. Do NOT edit or reproduce its three page layouts. Not watercolor, not 3D, not photorealistic.
+Canvas: landscape 1536 x 1024, three equal-width full-height phone screens side-by-side, all screen content completely visible, thin rounded screen frames and gentle shadows. Cream board background with very restrained leaves in the outer corners. Header at top exactly “念念 · 账号与安全”, smaller subtitle “UI设计稿 · 示例数据”. Screen labels at bottom outside frames: “01 密码登录”, “02 注册 / 首次设密”, “03 重置密码”. Every screen has a 16:00 Android statusbar. These are authentication pages: NO bottom tab navigation.
+Typography: accurate clearly legible Simplified Chinese, editorial dark-green headings, 14-16 px-equivalent body, generous form spacing, consistent alignment. Tiny illustrations must never cover labels.
+Screen 01:
+small back chevron “返回首页”; lovely small illustrated tulips beside page heading “欢迎来到念念”, subheading “你的小花园，在等你”.
+Field “接收提醒的邮箱”, value “hello@example.com”.
+Field “登录密码”, obscured dots, eye icon.
+Small checked shield note “账号密码加密保存在这台手机，下次自动登录”.
+Large sage-green button “登录念念”.
+Two balanced text links “注册 / 首次设置密码” and “忘记密码”.
+Lower subtle connection row “当前服务器” then “https://reminder.example.com”, outline button “更换服务器”.
+Footer clean small illustration of a sunny white picket garden gate with seedlings, not overwhelming the form.
+Screen 02:
+back chevron “返回登录”; small sprouting seed character right of heading “种下你的第一份期待”.
+Subtitle “注册 / 首次设置密码”.
+Labeled fields “接收提醒的邮箱” with hello@example.com; “邮箱验证码” with placeholder “输入 6 位验证码” and compact same-line “发送验证码” button; “设置密码” with placeholder “至少 8 个字符”.
+Informational small text “已有账号首次设密，原来的记录继续保留”.
+Primary button “注册并登录”. Text link “已有密码，返回登录”.
+Small terracotta seedling pot at bottom on low leafy border. No OTP actually sent.
+Screen 03:
+back “返回登录”; simple lovely illustrated sprout with key motif. Heading “重新设置密码”, subtitle “验证邮箱，回到你的小花园”.
+Fields “接收提醒的邮箱” hello@example.com; “邮箱验证码” placeholder 输入 6 位验证码 with “发送验证码”; “新密码” placeholder 至少 8 个字符.
+Soft sage notice “提醒和成长记录都会保留”.
+Primary button “重置并登录”; secondary “返回登录”.
+Footer tiny peaceful blue watering can and two flowers.
+All three forms have the same grid, input height, corners, text styling and button alignment. No invented social sign-in. Do not add password-confirmation fields. No passwords or actual private information. Perfect UI design mockup fidelity, polished production-ready readable forms.

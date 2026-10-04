@@ -1,0 +1,19 @@
+Use case: ui-mockup
+Create a NEW high-fidelity Chinese Android app UI design board for “念念”. Input image 1 is STYLE REFERENCE ONLY. Inherit its warm ivory, dark forest green typography, gentle sage buttons, clean thin line icons and beautifully detailed 2D anime sunny garden, white picket fence and lush flowers. Do not reproduce original pages. No watercolor, no photorealism, no 3D.
+Canvas 1536 x 1024 landscape, three equal-width complete phone interfaces in one horizontal row, subtle rounded frames and shadows. All content and screen edges fully visible. Board background warm cream, tasteful little leaves outer corners. Header exactly “念念 · 欢迎与连接”, subtitle “UI设计稿 · 示例数据”. Bottom labels outside phones: “04 未登录欢迎页”, “05 首次连接”, “06 更换服务器 / 连接失败”. Each status bar says16:00. No bottom navigation on these three pages.
+Screen 04: Full-width beautiful sunlit garden gate illustration in upper 45%, small cute sleeping white-orange cat near gate, trees and blue sky. Elegant page heading below illustration “让小事，慢慢长大”, subheading “你的小花园，还在等你”. Two short lines “每一件认真完成的小事” and “都会留下成长”. Large green button “登录我的花园”; gentle outline button “注册 / 首次设置密码”; low-emphasis link “更换服务器”. Small planted seedling in terracotta pot at bottom, cream space kept spacious, no fake task data.
+Screen 05: Back button top left “返回”. Heading “连接你的小花园”, subtitle “先找到念念的提醒服务”. Small lovely seedling illustration at right.
+Clear field label “服务器地址”, empty input with placeholder “https://reminder.example.com” in gray. Under field small helper “填入你的念念服务地址”.
+Soft outline full-width button “测试连接”.
+Primary large green full-width button “连接并继续”.
+Collapsed row with disclosure chevron “本地调试说明”, showing no large technical paragraphs.
+Soft information card “公网连接建议使用 HTTPS”.
+Bottom beautiful small white garden gate plus a pathway inviting the user to enter; restrained garden plants border, no UI behind it.
+Screen 06: Top back “返回”; heading “更换服务器”, subtitle “连接到另一座小花园”. Small watering can illustration near heading.
+Field label “服务器地址”, retained value “https://reminder.example.com”.
+Inline warm muted terracotta error card with small alert icon: bold “暂时无法连接”, body “请检查地址和网络，再试一次”. Do not rely solely on red. Field retains typed value.
+Outline full-width button “重试测试”. Green full-width button “保存服务器地址”. Text secondary button “返回”.
+Small sage informational note “同一地址保留登录；更换地址后重新验证账号”.
+Collapsed row “本地调试说明”.
+Low decorative plants and garden tools at bottom; enough breathing room for all controls. This is failed test state, not success. No invented offline task storage.
+Keep precise simplified Chinese, restrained elegant UI hierarchy, consistent 16 px equivalent body size and equal input/button heights, no overlaps or cut-off content. Preserve semantics: welcome has sign-in and registration; first connection address empty; change-connection test failure keeps the address and exposes retry.
