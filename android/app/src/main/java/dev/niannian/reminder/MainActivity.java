@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
     private final Handler ui = new Handler(Looper.getMainLooper());
     private Session session;
     private int accountEpoch = 0, pageEpoch = 0, taskLoadRequest = 0;
-    private String screen = "home", filter = "全部", search = "";
+    private String screen = "home", filter = "待完成", search = "";
     private JSONObject selected = new JSONObject(), draft = new JSONObject(), restoredForm;
     private JSONArray taskData = new JSONArray();
     private LinearLayout root, body, taskList;
@@ -88,7 +88,7 @@ public class MainActivity extends Activity {
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         session = new Session(this);
         if (state != null) {
-            screen = state.getString("screen", "home"); filter = state.getString("filter", "全部");
+            screen = state.getString("screen", "home"); filter = state.getString("filter", "待完成");
             search=state.getString("search","");homeSearchExpanded=state.getBoolean("homeSearchExpanded");
             try { selected = new JSONObject(state.getString("selected", "{}")); draft = new JSONObject(state.getString("draft", "{}")); restoredForm = new JSONObject(state.getString("form", "{}")); } catch (Exception ignored) {}
             editing = state.getBoolean("editing"); manualVisible = state.getBoolean("manual");
@@ -418,7 +418,7 @@ public class MainActivity extends Activity {
         query.setVisibility(homeSearchExpanded||!search.isEmpty()?View.VISIBLE:View.GONE);content.addView(query);
         find.setOnClickListener(v->{homeSearchExpanded=query.getVisibility()!=View.VISIBLE;query.setVisibility(homeSearchExpanded?View.VISIBLE:View.GONE);if(homeSearchExpanded){query.requestFocus();((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).showSoftInput(query,InputMethodManager.SHOW_IMPLICIT);}else{query.setText("");hideKeyboard(query);}});
         LinearLayout tabs=row();List<Button> filters=new ArrayList<>();
-        for(String name:new String[]{"全部","待完成","已完成","已暂停"}){
+        for(String name:new String[]{"待完成","全部","已完成","已暂停"}){
             Button tab=smallButton(name);tab.setTextSize(12);tab.setPadding(0,0,0,0);tab.setTag(name);filters.add(tab);
             LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(48),1);if(filters.size()>1)lp.leftMargin=dp(4);tabs.addView(tab,lp);
             tab.setOnClickListener(v->{filter=name;for(Button item:filters)styleFilter(item,filter.equals(item.getTag()));drawTasks();});
@@ -700,7 +700,9 @@ public class MainActivity extends Activity {
                         taskLoadRequest++;
                         for(int i=0;i<taskData.length();i++)if(id.equals(taskData.optJSONObject(i)==null?"":taskData.optJSONObject(i).optString("id")))try{taskData.put(i,result);}catch(JSONException ignored){}
                         if(id.equals(selected.optString("id")))selected=result;
-                        invalidateCalendar();
+                        // Pausing changes future schedules, not plant identity or earned growth.
+                        // Keep loaded garden data and any in-flight garden read intact.
+                        invalidateCalendarSchedule();
                     }
                     if(page!=pageEpoch){
                         if(screen.equals("home"))loadTasks(null);else if(screen.equals("detail")&&id.equals(selected.optString("id")))reloadSelected();else if(screen.equals("history")&&error==null)loadCalendar(null);
@@ -1065,7 +1067,8 @@ public class MainActivity extends Activity {
     private void changeMonth(int delta){calendarMonth=calendarMonth.plusMonths(delta);calendarDate=calendarMonth.atDay(Math.min(calendarDate.getDayOfMonth(),calendarMonth.lengthOfMonth()));recordPage=0;loadCalendar(null);}
     private String calendarKey(){return calendarMonth+"|"+ZoneId.systemDefault().getId();}
     private boolean calendarLoaded(){return calendarLoadedKey.equals(calendarKey());}
-    private void invalidateCalendar(){calendarRequests.invalidate();plannedTaskRequest++;calendarData=new JSONArray();calendarLoadedKey="";calendarNotice="";calendarTruncated=false;calendarLoading=false;gardenRequest++;gardenTaskRequest++;gardenData=null;gardenLoading=false;gardenNotice="";}
+    private void invalidateCalendarSchedule(){calendarRequests.invalidate();plannedTaskRequest++;calendarData=new JSONArray();calendarLoadedKey="";calendarNotice="";calendarTruncated=false;calendarLoading=false;}
+    private void invalidateCalendar(){invalidateCalendarSchedule();gardenRequest++;gardenTaskRequest++;gardenData=null;gardenLoading=false;gardenNotice="";}
     private void loadCalendar(Button trigger){
         plannedTaskRequest++;
         String month=calendarMonth.toString(),zone=ZoneId.systemDefault().getId(),key=calendarKey();int request=calendarRequests.begin(month,zone);
@@ -1359,7 +1362,7 @@ public class MainActivity extends Activity {
             Api old=new Api(session.base,session.token);try{session.logout();}catch(Exception e){showError("退出登录未保存，请重试");return;}accountEpoch++;clearAccountData();homeNotice="已退出登录。账号信息仍记在这台手机上，点登录即可继续。";navigate("home");workers.submit(()->{try{old.json("POST","/api/v1/auth/logout",object());}catch(Exception ignored){}});
         }).show());
     }
-    private void clearAccountData(){gardenSelection=null;homeSearchExpanded=false;growthAnimationState.clear();gardenPage=0;gardenSelectedPlantId="";gardenMemoriesExpanded=false;gardenContent=null;gardenPreview=null;recordBack="history";completedRecord=new JSONObject();taskData=new JSONArray();taskLoadRequest++;pauseInFlight.clear();selected=new JSONObject();draft=new JSONObject();selectedRecord=new JSONObject();invalidateCalendar();calendarDate=LocalDate.now();calendarMonth=YearMonth.now();recordPage=0;detailBack="home";photoBack="record";photoId="";photoTitle="";calendarGrid=null;calendarRecords=null;calendarFeedback=null;calendarCaption=null;calendarRefresh=null;restoredForm=null;photoFile=null;cameraFile=null;search="";filter="全部";aiText="";aiWarning="";completionText="";taskList=null;manualVisible=false;rulesExpanded=false;advancedExpanded=false;aiExpanded=true;}
+    private void clearAccountData(){gardenSelection=null;homeSearchExpanded=false;growthAnimationState.clear();gardenPage=0;gardenSelectedPlantId="";gardenMemoriesExpanded=false;gardenContent=null;gardenPreview=null;recordBack="history";completedRecord=new JSONObject();taskData=new JSONArray();taskLoadRequest++;pauseInFlight.clear();selected=new JSONObject();draft=new JSONObject();selectedRecord=new JSONObject();invalidateCalendar();calendarDate=LocalDate.now();calendarMonth=YearMonth.now();recordPage=0;detailBack="home";photoBack="record";photoId="";photoTitle="";calendarGrid=null;calendarRecords=null;calendarFeedback=null;calendarCaption=null;calendarRefresh=null;restoredForm=null;photoFile=null;cameraFile=null;search="";filter="待完成";aiText="";aiWarning="";completionText="";taskList=null;manualVisible=false;rulesExpanded=false;advancedExpanded=false;aiExpanded=true;}
     private interface Job<T>{T run(Api api)throws Exception;}
     private interface Result<T>{void accept(T value);}
     private <T> void run(Button trigger,Job<T> job,Result<T> success){
