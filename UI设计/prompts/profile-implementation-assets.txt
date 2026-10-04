@@ -1,0 +1,8 @@
+2026-10-04 · 我的与账号操作（03 设计板 / 07–09 页）
+工具：内置 image_gen，单张新素材生成，无参考图片输入，无后期编辑。
+成品：android/app/src/main/res/drawable-nodpi/profile_header.png
+实际尺寸：2048 × 768，不透明 PNG。原始生成结果复制入项目，文字和木牌由原生控件叠加。
+复用：sowing_footer_foliage.png、garden_sprout_v3.png、garden_notice_board.xml。
+
+完整提示词：
+Use case: illustration-story. Create one production-ready illustrated header background for a Chinese gentle garden reminder Android app. Landscape ratio 2.7:1, approximately 1536x576. Clean high-quality 2D anime garden, crisp shapes and fine outlines, warm ivory (#fffcf5) and soft sunny sage-green palette, NOT watercolor, no paper texture, no realism, no 3D. Composition: left 55 percent stays mostly open pale ivory sky for native dark-green heading and subtitle; very small leaves touching left top edge. Right 45 percent lush hydrangeas in light blue, purple and pink, green leaves, small white picket fence behind flowers. Light leafy canopy enters upper right. Small daisies and foliage form the lower border and fade into plain warm ivory along bottom to blend into app page. Flowers are bright but gentle, tidy, charming. No text, no lettering, no UI, no border, no phone, no watermark, no wooden sign (added natively). This is only the standalone banner asset, not a screenshot.

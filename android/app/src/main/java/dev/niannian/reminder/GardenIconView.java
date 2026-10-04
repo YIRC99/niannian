@@ -51,6 +51,25 @@ public final class GardenIconView extends View {
         canvas.scale(size / 24f, size / 24f);
         path.reset();
         switch (kind) {
+            case "mail":
+                rect.set(2,4,22,20);canvas.drawRoundRect(rect,2,2,paint);
+                path.moveTo(3,5);path.lineTo(12,13);path.lineTo(21,5);canvas.drawPath(path,paint);
+                break;
+            case "server":
+                rect.set(4,3,20,10);canvas.drawRoundRect(rect,2,2,paint);
+                rect.set(4,14,20,21);canvas.drawRoundRect(rect,2,2,paint);
+                canvas.drawPoint(8,6.5f,paint);canvas.drawLine(12,6.5f,16,6.5f,paint);
+                canvas.drawPoint(8,17.5f,paint);canvas.drawLine(12,17.5f,16,17.5f,paint);
+                break;
+            case "wifi":
+                path.moveTo(2,8);path.quadTo(12,-1,22,8);path.moveTo(5,12);path.quadTo(12,5,19,12);
+                path.moveTo(8,16);path.quadTo(12,12,16,16);canvas.drawPath(path,paint);canvas.drawCircle(12,20,1,paint);
+                break;
+            case "export":
+                path.moveTo(13,3);path.lineTo(5,3);path.lineTo(5,21);path.lineTo(17,21);path.lineTo(17,17);
+                path.moveTo(13,3);path.lineTo(19,9);path.lineTo(13,9);path.close();
+                path.moveTo(11,15);path.lineTo(22,15);path.moveTo(19,12);path.lineTo(22,15);path.lineTo(19,18);canvas.drawPath(path,paint);
+                break;
             case "send":
                 path.moveTo(3, 10); path.lineTo(21, 3); path.lineTo(16, 21);
                 path.lineTo(11, 14); path.lineTo(3, 10); path.moveTo(11, 14); path.lineTo(21, 3);

@@ -78,6 +78,7 @@ public class MainActivity extends Activity {
     private GardenGrowthView growthView;
     private GardenPlotView gardenScene;
     private GardenDrawerLayout gardenDrawer;
+    private AlertDialog profileDialog;
     private boolean motionHostActive;
     private long codeAvailableAt;
     private String authMode = "login", authEmail = "", homeNotice = "";
@@ -135,7 +136,7 @@ public class MainActivity extends Activity {
     }
     @Override protected void onResume() { super.onResume(); setMotionHostActive(true); }
     @Override protected void onPause() { setMotionHostActive(false); super.onPause(); }
-    @Override public void onDestroy() { stopPageMotion(); super.onDestroy(); workers.shutdownNow(); photoRequests.close(); ui.removeCallbacksAndMessages(null); }
+    @Override public void onDestroy() { dismissProfileDialog(); stopPageMotion(); super.onDestroy(); workers.shutdownNow(); photoRequests.close(); ui.removeCallbacksAndMessages(null); }
     private void setMotionHostActive(boolean active) {
         motionHostActive=active;
         if(growthView!=null)growthView.setHostActive(active);
@@ -185,6 +186,7 @@ public class MainActivity extends Activity {
     private void render() {
         stopPageMotion();
         photoRequests.invalidate();
+        dismissProfileDialog();
         GardenFlowers.configure(this,session.base,session.email);
         if(session.token.isEmpty()&&!Arrays.asList("home","login","server").contains(screen))screen="home";
         pageEpoch++; taskBusy = false; fields.clear(); kindPicker = null; modePicker = null; weekdays = null;
@@ -233,7 +235,7 @@ public class MainActivity extends Activity {
         body = column(); body.setPadding(dp(16), dp(12), dp(16), dp(20));
         if(recordFooter){body.setPadding(dp(16),dp(12),dp(16),0);body.setClipToPadding(false);}
         if(screen.equals("editor"))body.setPadding(dp(16),dp(4),dp(16),0);
-        if((screen.equals("home")&&!session.token.isEmpty())||screen.equals("garden")||screen.equals("history"))body.setPadding(0,0,0,0);
+        if((screen.equals("home")&&!session.token.isEmpty())||screen.equals("garden")||screen.equals("history")||screen.equals("settings"))body.setPadding(0,0,0,0);
         if(fixedMail||screen.equals("garden"))root.addView(body,new LinearLayout.LayoutParams(-1,0,1));
         else scroll.addView(body,new ScrollView.LayoutParams(-1,-2));
         gardenContent=null; gardenPreview=null; gardenSelection=null; gardenDrawer=null;
@@ -1456,18 +1458,125 @@ public class MainActivity extends Activity {
         if(!accepted)target.failed(()->loadRecordPhoto(target,id,open));
     }
     private void renderSettings(){
-        LinearLayout hello=row();hello.addView(art(R.drawable.garden_bloom,74));gapHorizontal(hello,12);LinearLayout words=column();words.addView(text("我的小天地",24,INK,true));gap(words,5);words.addView(text("照料生活，也照顾自己。",13,MUTED,false));hello.addView(words,new LinearLayout.LayoutParams(0,-2,1));body.addView(hello);gap(body,18);
-        LinearLayout account=card(body);account.addView(text("接收提醒的邮箱",13,MUTED,false));gap(account,8);TextView email=text(session.email,19,INK,true);email.setTextIsSelectable(true);account.addView(email);gap(account,12);account.addView(text("登录状态已安全保存在这台手机上。",13,MUTED,false));
-        section(body,"连接与数据");label(body,"当前服务器");TextView address=text(session.base,15,INK,false);address.setTextIsSelectable(true);body.addView(address);gap(body,12);
-        Button change=button("更换服务器地址",false);body.addView(change);change.setOnClickListener(v->navigate("server"));gap(body,12);
-        Button check=button("检查连接和登录状态",false);body.addView(check);check.setOnClickListener(v->run(check,a->{a.json("GET","/health",null);return a.json("GET","/api/v1/me",null);},r->toast("连接正常，当前登录："+r.optString("email"))));gap(body,12);
-        Button password=button(session.hasCredentials()?"修改登录密码":"设置密码，以后自动登录",false);body.addView(password);password.setOnClickListener(v->{authEmail=session.email;openAuth(session.hasCredentials()?"reset":"register");});gap(body,12);
-        Button export=button("导出我的全部文字记录",false);body.addView(export);export.setOnClickListener(v->run(export,a->{JSONObject data=a.json("GET","/api/v1/export",null);File dir=new File(getCacheDir(),"exports");if(!dir.exists()&&!dir.mkdirs())throw new IOException("无法创建导出文件");File file=new File(dir,"念念记录-"+LocalDate.now()+"-"+UUID.randomUUID()+".json");try(OutputStream out=new FileOutputStream(file)){out.write(data.toString(2).getBytes(StandardCharsets.UTF_8));}return file;},file->{Uri uri=FileProvider.getUriForFile(this,getPackageName()+".files",file);Intent i=new Intent(Intent.ACTION_SEND);i.setType("application/json");i.putExtra(Intent.EXTRA_STREAM,uri);i.setClipData(ClipData.newRawUri("念念记录",uri));i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);startActivity(Intent.createChooser(i,"保存或分享记录"));}));gap(body,12);
-        note(body,"导出包含提醒规则、完成文字和邮件记录。照片原文件保存在服务器的数据目录，完整备份时请一起保存该目录。");
-        section(body,"关于念念");body.addView(text("念念 1.4.0 · 小事生长的地方",15,INK,true));gap(body,8);note(body,"创建任务就是播种，真实完成才会增加养分。已经拥有的成长，不会因为漏做而消失。邮件按时发送，手机无需后台常驻。");
-        Button logout=button("退出登录",false);logout.setTextColor(RED);body.addView(logout);logout.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("退出当前账号？").setMessage("服务器上的提醒仍会照常发送，任务和记录不会删除。").setNegativeButton("取消",null).setPositiveButton("退出",(d,w)->{
-            Api old=new Api(session.base,session.token);try{session.logout();}catch(Exception e){showError("退出登录未保存，请重试");return;}accountEpoch++;clearAccountData();homeNotice="已退出登录。账号信息仍记在这台手机上，点登录即可继续。";navigate("home");workers.submit(()->{try{old.json("POST","/api/v1/auth/logout",object());}catch(Exception ignored){}});
-        }).show());
+        FrameLayout hero=new FrameLayout(this);
+        hero.addView(scenery(R.drawable.profile_header),new FrameLayout.LayoutParams(-1,-1));
+        LinearLayout heading=column();heading.addView(homeTitle("我的小天地",24));gap(heading,8);
+        heading.addView(text("照料生活，也照顾自己",13,INK,false));
+        FrameLayout.LayoutParams headingLp=new FrameLayout.LayoutParams(-2,-2,Gravity.CENTER_VERTICAL|Gravity.START);headingLp.leftMargin=dp(24);hero.addView(heading,headingLp);
+        TextView sign=text("慢一点\n也没关系",13,HOME_WOOD_TEXT,false);sign.setTypeface(getResources().getFont(R.font.garden_handwriting));sign.setGravity(Gravity.CENTER);
+        sign.setBackgroundResource(R.drawable.garden_notice_board);sign.setPadding(dp(8),dp(6),dp(8),dp(18));sign.setRotation(5);sign.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        FrameLayout.LayoutParams signLp=new FrameLayout.LayoutParams(dp(86),dp(64),Gravity.BOTTOM|Gravity.END);signLp.setMargins(0,0,dp(14),dp(7));hero.addView(sign,signLp);
+        // Preserve room for enlarged native text instead of clipping it into the artwork.
+        int headerHeight=Math.max(132,Math.round(112*getResources().getConfiguration().fontScale));
+        body.addView(hero,new LinearLayout.LayoutParams(-1,dp(headerHeight)));
+        if(getResources().getConfiguration().screenWidthDp<340||getResources().getConfiguration().fontScale>1.15f)sign.setVisibility(View.GONE);
+        LinearLayout content=column();content.setPadding(dp(16),dp(6),dp(16),0);body.addView(content);
+        ((ViewGroup)errorView.getParent()).removeView(errorView);content.addView(errorView);
+        LinearLayout account=card(content);account.setPadding(dp(12),dp(12),dp(12),dp(12));
+        LinearLayout accountRow=row();account.addView(accountRow);
+        FrameLayout mailPlate=new FrameLayout(this);mailPlate.setBackground(shape(PALE,28));mailPlate.addView(new GardenIconView(this,"mail",HOME_TITLE),new FrameLayout.LayoutParams(dp(26),dp(26),Gravity.CENTER));
+        accountRow.addView(mailPlate,new LinearLayout.LayoutParams(dp(48),dp(48)));gapHorizontal(accountRow,12);
+        LinearLayout identity=column();accountRow.addView(identity,new LinearLayout.LayoutParams(0,-2,1));
+        LinearLayout caption=row();caption.addView(text("接收提醒的邮箱",12,INK,false),new LinearLayout.LayoutParams(0,-2,1));
+        TextView signedIn=text("● 已登录",11,GREEN,false);caption.addView(signedIn);identity.addView(caption);gap(identity,6);
+        TextView email=text(session.email,16,INK,true);email.setTextIsSelectable(true);identity.addView(email);gap(identity,5);
+        identity.addView(text("账号已安全保存在这台手机",11,MUTED,false));
+        content.addView(homeTitle("连接与数据",17));gap(content,8);
+        LinearLayout group=card(content);group.setPadding(0,0,0,0);
+        LinearLayout addressRow=row();addressRow.setPadding(dp(16),dp(10),dp(16),dp(10));
+        addressRow.addView(new GardenIconView(this,"globe",BLUE),new LinearLayout.LayoutParams(dp(24),dp(24)));gapHorizontal(addressRow,14);
+        LinearLayout server=column();server.addView(text("当前服务器地址",12,INK,false));gap(server,4);
+        TextView address=text(session.base,12,MUTED,false);address.setTextIsSelectable(true);server.addView(address);addressRow.addView(server,new LinearLayout.LayoutParams(0,-2,1));group.addView(addressRow);
+        ProfileAction change=new ProfileAction(group,"server","更换服务器地址","");change.setOnClickListener(v->navigate("server"));
+        ProfileAction check=new ProfileAction(group,"wifi","检查连接和登录状态","");
+        check.setOnClickListener(v->{
+            String expectedEmail=session.email;check.state("正在检查连接和登录状态…",true,false);
+            run(null,a->{
+                if(!"ok".equals(a.json("GET","/health",null).optString("status")))throw new IOException("地址可访问，但不是念念提醒服务");
+                JSONObject me=a.json("GET","/api/v1/me",null);
+                if(!expectedEmail.equalsIgnoreCase(me.optString("email").trim()))throw new IOException("登录账号不一致，请重新登录");
+                return me;
+            },r->check.state("连接正常 · 当前账号登录有效",false,false),e->check.state("检查失败，点击重试\n"+failureMessage(e),false,true));
+        });
+        ProfileAction password=new ProfileAction(group,"lock",session.hasCredentials()?"修改登录密码":"设置密码，以后自动登录","");
+        password.setOnClickListener(v->{authEmail=session.email;openAuth(session.hasCredentials()?"reset":"register");});
+        ProfileAction export=new ProfileAction(group,"export","导出我的全部文字记录","包含提醒规则、完成文字和邮件记录\n照片不包含在此文件中");
+        export.setOnClickListener(v->{
+            export.state("正在准备文字记录…\n照片不包含在此文件中",true,false);
+            run(null,a->{
+                JSONObject data=a.json("GET","/api/v1/export",null);
+                // Unique private directory, readable filename in the native system share sheet.
+                File dir=new File(getCacheDir(),"exports/"+UUID.randomUUID());if(!dir.mkdirs())throw new IOException("无法创建导出文件");
+                File file=new File(dir,"念念记录-"+LocalDate.now()+".json");
+                try(OutputStream out=new FileOutputStream(file)){out.write(data.toString(2).getBytes(StandardCharsets.UTF_8));}return file;
+            },file->{
+                try{
+                    Uri uri=FileProvider.getUriForFile(this,getPackageName()+".files",file);
+                    Intent share=new Intent(Intent.ACTION_SEND);share.setType("application/json");share.putExtra(Intent.EXTRA_STREAM,uri);
+                    share.putExtra(Intent.EXTRA_TITLE,file.getName());share.setClipData(ClipData.newRawUri("念念文字记录",uri));share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(Intent.createChooser(share,"保存或分享记录"));
+                    export.state("文字文件已准备好，可再次导出\n照片不包含在此文件中",false,false);
+                }catch(ActivityNotFoundException|SecurityException e){export.state("无法打开系统分享，点击重试",false,true);}
+            },e->export.state("导出失败，点击重试\n"+failureMessage(e),false,true));
+        });
+        content.addView(homeTitle("关于念念",17));gap(content,7);
+        LinearLayout about=row();about.addView(art(R.drawable.garden_sprout_v3,32));gapHorizontal(about,10);
+        about.addView(text("真实完成，才会让花朵生长。\n邮件按时发送，手机无需后台常驻。",12,MUTED,false),new LinearLayout.LayoutParams(0,-2,1));content.addView(about);
+        body.addView(new Space(this),new LinearLayout.LayoutParams(1,0,1));
+        FrameLayout footer=new FrameLayout(this);ImageView grass=scenery(R.drawable.sowing_footer_foliage);grass.setScaleType(ImageView.ScaleType.FIT_END);footer.addView(grass,new FrameLayout.LayoutParams(-1,-1));
+        Button logout=button("退出登录",true);logout.setTextColor(PAPER);logout.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22ffffff),shape(0xffb76d59,12),null));
+        FrameLayout.LayoutParams logoutLp=new FrameLayout.LayoutParams(-1,-2,Gravity.TOP);logoutLp.setMargins(dp(56),dp(12),dp(56),0);footer.addView(logout,logoutLp);logout.setOnClickListener(v->showProfileLogout());
+        body.addView(footer,new LinearLayout.LayoutParams(-1,dp(Math.max(90,Math.round(66*getResources().getConfiguration().fontScale)))));
+    }
+    private String failureMessage(Exception e){return e.getMessage()==null?"请稍后再试":e.getMessage();}
+    private final class ProfileAction extends LinearLayout {
+        private final TextView caption;
+        private final ProgressBar progress;
+        private final GardenIconView arrow;
+        private final String title;
+        ProfileAction(LinearLayout parent,String icon,String title,String detail){
+            super(MainActivity.this);this.title=title;
+            View divider=new View(MainActivity.this);divider.setBackgroundColor(LINE);parent.addView(divider,new LinearLayout.LayoutParams(-1,dp(1)));
+            setOrientation(HORIZONTAL);setGravity(Gravity.CENTER_VERTICAL);setMinimumHeight(dp(48));setPadding(dp(16),dp(9),dp(12),dp(9));
+            setBackground(new RippleDrawable(ColorStateList.valueOf(0x18527a58),shape(Color.TRANSPARENT,12),null));
+            addView(new GardenIconView(MainActivity.this,icon,HOME_TITLE),new LinearLayout.LayoutParams(dp(24),dp(24)));gapHorizontal(this,14);
+            LinearLayout words=column();words.addView(text(title,14,INK,false));caption=text("",11,MUTED,false);caption.setPadding(0,dp(4),0,0);words.addView(caption);
+            words.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);addView(words,new LinearLayout.LayoutParams(0,-2,1));gapHorizontal(this,8);
+            progress=new ProgressBar(MainActivity.this);progress.setIndeterminateTintList(ColorStateList.valueOf(BLUE));progress.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);addView(progress,new LinearLayout.LayoutParams(dp(20),dp(20)));
+            arrow=new GardenIconView(MainActivity.this,"chevron_right",INK);addView(arrow,new LinearLayout.LayoutParams(dp(16),dp(16)));
+            setFocusable(true);setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+            setAccessibilityDelegate(new View.AccessibilityDelegate(){@Override public void onInitializeAccessibilityNodeInfo(View host,android.view.accessibility.AccessibilityNodeInfo info){super.onInitializeAccessibilityNodeInfo(host,info);info.setClassName(Button.class.getName());}});
+            parent.addView(this,new LinearLayout.LayoutParams(-1,-2));state(detail,false,false);
+        }
+        void state(String detail,boolean busy,boolean failed){
+            setEnabled(!busy);caption.setText(detail);caption.setTextColor(failed?RED:MUTED);caption.setVisibility(detail.isEmpty()?View.GONE:View.VISIBLE);
+            progress.setVisibility(busy?View.VISIBLE:View.GONE);arrow.setVisibility(busy?View.GONE:View.VISIBLE);setContentDescription(title+(detail.isEmpty()?"":"，"+detail));
+        }
+    }
+    private void dismissProfileDialog(){if(profileDialog!=null){profileDialog.dismiss();profileDialog=null;}}
+    private void showProfileLogout(){
+        if(profileDialog!=null)return;
+        int account=accountEpoch,page=pageEpoch;
+        LinearLayout panel=column();panel.setPadding(dp(22),dp(22),dp(22),dp(18));panel.setGravity(Gravity.CENTER_HORIZONTAL);panel.setBackground(shape(PAPER,20));
+        panel.addView(art(R.drawable.garden_sprout_v3,42));gap(panel,10);TextView title=homeTitle("退出当前账号？",21);title.setGravity(Gravity.CENTER);panel.addView(title);gap(panel,14);
+        TextView explanation=text("服务器上的提醒仍会照常发送，任务和记录不会删除。",15,INK,false);explanation.setGravity(Gravity.CENTER);panel.addView(explanation);gap(panel,12);
+        TextView later=text("以后可再次登录，继续照料小花园。",12,MUTED,false);later.setGravity(Gravity.CENTER);panel.addView(later);gap(panel,18);
+        TextView failure=text("",12,RED,false);failure.setVisibility(View.GONE);failure.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);panel.addView(failure);
+        LinearLayout actions=row();panel.addView(actions,new LinearLayout.LayoutParams(-1,-2));
+        Button cancel=button("取消",false);GradientDrawable outline=shape(PAPER,12);outline.setStroke(dp(1),LINE);cancel.setBackground(new RippleDrawable(ColorStateList.valueOf(0x18527a58),outline,null));actions.addView(cancel,new LinearLayout.LayoutParams(0,-2,1));gapHorizontal(actions,12);
+        Button exit=button("退出",true);exit.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22ffffff),shape(0xffb76d59,12),null));actions.addView(exit,new LinearLayout.LayoutParams(0,-2,1));
+        // A scroll container keeps confirmation reachable with large accessibility fonts.
+        ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);scroll.addView(panel);
+        AlertDialog dialog=new AlertDialog.Builder(this).create();profileDialog=dialog;dialog.setView(scroll,0,0,0,0);
+        dialog.setOnDismissListener(d->{if(profileDialog==dialog)profileDialog=null;});cancel.setOnClickListener(v->dialog.dismiss());
+        exit.setOnClickListener(v->{
+            if(account!=accountEpoch||page!=pageEpoch){dialog.dismiss();return;}
+            Api old=new Api(session.base,session.token);
+            try{session.logout();}catch(Exception e){failure.setText("退出登录未保存，请重试。");failure.setVisibility(View.VISIBLE);return;}
+            dialog.dismiss();accountEpoch++;clearAccountData();homeNotice="已退出登录。账号信息仍记在这台手机上，点登录即可继续。";navigate("home");
+            workers.submit(()->{try{old.json("POST","/api/v1/auth/logout",object());}catch(Exception ignored){}});
+        });
+        dialog.show();Window window=dialog.getWindow();if(window!=null){window.setBackgroundDrawable(shape(PAPER,20));window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.setDimAmount(.42f);window.setLayout(Math.min(getResources().getDisplayMetrics().widthPixels-dp(40),dp(360)),-2);}
     }
     private void clearAccountData(){gardenSelection=null;homeSearchExpanded=false;growthAnimationState.clear();gardenPage=0;gardenSelectedPlantId="";gardenMemoriesExpanded=false;gardenContent=null;gardenPreview=null;recordBack="history";completedRecord=new JSONObject();taskData=new JSONArray();taskLoadRequest++;pauseInFlight.clear();selected=new JSONObject();draft=new JSONObject();selectedRecord=new JSONObject();invalidateCalendar();calendarDate=LocalDate.now();calendarMonth=YearMonth.now();recordPage=0;detailBack="home";photoBack="record";photoId="";photoTitle="";calendarGrid=null;calendarRecords=null;calendarFeedback=null;calendarCaption=null;calendarRefresh=null;restoredForm=null;photoFile=null;cameraFile=null;search="";filter="待完成";aiText="";aiWarning="";completionText="";taskList=null;manualVisible=false;rulesExpanded=false;advancedExpanded=false;aiExpanded=true;}
     private interface Job<T>{T run(Api api)throws Exception;}
