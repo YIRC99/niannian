@@ -16,6 +16,7 @@ public final class UiAudit extends Instrumentation {
     private Bundle arguments;
     private File output;
     private int captures;
+    private final java.util.Set<String> capturedIds=new java.util.HashSet<>();
     private UiFixtures fixtures;
     @Override public void onCreate(Bundle args) { arguments=args; start(); }
     @Override public void onStart() {
@@ -35,6 +36,7 @@ public final class UiAudit extends Instrumentation {
             if(group.equals("all")||group.equals("editor"))editorPages();
             if(group.equals("all")||group.equals("main"))mainPages();
             if(group.equals("all")||group.equals("records"))recordPages();
+            if(group.equals("all"))for(int page=1;page<=72;page++){if((page==48||page==58)&&!arguments.getString("system","false").equals("true"))continue;String id=String.format(java.util.Locale.ROOT,"%02d",page);if(!capturedIds.contains(id))throw new AssertionError("Missing planned screenshot: "+id);}
             result.putString("stream","PASS: "+captures+" screenshots with loopback fixtures; group="+group+".\n");
             resultCode=Activity.RESULT_OK;
         } catch(Throwable e) {
@@ -61,24 +63,24 @@ public final class UiAudit extends Instrumentation {
     }
     private void editorPages()throws Exception{
         main(()->call("openEditor",new Class[]{JSONObject.class},(Object)null));capture("10");
-        fixtures.aiDelay=1600;main(()->field("ai").setText("15 分钟后提醒我收衣服，没完成就每 5 分钟提醒"));click("帮我安排");capture("11");SystemClock.sleep(1700);waitForIdleSync();capture("12");fixtures.aiDelay=0;
+        fixtures.aiDelay=1600;main(()->field("ai").setText("15 分钟后提醒我收衣服，没完成就每 5 分钟提醒"));click("帮我安排");capture("11");SystemClock.sleep(1700);syncUi();capture("12");fixtures.aiDelay=0;
         String[] kinds={"once","daily","weekly","monthly_window","date_range","interval","ongoing","minute_interval"};
-        for(int i=0;i<kinds.length;i++){String kind=kinds[i];main(()->{set("draft",UiFixtures.task(kind,"pending"));set("editing",false);set("manualVisible",true);set("rulesExpanded",true);set("advancedExpanded",false);set("aiExpanded",false);set("restoredForm",null);set("aiWarning","");show("editor");});capture(String.valueOf(13+i));main(()->{JSONObject built=(JSONObject)call("buildTask",new Class[]{});if(!built.getJSONObject("rule").getString("kind").equals(kind))throw new AssertionError("Rule round trip "+kind);});}
+        for(int i=0;i<kinds.length;i++){String kind=kinds[i];main(()->{set("draft",UiFixtures.task(kind,"pending"));set("aiText","");set("editing",false);set("manualVisible",true);set("rulesExpanded",true);set("advancedExpanded",false);set("aiExpanded",false);set("restoredForm",null);set("aiWarning","");show("editor");});capture(String.valueOf(13+i));main(()->{JSONObject built=(JSONObject)call("buildTask",new Class[]{});if(!built.getJSONObject("rule").getString("kind").equals(kind))throw new AssertionError("Rule round trip "+kind);});}
         main(()->{JSONObject task=UiFixtures.task("minute_interval","pending");task.getJSONObject("rule").put("end_at",java.time.OffsetDateTime.now().plusHours(3).withSecond(37).withNano(0).toString());call("openEditor",new Class[]{JSONObject.class},task);});click("更多设置");capture("21");
         main(()->{JSONObject saved=(JSONObject)call("buildTask",new Class[]{});if(!saved.getJSONObject("rule").getString("end_at").equals(((JSONObject)get("draft")).getJSONObject("rule").getString("end_at")))throw new AssertionError("Exact deadline lost");activity.onBackPressed();});capture("42");dismissDialog();
         main(()->{call("openEditor",new Class[]{JSONObject.class},UiFixtures.task("daily","pending"));field("start_date").performClick();});capture("43");systemBack();
         main(()->call("pickTime",new Class[]{int.class,String.class},-1,"16:15"));capture("44");systemBack();
         main(()->((Spinner)get("kindPicker")).performClick());capture("45");systemBack();
         main(()->((Spinner)get("modePicker")).performClick());capture("46");systemBack();click("20:30");capture("47");systemBack();
-        main(()->{JSONObject suggested=UiFixtures.task("weekly","pending");set("draft",suggested);set("editing",false);set("manualVisible",true);set("rulesExpanded",false);set("restoredForm",null);set("aiWarning","暂不支持自动判断空气质量。我先安排在每周六上午，出发前请你确认天气。保存前可以继续调整。");show("editor");});capture("52");
+        main(()->{JSONObject suggested=UiFixtures.task("weekly","pending").put("title","散步");suggested.getJSONObject("rule").put("weekdays",new JSONArray().put(6)).put("times",new JSONArray().put("09:00"));set("draft",suggested);set("aiText","空气好的时候提醒我散步");set("editing",false);set("manualVisible",true);set("rulesExpanded",false);set("restoredForm",null);set("aiWarning","暂不支持自动判断空气质量。我先安排在每周六上午，出发前请你确认天气。保存前可以继续调整。");show("editor");});capture("52");
         main(()->{set("rulesExpanded",true);set("aiWarning","");call("render",new Class[]{});for(CheckBox day:(CheckBox[])get("weekdays"))day.setChecked(false);});click("播下种子，开始提醒");capture("53");assertText("请选择至少一个星期");
-        fixtures.aiFailure=true;main(()->{call("openEditor",new Class[]{JSONObject.class},(Object)null);field("ai").setText("等会儿提醒我搞卫生");});click("帮我安排");SystemClock.sleep(600);waitForIdleSync();capture("54");assertText("重新安排");fixtures.aiFailure=false;
+        fixtures.aiFailure=true;main(()->{call("openEditor",new Class[]{JSONObject.class},(Object)null);field("ai").setText("等会儿提醒我搞卫生");});click("帮我安排");SystemClock.sleep(600);syncUi();capture("54");assertText("重新安排");fixtures.aiFailure=false;
     }
     private void mainPages()throws Exception{
         fixtures.tasks=new JSONArray().put(UiFixtures.task("daily","pending"));main(()->{set("search","");set("filter","待完成");show("home");});settle();capture("22");
         main(()->{set("search","找不到的小事");show("home");});settle();capture("56");click("清除搜索");
         fixtures.tasks=new JSONArray();main(()->{set("taskData",new JSONArray());show("home");});settle();capture("55");
-        fixtures.taskDelay=1800;main(()->{set("taskData",new JSONArray());show("home");});capture("70");SystemClock.sleep(1800);fixtures.taskDelay=0;
+        fixtures.taskDelay=1800;main(()->{set("taskData",new JSONArray());show("home");Button refresh=(Button)findDescription(activity.getWindow().getDecorView(),"刷新提醒");if(refresh.getText().length()!=0)throw new AssertionError("Loading caption overlaps refresh icon");});capture("70");SystemClock.sleep(1800);fixtures.taskDelay=0;
         fixtures.garden=UiFixtures.garden(14);main(()->{set("gardenData",fixtures.garden);set("gardenMemoriesExpanded",false);show("garden");});settle();capture("23");
         main(()->{GardenPlotView scene=(GardenPlotView)get("gardenScene");set("gardenSelectedPlantId","task-01");call("drawGarden",new Class[]{});});clickDescription("展开花园抽屉");SystemClock.sleep(350);capture("26");
         main(()->activity.onBackPressed());clickDescriptionPrefix("选择花圃，");capture("27");systemBack();
@@ -98,14 +100,16 @@ public final class UiAudit extends Instrumentation {
         main(()->{set("photoId","photo-01");set("photoTitle","读书");show("photo");});settle();capture("36");
         fixtures.mediaFailure=true;main(()->show("photo"));settle();capture("59");fixtures.mediaFailure=false;clickDescription("照片加载失败，点击重试");settle();main(()->{if(findDescription(activity.getWindow().getDecorView(),"完成凭证照片")==null)throw new AssertionError("Photo retry did not recover");});
     }
-    private void settle(){SystemClock.sleep(650);waitForIdleSync();}
+    // The garden has a perpetual breeze; a queue-idle wait can never finish under software rendering.
+    private void syncUi(){java.util.concurrent.CountDownLatch ready=new java.util.concurrent.CountDownLatch(1);new Handler(Looper.getMainLooper()).post(ready::countDown);try{if(!ready.await(8,java.util.concurrent.TimeUnit.SECONDS))throw new AssertionError("UI thread did not respond");}catch(InterruptedException e){Thread.currentThread().interrupt();throw new AssertionError(e);}}
+    private void settle(){SystemClock.sleep(650);syncUi();}
     private void awaitScreen(String expected)throws Exception{for(int i=0;i<25;i++){final boolean[] match={false};main(()->match[0]=expected.equals(get("screen")));if(match[0])return;SystemClock.sleep(200);}throw new AssertionError("Did not reach "+expected);}
     private void click(String label)throws Exception{main(()->{View found=findText(activity.getWindow().getDecorView(),label);if(found==null)throw new AssertionError("Missing action: "+label);while(!found.isClickable()&&found.getParent() instanceof View)found=(View)found.getParent();found.performClick();});}
     private void clickDescription(String label)throws Exception{main(()->{View found=findDescription(activity.getWindow().getDecorView(),label);if(found==null)throw new AssertionError("Missing action: "+label);found.performClick();});}
     private void clickDescriptionPrefix(String label)throws Exception{main(()->{View found=findDescriptionPrefix(activity.getWindow().getDecorView(),label);if(found==null)throw new AssertionError("Missing action: "+label);found.performClick();});}
-    private View findDescriptionPrefix(View v,String text){if(v.getContentDescription()!=null&&v.getContentDescription().toString().startsWith(text))return v;if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){View found=findDescriptionPrefix(g.getChildAt(i),text);if(found!=null)return found;}}return null;}
+    private View findDescriptionPrefix(View v,String text){if(v.getVisibility()!=View.VISIBLE)return null;if(v.getContentDescription()!=null&&v.getContentDescription().toString().startsWith(text))return v;if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){View found=findDescriptionPrefix(g.getChildAt(i),text);if(found!=null)return found;}}return null;}
     private void dismissDialog()throws Exception{main(()->{AlertDialog dialog=(AlertDialog)get("profileDialog");if(dialog==null)throw new AssertionError("Dialog absent");dialog.dismiss();});}
-    private void systemBack(){getUiAutomation().performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK);SystemClock.sleep(350);waitForIdleSync();}
+    private void systemBack(){getUiAutomation().performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK);SystemClock.sleep(350);syncUi();}
     private void accountPages() throws Exception {
         main(()->{Session s=(Session)get("session");s.base="http://127.0.0.1:1";s.email="ui@example.test";s.password="";s.token="";s.autoLogin=false;set("authMode","login");show("login");});
         capture("01");
@@ -114,7 +118,7 @@ public final class UiAudit extends Instrumentation {
         main(()->{set("authMode","reset");show("login");});capture("03");
         main(()->show("home"));capture("04");
         main(()->{((Session)get("session")).base="";show("server");});capture("05");
-        main(()->{((Session)get("session")).base="http://127.0.0.1:1";show("server");call("showError",new Class[]{String.class},"暂时无法连接，请检查地址和网络，再试一次");});capture("06");
+        main(()->{((Session)get("session")).base="http://127.0.0.1:1";show("server");});click("测试连接");settle();capture("06");assertText("重试连接");
         main(()->{set("authMode","login");show("login");call("authenticationFailed",new Class[]{boolean.class,String.class},false,"邮箱或密码不正确，请重新输入");});capture("49");
         main(()->{set("authMode","register");set("codeAvailableAt",System.currentTimeMillis()+60000);show("login");});capture("50");
         main(()->{set("homeNotice","登录已过期，请重新登录。提醒和记录仍然保留。");show("home");});capture("51");
@@ -129,12 +133,13 @@ public final class UiAudit extends Instrumentation {
     private void set(String name,Object value)throws Exception{Field f=MainActivity.class.getDeclaredField(name);f.setAccessible(true);f.set(activity,value);}
     private Object call(String name,Class<?>[] types,Object...args)throws Exception{Method m=MainActivity.class.getDeclaredMethod(name,types);m.setAccessible(true);return m.invoke(activity,args);}
     private interface Work{void run()throws Exception;}
-    private void main(Work work)throws Exception{Throwable[] failure={null};runOnMainSync(()->{try{work.run();}catch(Throwable e){failure[0]=e;}});if(failure[0]!=null)throw new Exception(failure[0]);waitForIdleSync();}
+    private void main(Work work)throws Exception{Throwable[] failure={null};runOnMainSync(()->{try{work.run();}catch(Throwable e){failure[0]=e;}});if(failure[0]!=null)throw new Exception(failure[0]);syncUi();}
     private void assertText(String text)throws Exception{main(()->{if(findText(activity.getWindow().getDecorView(),text)==null)throw new AssertionError("Missing visible text: "+text);});}
-    private View findText(View v,String text){if(v instanceof TextView&&((TextView)v).getText().toString().equals(text))return v;if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){View found=findText(g.getChildAt(i),text);if(found!=null)return found;}}return null;}
-    private View findDescription(View v,String text){if(v.getContentDescription()!=null&&text.contentEquals(v.getContentDescription()))return v;if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){View found=findDescription(g.getChildAt(i),text);if(found!=null)return found;}}return null;}
+    private View findText(View v,String text){if(v.getVisibility()!=View.VISIBLE)return null;if(v instanceof TextView&&((TextView)v).getText().toString().equals(text))return v;if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){View found=findText(g.getChildAt(i),text);if(found!=null)return found;}}return null;}
+    private View findDescription(View v,String text){if(v.getVisibility()!=View.VISIBLE)return null;if(v.getContentDescription()!=null&&text.contentEquals(v.getContentDescription()))return v;if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){View found=findDescription(g.getChildAt(i),text);if(found!=null)return found;}}return null;}
     private void capture(String id)throws Exception{
-        waitForIdleSync();SystemClock.sleep(350);screenshot(id);captures++;
+        if(!capturedIds.add(id))throw new AssertionError("Duplicate screenshot: "+id);
+        syncUi();SystemClock.sleep(350);screenshot(id);captures++;
         StringBuilder hierarchy=new StringBuilder();main(()->describe(activity.getWindow().getDecorView(),hierarchy,0));try(Writer writer=new OutputStreamWriter(new FileOutputStream(new File(output,id+".txt")),java.nio.charset.StandardCharsets.UTF_8)){writer.write(hierarchy.toString());}
         final ScrollView[] scroll={null};final int[] start={0};main(()->{View body=(View)get("body");if(body.getParent() instanceof ScrollView){ScrollView candidate=(ScrollView)body.getParent();if(candidate.canScrollVertically(1)&&(AlertDialog)get("profileDialog")==null){scroll[0]=candidate;start[0]=candidate.getScrollY();}}});
         if(scroll[0]!=null){main(()->scroll[0].fullScroll(View.FOCUS_DOWN));SystemClock.sleep(200);screenshot(id+"-bottom");main(()->scroll[0].scrollTo(0,start[0]));}

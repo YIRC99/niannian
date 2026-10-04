@@ -34,12 +34,12 @@ final class UiFixtures implements AutoCloseable {
         return obj("id","task-01","title",kind.equals("minute_interval")?"收衣服":"读书","description","按自己的节奏，照料生活中的小事。","summary",kind.equals("minute_interval")?"每 5 分钟提醒，完成后停止":"每天 20:30 · 完成后停止当天提醒","status",status,"paused",status.equals("paused"),"archived",false,"next_reminder",status.equals("expired")||status.equals("paused")?"":LocalDate.now().atTime(20,30).atZone(ZoneId.systemDefault()).toOffsetDateTime().toString(),"rule",rule);
     }
     static JSONObject record(String type,String status,boolean media)throws JSONException{
-        return obj("id","completion-01","task_id","task-01","task_title","读书","type",type,"_type",type,"at",at(),"_at",at(),"created_at",at(),"scheduled_at",at(),"sent_at",status.equals("sent")?at():"","status",status,"state",type.equals("completion")?"completed":type.equals("planned")?"scheduled":"notified","text","今天读完了一个章节。","error",status.equals("failed")?"邮件服务暂时不可用，请稍后查看发送情况。":"","media_ids",media?new JSONArray().put("photo-01"):new JSONArray());
+        return obj("id","completion-01","task_id","task-01","task_title","读书","type",type,"_type",type,"at",at(),"_at",at(),"created_at",at(),"scheduled_at",at(),"sent_at",status.equals("sent")?at():"","status",status,"state",type.equals("completion")?"completed":status.equals("sent")?"notified":status.equals("failed")?"pending":"scheduled","text","今天读完了一个章节。","error",status.equals("failed")?"邮件服务暂时不可用，请稍后查看发送情况。":"","media_ids",media?new JSONArray().put("photo-01"):new JSONArray());
     }
     static JSONObject garden(int count)throws JSONException{
         JSONArray plants=new JSONArray();int total=0;
         for(int i=0;i<count;i++){int n=i%8;total+=n;plants.put(obj("task_id",String.format(java.util.Locale.ROOT,"task-%02d",i+1),"title",new String[]{"读书","申报提醒","收衣服","散步"}[i%4],"completion_count",n,"stage",n==0?"seed":n<3?"sprout":n<7?"leaf":"bloom","archived",false));}
-        return obj("timezone",ZoneId.systemDefault().getId(),"total_plants",count,"total_completions",total,"week_completions",5,"truncated",false,"plants",plants,"recent_completions",count==0?new JSONArray():new JSONArray().put(record("completion","",true)));
+        return obj("timezone",ZoneId.systemDefault().getId(),"total_plants",count,"total_completions",total,"week_completions",Math.min(5,total),"truncated",false,"plants",plants,"recent_completions",count==0?new JSONArray():new JSONArray().put(record("completion","",true)));
     }
     private void respond(Socket socket){
         try(Socket connection=socket){

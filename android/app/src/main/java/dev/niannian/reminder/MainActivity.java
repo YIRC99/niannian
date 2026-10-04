@@ -233,7 +233,7 @@ public class MainActivity extends Activity {
             ImageView leaves=new ImageView(this);leaves.setImageBitmap(GardenArtCache.load(getResources(),R.drawable.sowing_corner_leaves));leaves.setScaleType(ImageView.ScaleType.FIT_END);leaves.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             page.addView(leaves,new FrameLayout.LayoutParams(dp(160),dp(108),Gravity.TOP|Gravity.END));page.addView(scroll,new FrameLayout.LayoutParams(-1,-1));
         }else if(!fixedMail&&!screen.equals("garden"))root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-        body = column(); body.setPadding(dp(16), dp(12), dp(16), dp(20));
+        body = column(); body.setPadding(dp(16), dp(12), dp(16), dp(20));body.setClipChildren(false);body.setClipToPadding(false);
         if(recordFooter){body.setPadding(dp(16),dp(12),dp(16),0);body.setClipToPadding(false);}
         if(screen.equals("editor"))body.setPadding(dp(16),dp(4),dp(16),0);
         if((screen.equals("home")&&!session.token.isEmpty())||screen.equals("garden")||screen.equals("history")||screen.equals("settings"))body.setPadding(0,0,0,0);
@@ -271,7 +271,12 @@ public class MainActivity extends Activity {
         LinearLayout heading=row(),words=column();words.addView(homeTitle(title,24));gap(words,8);words.addView(text(subtitle,13,INK,false));heading.addView(words,new LinearLayout.LayoutParams(0,-2,1));gapHorizontal(heading,8);heading.addView(art(picture,86));body.addView(heading,new LinearLayout.LayoutParams(-1,-2));gap(body,20);
     }
     private void botanicalFooter(int picture,int height){
-        body.addView(new Space(this),new LinearLayout.LayoutParams(1,0,1));ImageView plants=scenery(picture);plants.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);plants.setScaleType(picture==R.drawable.sowing_footer_foliage?ImageView.ScaleType.FIT_END:ImageView.ScaleType.CENTER_CROP);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(height));lp.setMargins(-dp(16),dp(12),-dp(16),-dp(20));body.addView(plants,lp);
+        botanicalFooter(picture,height,0);
+    }
+    private void botanicalFooter(int picture,int height,int accent){
+        body.addView(new Space(this),new LinearLayout.LayoutParams(1,0,1));FrameLayout scene=new FrameLayout(this);ImageView plants=scenery(picture);plants.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);plants.setScaleType(ImageView.ScaleType.CENTER_CROP);if(picture==R.drawable.sowing_footer_foliage){plants.setScaleType(ImageView.ScaleType.MATRIX);plants.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{android.graphics.drawable.Drawable drawable=plants.getDrawable();if(drawable==null||r==l||b==t)return;float scale=Math.max((r-l)/(float)drawable.getIntrinsicWidth(),(b-t)/(float)drawable.getIntrinsicHeight());Matrix matrix=new Matrix();matrix.setScale(scale,scale);matrix.postTranslate(((r-l)-drawable.getIntrinsicWidth()*scale)/2f,(b-t)-drawable.getIntrinsicHeight()*scale);plants.setImageMatrix(matrix);});}scene.addView(plants,new FrameLayout.LayoutParams(-1,-1));
+        if(accent!=0){ImageView detail=art(accent,Math.min(height,112));detail.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);scene.addView(detail,new FrameLayout.LayoutParams(dp(Math.min(height,112)),dp(Math.min(height,112)),Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL));}
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(height));lp.setMargins(-dp(16),dp(12),-dp(16),-dp(20));body.addView(scene,lp);
     }
     private Button linkButton(String label){Button link=smallButton(label);link.setBackground(new RippleDrawable(ColorStateList.valueOf(0x18527a58),shape(Color.TRANSPARENT,10),null));link.setLayoutParams(new LinearLayout.LayoutParams(-2,-2));return link;}
     private void moveErrorHere(LinearLayout parent){((ViewGroup)errorView.getParent()).removeView(errorView);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.bottomMargin=dp(12);parent.addView(errorView,lp);}
@@ -295,7 +300,7 @@ public class MainActivity extends Activity {
         gap(body,16);
     }
     private void renderServer() {
-        if(!session.base.isEmpty())backLink("返回",()->navigate(session.token.isEmpty()?"home":"settings"));
+        backLink("返回",()->navigate(session.token.isEmpty()?"home":"settings"));
         illustratedHeading(session.base.isEmpty()?"连接你的小花园":"更换服务器",session.base.isEmpty()?"先找到念念的提醒服务":"连接到另一座小花园",session.base.isEmpty()?R.drawable.garden_sprout_v3:R.drawable.garden_watering);
         field(body,"server","服务器地址",session.base,"https://你的域名 或 http://局域网IP:56507",1);
         note(body,"填入你的念念服务地址");
@@ -338,12 +343,12 @@ public class MainActivity extends Activity {
         adornField(email,"mail",false);
         if(!passwordLogin){
             label(body,"邮箱验证码");LinearLayout codeRow=row();body.addView(codeRow);LinearLayout codeBox=column();codeRow.addView(codeBox,new LinearLayout.LayoutParams(0,-2,1));
-            EditText code=field(codeBox,"code","","","输入 6 位验证码",1);code.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);code.setFilters(new InputFilter[]{new InputFilter.LengthFilter(6)});code.setSaveEnabled(false);
+            EditText code=field(codeBox,"code","","","输入 6 位验证码",1);code.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);code.setFilters(new InputFilter[]{new InputFilter.LengthFilter(6)});code.setSaveEnabled(false);adornField(code,"circle_check",false);
             gapHorizontal(codeRow,8);Button send=button("发送验证码",false);LinearLayout.LayoutParams sendLp=new LinearLayout.LayoutParams(-2,dp(48));sendLp.bottomMargin=dp(10);codeRow.addView(send,sendLp);updateCodeButton(send);
             send.setOnClickListener(v->{String address=value("email");if(!android.util.Patterns.EMAIL_ADDRESS.matcher(address).matches()){email.setError("请填写有效的邮箱地址");return;}
                 run(send,a->new Api(a.base,"").json("POST","/api/v1/auth/code",object("email",address)),r->{codeAvailableAt=System.currentTimeMillis()+60000;updateCodeButton(send);toast("验证码已发送，请查看邮箱和垃圾邮件");});});gap(body,12);
         }
-        EditText password=field(body,"password",passwordLogin?"登录密码":"设置密码",passwordLogin?session.password:"","至少 8 个字符",1);
+        EditText password=field(body,"password",passwordLogin?"登录密码":reset?"新密码":"设置密码",passwordLogin?session.password:"","至少 8 个字符",1);
         password.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);password.setSaveEnabled(false);
         password.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);password.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING);
         adornField(password,"lock",true);
@@ -366,7 +371,7 @@ public class MainActivity extends Activity {
         LinearLayout links=row();Button primaryLink=linkButton(passwordLogin?"注册 / 首次设置密码":"已有密码，返回登录");links.addView(primaryLink,new LinearLayout.LayoutParams(0,-2,1));primaryLink.setOnClickListener(v->openAuth(passwordLogin?"register":"login"));
         if(passwordLogin){Button forgot=linkButton("忘记密码");links.addView(forgot);forgot.setOnClickListener(v->openAuth("reset"));}body.addView(links);
         if(passwordLogin){gap(body,12);label(body,"当前服务器");LinearLayout server=row();server.addView(new GardenIconView(this,"server",MUTED),new LinearLayout.LayoutParams(dp(20),dp(20)));gapHorizontal(server,8);TextView address=text(session.base,11,MUTED,false);address.setMaxLines(2);address.setEllipsize(TextUtils.TruncateAt.MIDDLE);server.addView(address,new LinearLayout.LayoutParams(0,-2,1));Button change=linkButton("更换服务器");change.setTextSize(12);server.addView(change);change.setOnClickListener(v->navigate("server"));body.addView(server);}
-        botanicalFooter(passwordLogin?R.drawable.garden_home_hero_v3:R.drawable.sowing_footer_foliage,passwordLogin?146:110);
+        botanicalFooter(passwordLogin?R.drawable.garden_home_hero_v3:R.drawable.sowing_footer_foliage,passwordLogin?146:120,passwordLogin?0:reset?R.drawable.garden_watering:R.drawable.garden_seed_pot_v3);
     }
     private boolean canLeaveAuthentication(){if(credentialWritePending){toast("正在保存密码，请稍候");return false;}return true;}
     private void openAuth(String mode){if(!canLeaveAuthentication())return;captureTransient();authMode=mode;homeNotice="";navigate("login");}
@@ -432,8 +437,8 @@ public class MainActivity extends Activity {
         if(authBusy){gap(welcome,12);ProgressBar progress=new ProgressBar(this);welcome.addView(progress,new LinearLayout.LayoutParams(dp(28),dp(28)));}
         gap(body,8);Button login=button(authBusy?"改用手动登录":"登录我的花园",true);body.addView(login);login.setOnClickListener(v->openAuth("login"));gap(body,10);
         Button register=button("注册 / 首次设置密码",false);body.addView(register);register.setOnClickListener(v->openAuth("register"));gap(body,14);
-        Button change=smallButton("更换服务器");body.addView(change);change.setOnClickListener(v->navigate("server"));
-        botanicalFooter(R.drawable.sowing_footer_foliage,104);
+        Button change=linkButton("更换服务器  ›");LinearLayout.LayoutParams changeLp=new LinearLayout.LayoutParams(-2,dp(48));changeLp.gravity=Gravity.CENTER_HORIZONTAL;body.addView(change,changeLp);change.setOnClickListener(v->navigate("server"));
+        botanicalFooter(R.drawable.sowing_footer_foliage,120,R.drawable.garden_seed_pot_v3);
     }
     private void renderHome() {
         if(session.token.isEmpty()){renderGuestHome();return;}
@@ -847,7 +852,7 @@ public class MainActivity extends Activity {
             else{gap(body,10);actions.addView(generate,new LinearLayout.LayoutParams(0,dp(48),1));}
             Button manual=smallButton("手动填写");manual.setBackground(shape(Color.TRANSPARENT,10));manual.setTextColor(INK);manual.setTextSize(manualVisible?12:14);actions.addView(manual);body.addView(actions);gap(body,manualVisible?2:16);
             LinearLayout arranging=row();ProgressBar progress=new ProgressBar(this);progress.setIndeterminateTintList(ColorStateList.valueOf(BLUE));arranging.addView(progress,new LinearLayout.LayoutParams(dp(22),dp(22)));gapHorizontal(arranging,10);arranging.addView(text("正在整理提醒时间和重复方式…",13,MUTED,false),new LinearLayout.LayoutParams(0,-2,1));arranging.setPadding(dp(6),dp(8),dp(6),dp(14));arranging.setVisibility(View.GONE);body.addView(arranging);moveErrorHere(body);
-            if(manualVisible&&draft.optJSONObject("rule")==null){
+            if(manualVisible&&(draft.optJSONObject("rule")==null||aiText.trim().isEmpty())){
                 inputArea.setVisibility(View.GONE);actions.setVisibility(View.GONE);
                 Button useAi=smallButton("用一句话让念念安排");useAi.setBackground(shape(Color.TRANSPARENT,10));body.addView(useAi);
                 useAi.setOnClickListener(v->{if(taskBusy)return;boolean show=inputArea.getVisibility()!=View.VISIBLE;inputArea.setVisibility(show?View.VISIBLE:View.GONE);actions.setVisibility(show?View.VISIBLE:View.GONE);useAi.setText(show?"收起，继续手动填写":"用一句话让念念安排");});
@@ -874,7 +879,7 @@ public class MainActivity extends Activity {
             if(i<2){View divider=new View(this);divider.setBackgroundColor(LINE);summaryBlock.addView(divider,new LinearLayout.LayoutParams(-1,dp(1)));}
         }
         TextView previewNote=text("",11,MUTED,false);summaryBlock.addView(previewNote);gap(draftPanel,4);
-        LinearLayout adjustRow=row();adjustRow.setGravity(Gravity.END);Button adjust=smallButton(rulesExpanded?"收起规则":"调整规则");adjust.setTextColor(INK);adjust.setBackground(shape(Color.TRANSPARENT,10));adjustRow.addView(adjust);GardenIconView adjustArrow=new GardenIconView(this,"chevron_right",INK);adjustRow.addView(adjustArrow,new LinearLayout.LayoutParams(dp(16),dp(16)));draftPanel.addView(adjustRow);
+        LinearLayout adjustRow=row();adjustRow.setBaselineAligned(false);adjustRow.setGravity(Gravity.END|Gravity.CENTER_VERTICAL);Button adjust=smallButton(rulesExpanded?"收起规则":"调整规则");adjust.setTextColor(INK);adjust.setBackground(shape(Color.TRANSPARENT,10));adjustRow.addView(adjust);GardenIconView adjustArrow=new GardenIconView(this,"chevron_right",INK);adjustRow.addView(adjustArrow,new LinearLayout.LayoutParams(dp(16),dp(16)));draftPanel.addView(adjustRow);
         LinearLayout rules=column();rules.setPadding(dp(10),dp(4),dp(10),dp(8));GradientDrawable ruleSurface=shape(PAPER,12);ruleSurface.setStroke(dp(1),LINE);rules.setBackground(ruleSurface);LinearLayout.LayoutParams rulesLp=new LinearLayout.LayoutParams(-1,-2);rulesLp.topMargin=dp(8);body.addView(rules,rulesLp);rules.setVisibility(rulesExpanded?View.VISIBLE:View.GONE);
         View.OnClickListener toggleRules=v->{rulesExpanded=!rulesExpanded;rules.setVisibility(rulesExpanded?View.VISIBLE:View.GONE);summaryBlock.setVisibility(rulesExpanded?View.GONE:View.VISIBLE);adjust.setText(rulesExpanded?"收起规则":"调整规则");};adjust.setOnClickListener(toggleRules);adjustRow.setOnClickListener(toggleRules);
         for(LinearLayout summaryRow:summaryRows){summaryRow.setBackground(new RippleDrawable(ColorStateList.valueOf(0x18527a58),shape(Color.TRANSPARENT,8),null));summaryRow.setFocusable(true);summaryRow.setOnClickListener(v->{rulesExpanded=true;rules.setVisibility(View.VISIBLE);summaryBlock.setVisibility(View.GONE);adjust.setText("收起规则");rules.post(()->rules.requestRectangleOnScreen(new Rect(0,0,rules.getWidth(),dp(180)),false));});}
@@ -1663,7 +1668,7 @@ public class MainActivity extends Activity {
         run(trigger,job,success,null);
     }
     private <T> void run(Button trigger,Job<T> job,Result<T> success,Result<Exception> failure){
-        int account=accountEpoch,page=pageEpoch;Api api=new Api(session.base,session.token);CharSequence caption=trigger==null?"":trigger.getText();if(trigger!=null){trigger.setEnabled(false);trigger.setText("请稍等…");}errorView.setVisibility(View.GONE);
+        int account=accountEpoch,page=pageEpoch;Api api=new Api(session.base,session.token);CharSequence caption=trigger==null?"":trigger.getText();if(trigger!=null){trigger.setEnabled(false);if(caption.length()>0)trigger.setText("请稍等…");}errorView.setVisibility(View.GONE);
         workers.submit(()->{try{T result=job.run(api);ui.post(()->{if(isDestroyed()||account!=accountEpoch||page!=pageEpoch)return;if(trigger!=null){trigger.setEnabled(true);trigger.setText(caption);}success.accept(result);});}
             catch(Exception e){ui.post(()->{if(isDestroyed()||account!=accountEpoch||page!=pageEpoch)return;taskBusy=false;if(trigger!=null){trigger.setEnabled(true);trigger.setText(caption);}if(e instanceof Api.Failure&&((Api.Failure)e).status==401&&!session.token.isEmpty()){loginExpired();}else if(failure!=null)failure.accept(e);else showError(e.getMessage()==null?"操作未完成，请重试":e.getMessage());});}
         });
@@ -1696,7 +1701,7 @@ public class MainActivity extends Activity {
     private void note(LinearLayout parent,String message){parent.addView(text(message,12,MUTED,false));gap(parent,10);}
     private void gap(LinearLayout parent,int height){Space s=new Space(this);parent.addView(s,new LinearLayout.LayoutParams(1,dp(height)));}
     private void gapHorizontal(LinearLayout parent,int width){Space s=new Space(this);parent.addView(s,new LinearLayout.LayoutParams(dp(width),1));}
-    private void empty(LinearLayout parent,String title,String description){LinearLayout box=column();box.setGravity(Gravity.CENTER_HORIZONTAL);box.setPadding(dp(12),dp(18),dp(12),dp(20));box.addView(art(R.drawable.garden_seed_v3,96));gap(box,12);TextView t=text(title,17,INK,true);t.setGravity(Gravity.CENTER);box.addView(t);gap(box,8);TextView hint=text(description,13,MUTED,false);hint.setGravity(Gravity.CENTER);box.addView(hint);parent.addView(box);}
+    private void empty(LinearLayout parent,String title,String description){boolean compact=parent==taskList&&!search.isEmpty();LinearLayout box=column();box.setGravity(Gravity.CENTER_HORIZONTAL);box.setPadding(dp(12),dp(compact?8:18),dp(12),dp(compact?12:20));box.addView(art(R.drawable.garden_seed_v3,compact?64:96));gap(box,12);TextView t=text(title,17,INK,true);t.setGravity(Gravity.CENTER);box.addView(t);gap(box,8);TextView hint=text(description,13,MUTED,false);hint.setGravity(Gravity.CENTER);box.addView(hint);parent.addView(box);}
     private Spinner spinner(String[] labels){Spinner s=new Spinner(this);ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,labels);adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);s.setAdapter(adapter);s.setMinimumHeight(dp(52));s.setBackground(shape(PAPER,14));s.setPadding(dp(12),0,dp(12),0);return s;}
     private AdapterView.OnItemSelectedListener selection(Runnable action){return new AdapterView.OnItemSelectedListener(){public void onItemSelected(AdapterView<?> p,View v,int i,long id){action.run();}public void onNothingSelected(AdapterView<?> p){}};}
     private TextWatcher watcher(Runnable action){return new TextWatcher(){public void beforeTextChanged(CharSequence s,int start,int count,int after){}public void onTextChanged(CharSequence s,int start,int before,int count){action.run();}public void afterTextChanged(Editable e){}};}
@@ -1705,7 +1710,7 @@ public class MainActivity extends Activity {
     private String value(String key){EditText field=fields.get(key);return field==null?"":field.getText().toString().trim();}
     private String formValue(String key,String fallback){return restoredForm==null?fallback:restoredForm.optString(key,fallback);}
     private int dp(int x){return Math.round(x*getResources().getDisplayMetrics().density);}
-    private void showError(String message){errorView.setText(message);errorView.setVisibility(View.VISIBLE);if(screen.equals("garden")&&gardenDrawer!=null)gardenDrawer.setExpanded(true,true);errorView.announceForAccessibility(message);toast(message);}
+    private void showError(String message){TextView notice=errorView;notice.setText(message);notice.setVisibility(View.VISIBLE);if(screen.equals("garden")&&gardenDrawer!=null)gardenDrawer.setExpanded(true,true);notice.announceForAccessibility(message);notice.post(()->{if(notice.isAttachedToWindow())notice.requestRectangleOnScreen(new Rect(0,0,notice.getWidth(),notice.getHeight()),false);});}
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
     private static JSONObject object(Object... values){JSONObject o=new JSONObject();try{for(int i=0;i<values.length;i+=2)o.put((String)values[i],values[i+1]);}catch(JSONException e){throw new IllegalArgumentException(e);}return o;}
     private static JSONObject copy(JSONObject o){try{return new JSONObject(o.toString());}catch(Exception e){return new JSONObject();}}
