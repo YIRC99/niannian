@@ -61,7 +61,7 @@ func TestReminderAgentRejectsUnauthorizedModelChannel(t *testing.T) {
 	}
 }
 
-func TestReminderPreferencesTimezoneAcceptedAndQuietHoursEnforced(t *testing.T) {
+func TestReminderPreferencesTimezoneAcceptedAndQuietHoursIgnored(t *testing.T) {
 	a, m, _ := setup(t)
 	token := login(t, a, m, "one@example.com")
 	createTask(t, a, token, "until_done")
@@ -70,11 +70,14 @@ func TestReminderPreferencesTimezoneAcceptedAndQuietHoursEnforced(t *testing.T) 
 		t.Fatalf("timezone preference rejected %d %+v", c, out)
 	}
 	out = phoneSync(t, a, token, "phone", nil)
+	if out["settings"].(map[string]any)["quiet_start"] != "" || out["settings"].(map[string]any)["quiet_end"] != "" {
+		t.Fatal("obsolete quiet preferences returned to client")
+	}
 	for _, raw := range out["plans"].([]any) {
 		p := raw.(map[string]any)
 		at, _ := time.Parse(time.RFC3339Nano, p["scheduled_at"].(string))
-		if at.In(time.FixedZone("CST", 8*3600)).Hour() == 18 {
-			t.Fatal("quiet hour scheduled")
+		if at.In(time.FixedZone("CST", 8*3600)).Hour() != 18 {
+			t.Fatal("obsolete quiet hours shifted scheduled reminder")
 		}
 	}
 }
@@ -225,7 +228,7 @@ func TestBatchFailureOfOneChannelStillSwitchesOtherChannel(t *testing.T) {
 	}
 }
 
-func TestQuietHoursDeferWithinCycleButNeverPastDeadline(t *testing.T) {
+func TestQuietHoursNoLongerDeferWithinCycle(t *testing.T) {
 	a, m, _ := setup(t)
 	token := login(t, a, m, "one@example.com")
 	body := taskBody("until_done")
@@ -240,11 +243,11 @@ func TestQuietHoursDeferWithinCycleButNeverPastDeadline(t *testing.T) {
 	out = phoneSync(t, a, token, "phone", nil)
 	plans := out["plans"].([]any)
 	if len(plans) != 1 {
-		t.Fatalf("quiet slot was lost instead of deferred: %+v", out)
+		t.Fatalf("original slot was lost: %+v", out)
 	}
 	at, _ := time.Parse(time.RFC3339Nano, plans[0].(map[string]any)["scheduled_at"].(string))
-	if at.UTC().Hour() != 2 {
-		t.Fatal("did not defer until quiet end")
+	if at.UTC().Hour() != 1 || at.Minute() != 15 {
+		t.Fatal("obsolete quiet hours deferred the original slot")
 	}
 }
 

@@ -3,7 +3,6 @@ package dev.niannian.reminder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Locale;
 import java.util.Base64;
@@ -11,15 +10,14 @@ import java.util.Base64;
 /** Platform independent limits; platform delivery always checks them again at execution time. */
 final class ReminderPolicy {
     static final int MAX_PLANS = 128;
-    static boolean inQuiet(long instant, String zone, String start, String end) {
-        if ("".equals(start) && "".equals(end)) return false;
-        try {
-            LocalTime from = LocalTime.parse(start), until = LocalTime.parse(end);
-            if (from.equals(until)) return false;
-            LocalTime current = Instant.ofEpochMilli(instant).atZone(ZoneId.of(zone)).toLocalTime();
-            return from.isBefore(until) ? !current.isBefore(from) && current.isBefore(until)
-                    : !current.isBefore(from) || current.isBefore(until);
-        } catch (RuntimeException invalid) { return true; }
+    static boolean needsLegacyQuietMigration(boolean configured, boolean activeDevice, String start, String end) {
+        return configured && activeDevice && ((start != null && !start.isEmpty()) || (end != null && !end.isEmpty()));
+    }
+    static boolean blocksSettingsMigration(long now, long scheduled, long expires, String status) {
+        if ("delivered".equals(status) || "accepted".equals(status) || "failed".equals(status)
+                || "cancelled".equals(status) || "sent".equals(status)) return false;
+        // Cover a plan becoming due during the settings request as well as one already executing.
+        return scheduled > 0 && expires > now && scheduled <= now + 60_000L;
     }
     static boolean due(long now, long scheduled, long expires, long last, int interval, int taskCount, int totalCount) {
         return scheduled > 0 && expires > scheduled && now >= scheduled && now < expires

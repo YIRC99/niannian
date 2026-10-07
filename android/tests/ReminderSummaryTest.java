@@ -22,7 +22,7 @@ public final class ReminderSummaryTest {
         equal("请选择提醒日期", ReminderSummary.leadTime("once", fields), "missing one-off date stays explicit");
         equal("仅提醒一次，不再催办。", ReminderSummary.followUp("once","notify_once"), "notification-only must not promise escalation");
         equal("每期只提醒一次，不再催办。", ReminderSummary.followUp("weekly","notify_once"), "recurring notification-only remains per cycle");
-        equal("保存时确定跟进流程，通知和闹钟提前交给手机；未完成才继续，遵守静默、提醒间隔与截止。", ReminderSummary.followUp("minute_interval","until_done"), "follow-up describes judgment without promising immediate sound");
+        equal("保存时确定跟进流程，通知和闹钟提前交给手机；未完成才继续，遵守提醒间隔与截止。", ReminderSummary.followUp("minute_interval","until_done"), "follow-up has no removed quiet-hours promise");
 
         array(new String[]{"首次提醒", "重复间隔", "完成之后"}, ReminderSummary.labels("minute_interval"), "minute labels");
         for (String kind : new String[]{"once", "daily", "weekly", "monthly_window", "date_range", "interval", "ongoing", "unsupported"})

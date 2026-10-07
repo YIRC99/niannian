@@ -1,7 +1,6 @@
 package dev.niannian.reminder;
 
 import android.app.Activity;
-import android.app.TimePickerDialog;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Typeface;
@@ -14,10 +13,9 @@ import android.widget.Switch;
 import android.widget.TextView;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import java.util.Locale;
 import java.util.TimeZone;
 
-/** Small expandable native controls; server settings are changed only by the Save button. */
+/** Expandable channel controls and device-specific background guidance. */
 final class ReminderSettings {
     private static final int INK = 0xff294c36, MUTED = 0xff687565, GREEN = 0xff537957, PALE = 0xffedf4e9;
     static View view(Activity activity, Session session, Runnable changed) { return new Panel(activity, session, changed); }
@@ -26,10 +24,10 @@ final class ReminderSettings {
         final Activity activity; final Session session; final Runnable changed;
         final LinearLayout detail; final TextView summary, status; final Switch enabled;
         final Switch[] channels = new Switch[4]; final TextView[] permission = new TextView[3];
-        final Button[] access = new Button[3]; final Button start, end, interval, save;
+        final Button[] access = new Button[3]; final Button interval, save;
         final String[] names = {"手机通知", "手机日历", "闹钟提醒", "邮件（可选）"};
         final String[] keys = {"notification", "calendar", "alarm", "email"};
-        String quietStart = "22:00", quietEnd = "08:00"; int minutes = 5;
+        int minutes = 5;
         boolean dirty, updating;
         final SharedPreferences preferences;
         final SharedPreferences.OnSharedPreferenceChangeListener listener;
@@ -44,6 +42,12 @@ final class ReminderSettings {
             detail = new LinearLayout(activity); detail.setOrientation(VERTICAL); detail.setVisibility(GONE); addView(detail);
             title.setOnClickListener(view -> { boolean open = detail.getVisibility() != VISIBLE; detail.setVisibility(open ? VISIBLE : GONE); title.setText(open ? "念念可用的提醒方式  ⌄" : "念念可用的提醒方式  ›"); refresh(); });
             summary.setOnClickListener(view -> title.performClick());
+            Button backgroundAccess = button("检查后台提醒设置"); addView(backgroundAccess);
+            backgroundAccess.setOnClickListener(view -> new android.app.AlertDialog.Builder(activity)
+                    .setTitle("退出后，也能提醒你").setMessage(ReminderBackgroundAccess.instructions(activity))
+                    .setPositiveButton("去系统设置", (dialog, which) -> ReminderBackgroundAccess.openSettings(activity))
+                    .setNeutralButton("我已检查", (dialog, which) -> ReminderBackgroundAccess.reviewed(activity))
+                    .setNegativeButton("返回", null).show());
             detail.addView(label("开启后，念念接管当前账号的提醒渠道；原邮件提醒改为按这里的选择发送，邮件默认关闭。", 12, false));
             enabled = toggle("让念念安排提醒"); detail.addView(enabled);
             for (int i = 0; i < keys.length; i++) {
@@ -57,23 +61,24 @@ final class ReminderSettings {
                 }
             }
             detail.addView(label("闹钟提前交给系统定时，到点持续响铃，手动停止或 60 秒后自动停止。日历只写入念念的本地日历，是否弹出由日历应用决定。", 12, false));
-            start = button("静默开始 22:00"); end = button("静默结束 08:00"); interval = button("最短间隔 5 分钟");
-            detail.addView(start); detail.addView(end); detail.addView(interval);
-            start.setOnClickListener(view -> pickTime(true)); end.setOnClickListener(view -> pickTime(false));
+            interval = button("最短间隔 5 分钟");
+            detail.addView(interval);
             interval.setOnClickListener(view -> {
                 int[] values = {1, 2, 5, 10, 15, 30, 60}; String[] labels = {"1 分钟", "2 分钟", "5 分钟", "10 分钟", "15 分钟", "30 分钟", "60 分钟"};
                 new android.app.AlertDialog.Builder(activity).setTitle("同一事项至少间隔多久")
                         .setItems(labels, (dialog, which) -> { minutes = values[which]; dirty = true; refreshText(); }).show();
             });
-            detail.addView(label("静默起止相同表示不设静默。同一事项每天最多 32 次，本机每天最多 128 次。已确认的通知和闹钟流程会提前交给手机，断网也能按已保存的步骤跟进；邮件及后续新流程需要联网。完成或暂停会撤销本机后续提醒，日历同一事项每天一项。强行停止应用会清除系统定时。", 12, false));
+            detail.addView(label("同一事项每天最多 32 次，本机每天最多 128 次。已确认的通知和闹钟流程会提前交给手机，断网也能按已保存的步骤跟进；邮件及后续新流程需要联网。完成或暂停会撤销本机后续提醒，日历同一事项每天一项。强行停止应用会清除系统定时。", 12, false));
             status = label("", 12, false); detail.addView(status);
             save = button("保存渠道安排"); save.setTextColor(0xffffffff); save.setBackgroundTintList(ColorStateList.valueOf(GREEN)); detail.addView(save);
             save.setOnClickListener(view -> save());
             Button refresh = button("重新同步"); detail.addView(refresh);
             refresh.setOnClickListener(view -> { ReminderCoordinator.sync(activity, session); status.setText("正在同步…"); refresh(); });
-            Button test=button("10 秒后测试闹钟"),cancelTest=button("取消测试闹钟");detail.addView(test);detail.addView(cancelTest);
+            Button testNotification=button("10 秒后测试通知"),test=button("10 秒后测试闹钟"),cancelTest=button("取消测试");
+            detail.addView(testNotification);detail.addView(test);detail.addView(cancelTest);
+            testNotification.setOnClickListener(view->{try{ReminderCoordinator.testNotification(activity,session);status.setText("测试通知已交给系统，10 秒后提醒；可返回桌面等待。");}catch(Exception failure){status.setText(failure.getMessage());}});
             test.setOnClickListener(view->{try{ReminderCoordinator.testAlarm(activity,session);status.setText("测试闹钟已交给系统，10 秒后响铃；可返回桌面等待。");}catch(Exception failure){status.setText(failure.getMessage());}});
-            cancelTest.setOnClickListener(view->{ReminderCoordinator.cancelTestAlarm(activity);status.setText("测试闹钟已取消，不会到点响铃。");});
+            cancelTest.setOnClickListener(view->{ReminderCoordinator.cancelTestAlarm(activity);status.setText("测试提醒已取消。");});
             listener = (prefs, key) -> {
                 if ("settings".equals(key) || "configured".equals(key) || "status".equals(key) || "calendar_cleanup".equals(key)) activity.runOnUiThread(this::refresh);
             };
@@ -101,8 +106,7 @@ final class ReminderSettings {
                 for (int i = 0; i < keys.length; i++) {
                     channels[i].setChecked(ReminderSetupPolicy.isSelected(ReminderCoordinator.configured(activity), selected, keys[i]));
                 }
-                quietStart = settings.optString("quiet_start", "22:00"); quietEnd = settings.optString("quiet_end", "08:00"); minutes = settings.optInt("min_interval_minutes", 5);
-                if (quietStart.isEmpty() && quietEnd.isEmpty()) { quietStart = "00:00"; quietEnd = "00:00"; }
+                minutes = settings.optInt("min_interval_minutes", 5);
                 updating = false;
             }
             JSONObject capabilities = ReminderPlatform.capabilities(activity);
@@ -126,19 +130,7 @@ final class ReminderSettings {
         }
 
         private void refreshText() {
-            if (start != null) start.setText("静默开始 " + quietStart);
-            if (end != null) end.setText("静默结束 " + quietEnd);
             if (interval != null) interval.setText("最短间隔 " + minutes + " 分钟");
-        }
-        private void pickTime(boolean first) {
-            String[] parts = (first ? quietStart : quietEnd).split(":");
-            int hour = 22, minute = 0;
-            try { hour = Integer.parseInt(parts[0]); minute = Integer.parseInt(parts[1]); } catch (RuntimeException ignored) { }
-            new TimePickerDialog(activity, (picker, h, m) -> {
-                String value = String.format(Locale.ROOT, "%02d:%02d", h, m);
-                if (first) quietStart = value; else quietEnd = value;
-                dirty = true; refreshText();
-            }, hour, minute, true).show();
         }
         private void save() {
             try {
@@ -146,7 +138,7 @@ final class ReminderSettings {
                 for (int i = 0; i < keys.length; i++) if (channels[i].isChecked()) selected.put(keys[i]);
                 if (enabled.isChecked() && selected.length() == 0) { status.setText("至少选择一种提醒方式，或关闭安排"); return; }
                 JSONObject settings = new JSONObject().put("enabled", enabled.isChecked()).put("channels", selected)
-                        .put("quiet_start", quietStart.equals(quietEnd) ? "" : quietStart).put("quiet_end", quietStart.equals(quietEnd) ? "" : quietEnd)
+                        .put("quiet_start", "").put("quiet_end", "")
                         .put("min_interval_minutes", minutes).put("timezone", TimeZone.getDefault().getID());
                 controlsEnabled(detail, false); status.setText("正在保存并同步…");
                 ReminderCoordinator.saveSettings(activity, session, settings, (success, message) -> activity.runOnUiThread(() -> {

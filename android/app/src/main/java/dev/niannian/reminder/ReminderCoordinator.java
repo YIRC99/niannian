@@ -109,15 +109,23 @@ public final class ReminderCoordinator {
         }
     }
     static void testAlarm(Context context,Session session)throws Exception{
+        testReminder(context,session,"alarm");
+    }
+    static void testNotification(Context context,Session session)throws Exception{
+        testReminder(context,session,"notification");
+    }
+    private static void testReminder(Context context,Session session,String channel)throws Exception{
         synchronized(LOCK){
             String active=scope(session);
             if(active.isEmpty()||!active.equals(prefs(context).getString("scope","")))throw new IllegalStateException("请先登录");
-            JSONObject plan=new JSONObject().put("channel","alarm");
-            if(!allowed(context,plan,settings(context)))throw new IllegalStateException("请先保存闹钟开关，并允许精确闹钟和通知权限");
+            boolean alarm="alarm".equals(channel);
+            JSONObject plan=new JSONObject().put("channel",channel);
+            if(!allowed(context,plan,settings(context)))throw new IllegalStateException(alarm
+                    ?"请先保存闹钟开关，并允许精确闹钟和通知权限":"请先保存手机通知开关，并允许通知权限");
             cancelTestAlarm(context);
             long at=System.currentTimeMillis()+10000;
-            plan.put("id","test-"+UUID.randomUUID()).put("task_id","alarm-test").put("title","念念闹钟测试").put("_diagnostic",true)
-                    .put("body","这是一次手机响铃测试，不会创建任务或完成记录。")
+            plan.put("id","test-"+UUID.randomUUID()).put("task_id",alarm?"alarm-test":"").put("title",alarm?"念念闹钟测试":"念念通知测试").put("_diagnostic",true)
+                    .put("body",alarm?"这是一次手机响铃测试，不会创建任务或完成记录。":"这是一条手机通知测试，不会创建任务或完成记录。")
                     .put("scheduled_at",Instant.ofEpochMilli(at).toString()).put("expires_at",Instant.ofEpochMilli(at+120000).toString());
             if(!prefs(context).edit().putString("alarm_test",plan.toString()).commit())throw new IllegalStateException("测试未保存，请重试");
             try{ReminderPlatform.schedule(context,active,plan);}catch(Exception failure){prefs(context).edit().remove("alarm_test").commit();throw failure;}
@@ -129,6 +137,13 @@ public final class ReminderCoordinator {
             if(!plan.optString("id").isEmpty())ReminderPlatform.cancel(context,active,plan);
             stopRinging(context,active,"alarm-test");prefs(context).edit().remove("alarm_test").commit();
         }
+    }
+    private static void restoreTestReminder(Context context,String active){
+        JSONObject test=object(prefs(context).getString("alarm_test","{}"));
+        if(test.optString("id").isEmpty()||test.optBoolean("fired"))return;
+        if(ReminderPolicy.timestamp(test.optString("expires_at"))<=System.currentTimeMillis()||!allowed(context,test,settings(context))){cancelTestAlarm(context);return;}
+        try{ReminderPlatform.schedule(context,active,test);}
+        catch(Exception failure){setStatus(context,"测试提醒未能恢复，请重新测试");}
     }
 
     static String scope(Session session) {
@@ -311,10 +326,13 @@ public final class ReminderCoordinator {
 
     static void saveSettings(Context source, Session session, JSONObject settings, Result callback) {
         Context context = source.getApplicationContext();
+        JSONObject requested = object(settings.toString());
+        // Older servers still accept these fields. Explicitly disable their retired quiet window.
+        put(requested, "quiet_start", ""); put(requested, "quiet_end", "");
         Snapshot snapshot;
         synchronized (LOCK) {
             advance(context);
-            // Settings may disable a channel or change quiet hours; stop old execution immediately.
+            // Settings may disable a channel; stop old execution immediately.
             JSONArray plans = plans(context);
             String active = prefs(context).getString("scope", "");
             stopRinging(context,active,null);cancelTestAlarm(context);cancelFlows(context,null,true);
@@ -325,7 +343,7 @@ public final class ReminderCoordinator {
         if (snapshot == null) { callback.done(false, "请先登录再设置提醒渠道"); return; }
         WORK.execute(() -> {
             try {
-                JSONObject response = snapshot.api.json("PUT", "/api/v1/reminders/settings", settings);
+                JSONObject response = snapshot.api.json("PUT", "/api/v1/reminders/settings", requested);
                 synchronized (LOCK) {
                     if (!current(context, snapshot)) return;
                     JSONObject saved = response.optJSONObject("settings");
@@ -392,6 +410,32 @@ public final class ReminderCoordinator {
                     .put("timezone", TimeZone.getDefault().getID()).put("claim", claim).put("results", sent)
                     .put("flow_results",flowSent).put("closed_flow_ids",closedSent);
             JSONObject response = sendReminderSync(snapshot.api,request);
+            JSONObject migration = null;
+            synchronized (LOCK) {
+                if (!current(context, snapshot)) return false;
+                if (needsLegacySettingsMigration(response) && !hasInFlightLegacyPlan(response, System.currentTimeMillis())) {
+                    JSONObject saved = response.getJSONObject("settings");
+                    migration = new JSONObject().put("enabled", saved.optBoolean("enabled", false))
+                            .put("channels", new JSONArray(saved.getJSONArray("channels").toString()))
+                            .put("min_interval_minutes", saved.getInt("min_interval_minutes"))
+                            .put("timezone", saved.optString("timezone", TimeZone.getDefault().getID()))
+                            .put("quiet_start", "").put("quiet_end", "");
+                    // This first response already accepted legacy receipts and explicitly acknowledged flow results.
+                    // Do not resend them after a settings write changes the server's plan generation.
+                    acknowledge(context, sent);
+                    acknowledgeFlows(context, snapshot.scope, flowSent, response);
+                    sent = new JSONArray(); flowSent = new JSONArray(); closedSent = new JSONArray();
+                    request.put("results", sent).put("flow_results", flowSent).put("closed_flow_ids", closedSent);
+                }
+            }
+            if (migration != null) {
+                if (!isCurrent(context, snapshot)) return false;
+                snapshot.api.json("PUT", "/api/v1/reminders/settings", migration);
+                if (!isCurrent(context, snapshot)) return false;
+                response = sendReminderSync(snapshot.api, request);
+                // One bounded migration per sync. A nonconforming old server is retried on a later sync.
+                if (needsLegacySettingsMigration(response)) throw new IllegalStateException("旧提醒设置尚未更新");
+            }
             synchronized (LOCK) {
                 if (!current(context, snapshot)) return false;
                 acknowledge(context, sent);
@@ -443,6 +487,23 @@ public final class ReminderCoordinator {
         }
     }
 
+    private static boolean needsLegacySettingsMigration(JSONObject response) {
+        JSONObject settings = response.optJSONObject("settings");
+        return settings != null && ReminderPolicy.needsLegacyQuietMigration(
+                response.optBoolean("configured", settings.optBoolean("configured", false)),
+                response.optBoolean("active_device", false), settings.optString("quiet_start"), settings.optString("quiet_end"));
+    }
+
+    private static boolean hasInFlightLegacyPlan(JSONObject response, long now) {
+        JSONArray plans = withoutFlowPlans(response.optJSONArray("plans"), response.optInt("local_flow_version") == 1 ? response.optJSONArray("local_flows") : null);
+        for (int i = 0; i < plans.length(); i++) {
+            JSONObject plan = plans.optJSONObject(i);
+            if (plan != null && ReminderPolicy.blocksSettingsMigration(now, ReminderPolicy.timestamp(plan.optString("scheduled_at")),
+                    ReminderPolicy.timestamp(plan.optString("expires_at")), plan.optString("status"))) return true;
+        }
+        return false;
+    }
+
     private static void setStatus(Context context, String message) { prefs(context).edit().putString("status", message).commit(); }
     private static JSONObject sendReminderSync(Api api,JSONObject request)throws Exception{
         try{return api.json("POST","/api/v1/reminders/sync",request);}
@@ -490,12 +551,11 @@ public final class ReminderCoordinator {
             String id = plan.optString("id"), task = plan.optString("task_id"), channel = plan.optString("channel");
             long at = ReminderPolicy.timestamp(plan.optString("scheduled_at")), until = ReminderPolicy.timestamp(plan.optString("expires_at"));
             if (id.isEmpty() || task.isEmpty() || !seen.add(id) || delivered.has(id)) continue;
-            if (!allowed(context, plan, settings) || at <= 0 || until <= now || until <= at || at > now + 2 * 86400000L
-                    || ReminderPolicy.inQuiet(at, settings.optString("timezone", TimeZone.getDefault().getID()), settings.optString("quiet_start", "22:00"), settings.optString("quiet_end", "08:00"))) {
+            if (!allowed(context, plan, settings) || at <= 0 || until <= now || until <= at || at > now + 2 * 86400000L) {
                 JSONObject prior = old.get(id);
                 // Calendar only confirms insertion, not actual presentation. Expiry must not rewrite that history.
                 boolean expiredCalendar = "calendar".equals(channel) && until <= now && prior != null && prior.optBoolean("local_scheduled", false);
-                if (!expiredCalendar) {feedback(context, id, "failed", "计划过期、静默时段或渠道未授权");ready=false;}
+                if (!expiredCalendar) {feedback(context, id, "failed", "计划过期或渠道未授权");ready=false;}
                 continue;
             }
             if (pendingTasks.contains(task)) {
@@ -584,7 +644,9 @@ public final class ReminderCoordinator {
         if(scope.isEmpty()||id.isEmpty())return;
         JSONArray closed=closedFlows(context,scope);
         for(int i=0;i<closed.length();i++)if(id.equals(closed.optString(i)))return;
-        closed.put(id);prefs(context).edit().putString(flowKey("flow_closed",scope),closed.toString()).commit();
+        closed.put(id);
+        if(prefs(context).edit().putString(flowKey("flow_closed",scope),closed.toString()).commit()
+                &&scope.equals(prefs(context).getString("scope","")))enqueueSync(context);
     }
 
     /** Closing is a separate acknowledged message; unacknowledged execution receipts survive it. */
@@ -708,6 +770,9 @@ public final class ReminderCoordinator {
             if(revokedIds.contains(flow.optString("id")))stopRinging(context,active,flow.optString("task_id"));
             queueClosedFlow(context,active,flow.optString("id"));
         }
+        // A settings migration can revoke a lease returned by the first sync before it was installed.
+        // The device must close these explicit revocations too, or the server keeps their lease reserved.
+        for(String id:revokedIds)queueClosedFlow(context,active,id);
         if(!prefs(context).edit().putString("local_flows",next.toString()).commit())throw new java.io.IOException("无法保存手机提醒流程");
         int scheduledCount=plans(context).length();long now=System.currentTimeMillis();
         for(int i=0;i<next.length();i++){
@@ -750,15 +815,6 @@ public final class ReminderCoordinator {
         JSONObject deliveries=object(prefs(context).getString("delivered","{}")),recent=new JSONObject();long oldest=System.currentTimeMillis()-7*86400000L;
         for(java.util.Iterator<String> keys=deliveries.keys();keys.hasNext();){String id=keys.next();JSONObject value=deliveries.optJSONObject(id);if(value!=null&&value.optLong("at")>=oldest)put(recent,id,value);}
         prefs(context).edit().putString(flowKey("flow_receipts",active),next.toString()).putString("delivered",recent.toString()).commit();
-    }
-
-    private static long afterQuiet(long at,String zone,String start,String end){
-        if(!ReminderPolicy.inQuiet(at,zone,start,end))return at;
-        try{java.time.ZonedDateTime local=Instant.ofEpochMilli(at).atZone(ZoneId.of(zone));
-            java.time.ZonedDateTime next=local.toLocalDate().atTime(java.time.LocalTime.parse(end)).atZone(local.getZone());
-            if(!next.isAfter(local))next=local.toLocalDate().plusDays(1).atTime(java.time.LocalTime.parse(end)).atZone(local.getZone());
-            return next.toInstant().toEpochMilli();
-        }catch(RuntimeException invalid){return Long.MAX_VALUE;}
     }
 
     /** Returns true for known flow identities, even when consumed or no longer allowed. */
@@ -807,14 +863,10 @@ public final class ReminderCoordinator {
                 Math.max(flow.optInt("min_interval_minutes",1),settings.optInt("min_interval_minutes",1)),predecessors,previousFinished,step.optInt("wait_minutes"));
         if(next>=0){
             next=Math.max(next,blockedUntil);
-            for(int i=0;i<3;i++){long before=next;
-                next=afterQuiet(next,flow.optString("timezone",TimeZone.getDefault().getID()),flow.optString("quiet_start"),flow.optString("quiet_end"));
-                next=afterQuiet(next,settings.optString("timezone",TimeZone.getDefault().getID()),settings.optString("quiet_start","22:00"),settings.optString("quiet_end","08:00"));
-                if(next==before||next>=Math.min(expires,valid))break;}
             if(next>=Math.min(expires,valid))next=-1;
         }
         if(!allowed(context,plan,settings)||taskCount>=32||total>=ReminderPolicy.MAX_PLANS)next=-1;
-        if(next<0){flowFeedback(context,flow.optString("id"),id,task,"failed","已过授权时段、进入静默或达到提醒上限",now);finishConsumedFlows(context);enqueueSync(context);return true;}
+        if(next<0){flowFeedback(context,flow.optString("id"),id,task,"failed","已过授权时段或达到提醒上限",now);finishConsumedFlows(context);enqueueSync(context);return true;}
         if(next>now){
             put(step,"_local_retry_at",next);put(step,"_local_scheduled",false);prefs(context).edit().putString("local_flows",flows.toString()).commit();
             put(plan,"scheduled_at",Instant.ofEpochMilli(next).toString());
@@ -846,9 +898,13 @@ public final class ReminderCoordinator {
             if(id.equals(test.optString("id"))){
                 long now=System.currentTimeMillis();
                 if(!test.optBoolean("fired")&&now>=ReminderPolicy.timestamp(test.optString("scheduled_at"))&&now<ReminderPolicy.timestamp(test.optString("expires_at"))&&allowed(context,test,settings(context))){
-                    put(test,"fired",true);prefs(context).edit().putString("alarm_test",test.toString()).commit();grantAlarm(context,expectedScope,test);
-                    android.util.Log.i("NiannianAlarm","test_receiver_fired at="+now);
-                    try{ReminderPlatform.notify(context,expectedScope,test);}catch(RuntimeException failure){alarmStopped(context,expectedScope,id);android.util.Log.w("NiannianAlarm","test_start_failed at="+now);}
+                    boolean alarm="alarm".equals(test.optString("channel"));
+                    put(test,"fired",true);if(!prefs(context).edit().putString("alarm_test",test.toString()).commit())return;
+                    if(alarm)grantAlarm(context,expectedScope,test);
+                    android.util.Log.i("NiannianAlarm",(alarm?"test_receiver_fired":"test_notification_receiver_fired")+" at="+now);
+                    try{ReminderPlatform.notify(context,expectedScope,test);
+                        if(!alarm)android.util.Log.i("NiannianAlarm","test_notification_posted at="+System.currentTimeMillis());
+                    }catch(RuntimeException failure){if(alarm)alarmStopped(context,expectedScope,id);android.util.Log.w("NiannianAlarm","test_start_failed at="+now);}
                 }
                 return;
             }
@@ -873,9 +929,8 @@ public final class ReminderCoordinator {
             }
             delivered = retained;
             if (!allowed(context, plan, settings)
-                    || ReminderPolicy.inQuiet(now, settings.optString("timezone", TimeZone.getDefault().getID()), settings.optString("quiet_start", "22:00"), settings.optString("quiet_end", "08:00"))
                     || !ReminderPolicy.due(now, ReminderPolicy.timestamp(plan.optString("scheduled_at")), ReminderPolicy.timestamp(plan.optString("expires_at")), last, settings.optInt("min_interval_minutes", 15), taskCount, totalCount)) {
-                feedback(context, id, "failed", "计划已过期、进入静默时段或达到提醒上限");
+                feedback(context, id, "failed", "计划已过期或达到提醒上限");
                 plan.remove("local_scheduled");
             } else {
                 // Mark consumed first: process death must never cause repeated sound.
@@ -903,6 +958,7 @@ public final class ReminderCoordinator {
                 try {
                     reconcile(context, plans(context), true);
                     reconcileFlows(context,localFlows(context),new JSONArray(),true);
+                    restoreTestReminder(context,active);
                     prefs(context).edit().putString("capabilities", ReminderPlatform.capabilities(context).toString()).commit();
                 } catch (Exception ignored) { setStatus(context, "恢复提醒失败，请打开应用重试"); }
                 schedulePeriodic(context); enqueueSync(context);

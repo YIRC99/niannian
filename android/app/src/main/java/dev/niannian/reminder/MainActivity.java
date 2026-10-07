@@ -38,6 +38,9 @@ public class MainActivity extends Activity {
     private final ExecutorService workers = Executors.newFixedThreadPool(3);
     private final PhotoRequestQueue photoRequests = new PhotoRequestQueue();
     private final Handler ui = new Handler(Looper.getMainLooper());
+    private final SharedPreferences.OnSharedPreferenceChangeListener reminderSyncListener = (preferences, key) -> {
+        if ("last_sync".equals(key)) ui.post(this::refreshVisibleReminderTimes);
+    };
     private Session session;
     private int accountEpoch = 0, pageEpoch = 0, taskLoadRequest = 0;
     private String screen = "home", filter = "待完成", search = "";
@@ -124,6 +127,7 @@ public class MainActivity extends Activity {
         }
         if (session.base.isEmpty()) screen = "server";
         else if (session.token.isEmpty() && !screen.equals("server") && !screen.equals("login")) screen = "home";
+        getSharedPreferences("reminder_execution_v1", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(reminderSyncListener);
         ReminderCoordinator.attach(this,session);
         render();
         openReminderIntent(getIntent());
@@ -159,7 +163,12 @@ public class MainActivity extends Activity {
     }
     @Override protected void onResume() { super.onResume(); setMotionHostActive(true); if(session!=null)ReminderCoordinator.onResume(this,session); }
     @Override protected void onPause() { setMotionHostActive(false); super.onPause(); }
-    @Override public void onDestroy() { dismissProfileDialog(); stopPageMotion(); super.onDestroy(); workers.shutdownNow(); photoRequests.close(); ui.removeCallbacksAndMessages(null); }
+    @Override public void onDestroy() { getSharedPreferences("reminder_execution_v1", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(reminderSyncListener); dismissProfileDialog(); stopPageMotion(); super.onDestroy(); workers.shutdownNow(); photoRequests.close(); ui.removeCallbacksAndMessages(null); }
+    private void refreshVisibleReminderTimes() {
+        if (isDestroyed() || !motionHostActive || session == null || session.token.isEmpty() || !screen.equals("home")) return;
+        if (!ReminderCoordinator.acceptsIntent(session, getSharedPreferences("reminder_execution_v1", MODE_PRIVATE).getString("scope", ""))) return;
+        loadTasks(null);
+    }
     private void setMotionHostActive(boolean active) {
         motionHostActive=active;
         if(growthView!=null)growthView.setHostActive(active);
@@ -902,7 +911,7 @@ public class MainActivity extends Activity {
             LinearLayout copy=column();copy.addView(text(notificationChannel(step),14,INK,true));gap(copy,3);copy.addView(text(wait,12,MUTED,false));line.addView(copy,new LinearLayout.LayoutParams(0,-2,1));panel.addView(line);if(i<steps.length()-1)gap(panel,12);
         }
         gap(panel,12);JSONObject rule=task.optJSONObject("rule");boolean once=rule!=null&&"notify_once".equals(rule.optString("mode"));
-        note(panel,once?"每期只成功提醒一次。":"上一步有执行结果或等待超时后，才开始下一步。末步后逐渐延长间隔；遵守静默和次数上限，完成、暂停或到期即停止本期提醒。");
+        note(panel,once?"每期只成功提醒一次。":"上一步有执行结果或等待超时后，才开始下一步。末步后逐渐延长间隔；遵守次数上限，完成、暂停或到期即停止本期提醒。");
         String reason=strategy.optString("reason");
         if(!reason.isEmpty()){
             Button why=linkButton("为什么这样安排");panel.addView(why);LinearLayout explanation=column();explanation.setVisibility(View.GONE);note(explanation,reason);
@@ -983,12 +992,24 @@ public class MainActivity extends Activity {
         final int page=pageEpoch,account=accountEpoch;
         body.post(()->{
             if(isDestroyed()||page!=pageEpoch||account!=accountEpoch||!screen.equals("editor"))return;
-            String message=ReminderCoordinator.setupPrompt(this,session);if(message.isEmpty())return;
+            String message=ReminderCoordinator.setupPrompt(this,session);
+            if(message.isEmpty()){
+                if(ReminderBackgroundAccess.needsSetup(this))showReminderBackgroundSetup();
+                return;
+            }
             LinearLayout panel=dialogPanel("让念念能提醒到你",message);gap(panel,12);
             Button setup=button("去设置提醒方式",true),later=linkButton("先安排，稍后设置");panel.addView(setup);panel.addView(later,new LinearLayout.LayoutParams(-1,-2));
             profileDialog=gardenDialog(panel);AlertDialog dialog=profileDialog;
             setup.setOnClickListener(v->{dialog.dismiss();if(page==pageEpoch&&account==accountEpoch)navigate("reminders");});later.setOnClickListener(v->dialog.dismiss());
         });
+    }
+    private void showReminderBackgroundSetup(){
+        LinearLayout panel=dialogPanel("退出后，也能提醒你",ReminderBackgroundAccess.instructions(this));gap(panel,12);
+        Button setup=button("去设置后台权限",true),done=linkButton("我已检查，继续安排");
+        panel.addView(setup);panel.addView(done,new LinearLayout.LayoutParams(-1,-2));
+        profileDialog=gardenDialog(panel);AlertDialog dialog=profileDialog;
+        setup.setOnClickListener(v->{dialog.dismiss();ReminderBackgroundAccess.openSettings(this);});
+        done.setOnClickListener(v->{ReminderBackgroundAccess.reviewed(this);dialog.dismiss();});
     }
     private void renderEditor() {
         addSowingHeading();

@@ -6,14 +6,25 @@ public final class ReminderPolicyTest {
     private static int assertions;
     public static void main(String[] args) throws Exception {
         long morning = Instant.parse("2026-10-07T01:00:00Z").toEpochMilli();
-        yes(ReminderPolicy.inQuiet(morning, "Asia/Shanghai", "22:00", "10:00"), "overnight quiet window");
-        yes(!ReminderPolicy.inQuiet(morning, "Asia/Shanghai", "22:00", "08:00"), "outside quiet window");
-        yes(ReminderPolicy.inQuiet(morning, "Asia/Shanghai", "09:00", "10:00"), "quiet start inclusive");
-        yes(!ReminderPolicy.inQuiet(morning, "Asia/Shanghai", "08:00", "09:00"), "quiet end exclusive");
-        yes(!ReminderPolicy.inQuiet(morning, "Asia/Shanghai", "09:00", "09:00"), "equal times disables quiet window");
-        yes(!ReminderPolicy.inQuiet(morning, "Asia/Shanghai", "", ""), "server disabled quiet window");
-        yes(ReminderPolicy.inQuiet(morning, "Asia/Shanghai", "22:00", ""), "partial quiet setting fails closed");
-        yes(ReminderPolicy.inQuiet(morning, "invalid", "invalid", "08:00"), "invalid settings fail closed");
+        yes(ReminderPolicy.needsLegacyQuietMigration(true, true, "22:00", "08:00"), "configured active old-server settings need migration");
+        yes(!ReminderPolicy.needsLegacyQuietMigration(false, true, "22:00", "08:00"), "unconfigured defaults never become saved settings");
+        yes(!ReminderPolicy.needsLegacyQuietMigration(true, false, "22:00", "08:00"), "another active device prevents settings migration");
+        yes(!ReminderPolicy.needsLegacyQuietMigration(true, true, "", ""), "new-server cleared settings need no write");
+        yes(ReminderPolicy.needsLegacyQuietMigration(true, true, "22:00", ""), "partial legacy setting is removed too");
+        yes(ReminderPolicy.needsLegacyQuietMigration(true, true, "00:00", "00:00"), "equal legacy settings are cleared instead of retained");
+        yes(ReminderPolicy.blocksSettingsMigration(morning, morning, morning + 300000, "scheduled"), "unacknowledged due plan blocks generation reset");
+        yes(ReminderPolicy.blocksSettingsMigration(morning, morning - 1, morning + 300000, "pending"), "already due plan blocks migration");
+        yes(ReminderPolicy.blocksSettingsMigration(morning, morning + 60000, morning + 300000, "scheduled"), "about-to-fire plan has a network race guard");
+        yes(!ReminderPolicy.blocksSettingsMigration(morning, morning + 60001, morning + 300000, "scheduled"), "future plan outside race guard can be replaced");
+        yes(!ReminderPolicy.blocksSettingsMigration(morning, morning - 300000, morning, "scheduled"), "expired window no longer blocks migration");
+        for(String terminal : new String[]{"delivered", "accepted", "failed", "cancelled", "sent"})
+            yes(!ReminderPolicy.blocksSettingsMigration(morning, morning, morning + 300000, terminal), "confirmed " + terminal + " does not block migration");
+        yes(ReminderPolicy.blocksSettingsMigration(morning, morning, morning + 300000, "sending"), "unknown in-flight outcome is not assumed terminal");
+        long breakfast = Instant.parse("2026-10-08T06:22:55+08:00").toEpochMilli();
+        long bedtime = Instant.parse("2026-10-08T23:30:00+08:00").toEpochMilli();
+        yes(ReminderPolicy.due(breakfast, breakfast, breakfast + 300000, 0, 5, 0, 0), "explicit early morning reminder executes at its scheduled time");
+        yes(ReminderPolicy.due(bedtime, bedtime, bedtime + 300000, 0, 5, 0, 0), "explicit late night reminder executes at its scheduled time");
+        yes(!ReminderPolicy.due(breakfast, breakfast, breakfast + 300000, breakfast - 60000, 5, 0, 0), "early morning reminders still obey minimum spacing");
         yes(ReminderPolicy.due(morning, morning, morning + 60000, 0, 5, 0, 0), "fresh due plan admitted");
         yes(!ReminderPolicy.due(morning, morning + 5000, morning + 60000, 0, 5, 0, 0), "early broadcast rejected");
         yes(!ReminderPolicy.due(morning, morning - 60000, morning, 0, 5, 0, 0), "expiry exclusive");

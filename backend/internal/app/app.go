@@ -163,7 +163,7 @@ CREATE INDEX IF NOT EXISTS notification_user ON notifications(user_id,scheduled_
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 200, map[string]string{"status": "ok", "version": "2.3.0"})
+		writeJSON(w, 200, map[string]string{"status": "ok", "version": "2.4.0"})
 	})
 	mux.HandleFunc("POST /api/v1/auth/code", a.requestCode)
 	mux.HandleFunc("POST /api/v1/auth/verify", a.verifyCode)

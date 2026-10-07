@@ -33,6 +33,8 @@ type reminderSettings struct {
 	MinInterval       int      `json:"min_interval_minutes"`
 	Configured        bool     `json:"configured"`
 	LegacyEmailActive bool     `json:"legacy_email_active"`
+	legacyQuietStart  string
+	legacyQuietEnd    string
 }
 type reminderCapabilities struct {
 	Notification bool `json:"notification"`
@@ -81,7 +83,7 @@ func scanReminderPlan(s scanner) (p reminderPlan, err error) {
 	return
 }
 func (a *App) reminderSettingsFor(user string) (reminderSettings, string, error) {
-	s := reminderSettings{Enabled: true, Channels: []string{"notification", "calendar", "alarm"}, QuietStart: "22:00", QuietEnd: "08:00", MinInterval: 5, LegacyEmailActive: true, Timezone: "Asia/Shanghai"}
+	s := reminderSettings{Enabled: true, Channels: []string{"notification", "calendar", "alarm"}, MinInterval: 5, LegacyEmailActive: true, Timezone: "Asia/Shanghai"}
 	var raw, device string
 	err := a.db.QueryRow(`SELECT settings,active_device,revision FROM reminder_settings WHERE user_id=?`, user).Scan(&raw, &device, &s.Revision)
 	if err == sql.ErrNoRows {
@@ -91,6 +93,11 @@ func (a *App) reminderSettingsFor(user string) (reminderSettings, string, error)
 		return s, "", err
 	}
 	err = json.Unmarshal([]byte(raw), &s)
+	// The fields remain in the wire format for 2.3 clients, but have no effect.
+	// Normalization changes generations created with an old quiet preference;
+	// the existing sync protocol cancels those schedules before replacing them.
+	s.legacyQuietStart, s.legacyQuietEnd = s.QuietStart, s.QuietEnd
+	s.QuietStart, s.QuietEnd = "", ""
 	s.Configured = true
 	s.LegacyEmailActive = false
 	return s, device, err
@@ -119,22 +126,7 @@ func (a *App) putReminderSettings(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "提醒间隔需为1–1440分钟")
 		return
 	}
-	if (s.QuietStart == "") != (s.QuietEnd == "") {
-		writeError(w, 400, "请同时填写静默开始和结束时间，或同时留空")
-		return
-	}
-	if s.QuietStart != "" {
-		for _, v := range []string{s.QuietStart, s.QuietEnd} {
-			if _, err := time.Parse("15:04", v); err != nil {
-				writeError(w, 400, "静默时间格式应为HH:mm")
-				return
-			}
-		}
-		if s.QuietStart == s.QuietEnd {
-			writeError(w, 400, "静默开始和结束时间不能相同")
-			return
-		}
-	}
+	s.QuietStart, s.QuietEnd = "", ""
 	allowed := map[string]bool{"notification": true, "calendar": true, "alarm": true, "email": true}
 	seen := map[string]bool{}
 	for _, ch := range s.Channels {
@@ -309,7 +301,7 @@ func (a *App) syncReminders(w http.ResponseWriter, r *http.Request) {
 	if len(localFlows) > 0 {
 		agentMessage = "已把有限的通知和闹钟步骤交给手机系统，未完成时可离线逐步跟进；到期或步骤用完后联网续领"
 	} else if len(plans) == 0 && agentStatus == "ready" {
-		agentMessage = "当前没有可执行的手机提醒；已遵守完成状态、静默时段、最短间隔和截止时间"
+		agentMessage = "当前没有可执行的手机提醒；已遵守完成状态、最短间隔和截止时间"
 	}
 	if agentStatus == "no_authorized_channel" {
 		agentMessage = "当前没有已授权的可用渠道，请在手机设置中开启提醒权限"
@@ -339,45 +331,6 @@ func containsReminderChannel(channels []string, ch string) bool {
 		}
 	}
 	return false
-}
-func quietReminder(at time.Time, s reminderSettings, zone string) bool {
-	if s.QuietStart == "" {
-		return false
-	}
-	if s.Timezone != "" {
-		zone = s.Timezone
-	}
-	loc, err := time.LoadLocation(zone)
-	if err != nil {
-		return true
-	}
-	clock := at.In(loc).Format("15:04")
-	if s.QuietStart < s.QuietEnd {
-		return clock >= s.QuietStart && clock < s.QuietEnd
-	}
-	return clock >= s.QuietStart || clock < s.QuietEnd
-}
-func afterReminderQuiet(at time.Time, s reminderSettings, zone string) time.Time {
-	if !quietReminder(at, s, zone) {
-		return at
-	}
-	if s.Timezone != "" {
-		zone = s.Timezone
-	}
-	loc, err := time.LoadLocation(zone)
-	if err != nil {
-		return at
-	}
-	end, err := time.Parse("15:04", s.QuietEnd)
-	if err != nil {
-		return at
-	}
-	local := at.In(loc)
-	day := local
-	if s.QuietStart > s.QuietEnd && local.Format("15:04") >= s.QuietStart {
-		day = day.AddDate(0, 0, 1)
-	}
-	return time.Date(day.Year(), day.Month(), day.Day(), end.Hour(), end.Minute(), 0, 0, loc)
 }
 func reminderGeneration(t task, s reminderSettings, device string, channels []string) string {
 	raw, _ := json.Marshal([]any{"sequential-v1", t.ID, t.Title, t.Description, t.Rule, t.UpdatedAt, t.SnoozeUntil, t.SnoozeCycle, s, s.Revision, device, channels})
@@ -607,7 +560,16 @@ func (a *App) buildTaskReminderPlan(ctx context.Context, t task, s reminderSetti
 	if err = a.cancelStoppedReminderPlans(latest); err != nil {
 		return err
 	}
-	if _, err = a.db.Exec(`UPDATE reminder_plans SET status='cancelled',error='跟进流程已更新，仅保留下一条安排' WHERE task_id=? AND generation<>? AND status IN ('pending','scheduled') AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=?)`, t.ID, generation, stamp(a.now())); err != nil {
+	// A quiet-only migration must not erase an already-due phone execution
+	// whose receipt is still offline. Match the old generation against the
+	// current task/device/settings, so edits and revocations remain effective.
+	legacyQuietGeneration := ""
+	if fresh.legacyQuietStart != "" || fresh.legacyQuietEnd != "" {
+		legacy := fresh
+		legacy.QuietStart, legacy.QuietEnd = fresh.legacyQuietStart, fresh.legacyQuietEnd
+		legacyQuietGeneration = reminderGeneration(latest, legacy, device, freshChannels)
+	}
+	if _, err = a.db.Exec(`UPDATE reminder_plans SET status='cancelled',error='跟进流程已更新，仅保留下一条安排' WHERE task_id=? AND generation<>? AND status IN ('pending','scheduled') AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=?) AND NOT(generation=? AND scheduled_at<=? AND expires_at>?)`, t.ID, generation, stamp(a.now()), legacyQuietGeneration, stamp(a.now()), stamp(a.now())); err != nil {
 		return err
 	}
 	// Cancel legacy batches, retaining their rows and returning their IDs for
@@ -778,14 +740,6 @@ func (a *App) saveNextReminder(t task, s reminderSettings, device string, strate
 			next = minimumAt
 		}
 	}
-	if quietReminder(next, s, t.Rule.Timezone) {
-		deferred := afterReminderQuiet(next, s, t.Rule.Timezone)
-		adjusted, active := schedule.CycleAt(t.Rule, deferred)
-		if !active || adjusted.Key != cycle.Key {
-			return nil
-		}
-		next = deferred
-	}
 	complete, sent, err := a.cycleCounts(t.ID, cycle.Key)
 	if err != nil || stopForRule(t.Rule, complete, sent) {
 		return err
@@ -912,7 +866,7 @@ func (a *App) tickReminderAgent(ctx context.Context) error {
 			}
 			cycle, active := schedule.CycleAt(t.Rule, a.now())
 			snooze, _ := time.Parse(time.RFC3339Nano, t.SnoozeUntil)
-			invalidWindow = plannedRule != string(raw) || !active || cycle.Key != p.CycleKey || snooze.After(a.now()) || t.Paused || quietReminder(a.now(), s, t.Rule.Timezone)
+			invalidWindow = plannedRule != string(raw) || !active || cycle.Key != p.CycleKey || snooze.After(a.now()) || t.Paused
 		}
 		if e != nil || invalidWindow || stopForRule(t.Rule, complete, sent) {
 			_, err = a.db.Exec(`UPDATE reminder_plans SET status='cancelled',error='任务已完成或已停止' WHERE id=?`, p.ID)

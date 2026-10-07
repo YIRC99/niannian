@@ -84,15 +84,15 @@ func (a *App) localFlowReserved(taskID string) (bool, error) {
 // Call under a.mu. A revoked offline device cannot learn about revocation until
 // its next sync; reserve the old window until cancellation is acknowledged.
 func (a *App) reconcileLocalFlows(user string) error {
-	rows, err := a.db.Query(`SELECT id,task_id,device_id,generation,cycle_key,valid_until FROM reminder_local_flows WHERE user_id=? AND state IN ('active','revoked')`, user)
+	rows, err := a.db.Query(`SELECT id,task_id,device_id,generation,cycle_key,valid_until,blueprint FROM reminder_local_flows WHERE user_id=? AND state IN ('active','revoked')`, user)
 	if err != nil {
 		return err
 	}
-	type grant struct{ id, task, device, generation, cycle, until string }
+	type grant struct{ id, task, device, generation, cycle, until, blueprint string }
 	grants := []grant{}
 	for rows.Next() {
 		var g grant
-		if err = rows.Scan(&g.id, &g.task, &g.device, &g.generation, &g.cycle, &g.until); err != nil {
+		if err = rows.Scan(&g.id, &g.task, &g.device, &g.generation, &g.cycle, &g.until, &g.blueprint); err != nil {
 			rows.Close()
 			return err
 		}
@@ -118,11 +118,15 @@ func (a *App) reconcileLocalFlows(user string) error {
 		if e != nil || !a.now().Before(until) {
 			state = "expired"
 		} else {
+			var oldFlow localFlow
+			if err := json.Unmarshal([]byte(g.blueprint), &oldFlow); err != nil {
+				return err
+			}
 			t, e := a.findTask(g.task, user)
 			if e != nil && e != sql.ErrNoRows {
 				return e
 			}
-			if e == sql.ErrNoRows || t.Paused || !s.Enabled || active != g.device || reminderGeneration(t, s, active, channels) != g.generation {
+			if e == sql.ErrNoRows || t.Paused || !s.Enabled || active != g.device || reminderGeneration(t, s, active, channels) != g.generation || oldFlow.QuietStart != "" || oldFlow.QuietEnd != "" {
 				state = "revoked"
 			} else {
 				complete, sent, e := a.cycleCounts(g.task, g.cycle)
@@ -240,7 +244,7 @@ func (a *App) issueLocalFlow(p reminderPlan, user, device string, availableSteps
 	if budget <= 0 {
 		return nil, nil
 	}
-	f := &localFlow{ID: randomID(), RootPlanID: p.ID, TaskID: t.ID, DeviceID: device, Generation: p.Generation, CycleKey: p.CycleKey, IssuedAt: localFlowStamp(a.now()), Timezone: s.Timezone, QuietStart: s.QuietStart, QuietEnd: s.QuietEnd, MinInterval: max(1, s.MinInterval), StopAfterSuccess: t.Rule.Mode == "notify_once", RemainingReminders: budget, Steps: []localFlowStep{}, Rule: t.Rule}
+	f := &localFlow{ID: randomID(), RootPlanID: p.ID, TaskID: t.ID, DeviceID: device, Generation: p.Generation, CycleKey: p.CycleKey, IssuedAt: localFlowStamp(a.now()), Timezone: s.Timezone, MinInterval: max(1, s.MinInterval), StopAfterSuccess: t.Rule.Mode == "notify_once", RemainingReminders: budget, Steps: []localFlowStep{}, Rule: t.Rule}
 	f.Source = p.Source
 	start := localFlowStartIndex(p, strategy)
 	for i := start; i < len(strategy.Steps) && len(f.Steps) < min(6, availableSteps); i++ {
@@ -257,9 +261,6 @@ func (a *App) issueLocalFlow(p reminderPlan, user, device string, availableSteps
 				wait = max(wait, t.Rule.RepeatMinutes)
 			}
 			at = prior.Add(time.Duration(wait) * time.Minute)
-		}
-		if quietReminder(at, s, t.Rule.Timezone) {
-			at = afterReminderQuiet(at, s, t.Rule.Timezone)
 		}
 		c, valid := schedule.CycleAt(t.Rule, at)
 		if !valid || c.Key != cycle.Key || !at.Before(limit) {
@@ -529,10 +530,6 @@ func (a *App) recordLocalFlowResult(user, device string, f localFlow, index int,
 	if r.Status == "delivered" {
 		if at.Before(scheduled) || !at.Before(expires) {
 			return "执行时间超出授权窗口", nil
-		}
-		s := reminderSettings{Timezone: f.Timezone, QuietStart: f.QuietStart, QuietEnd: f.QuietEnd}
-		if quietReminder(at, s, f.Rule.Timezone) {
-			return "执行时间位于静默时段", nil
 		}
 		cycle, ok := schedule.CycleAt(f.Rule, at)
 		if !ok || cycle.Key != f.CycleKey {

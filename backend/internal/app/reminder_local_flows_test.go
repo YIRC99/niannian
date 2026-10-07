@@ -203,7 +203,7 @@ func TestLocalFlowRejectsEarlyOutOfOrderAndExpiredDelivery(t *testing.T) {
 	}
 }
 
-func TestLocalFlowHonorsQuietDeadlineNotifyOnceAndLegacyClients(t *testing.T) {
+func TestLocalFlowHonorsDeadlineNotifyOnceAndLegacyClients(t *testing.T) {
 	t.Run("legacy", func(t *testing.T) {
 		a, m, now := setup(t)
 		token := login(t, a, m, "one@example.com")
@@ -225,7 +225,7 @@ func TestLocalFlowHonorsQuietDeadlineNotifyOnceAndLegacyClients(t *testing.T) {
 			t.Fatal("notify_once received repeated offline authority")
 		}
 	})
-	t.Run("quiet_and_deadline", func(t *testing.T) {
+	t.Run("obsolete_quiet_ignored_deadline_kept", func(t *testing.T) {
 		a, m, now := setup(t)
 		token := login(t, a, m, "one@example.com")
 		body := taskBody("until_done")
@@ -239,10 +239,13 @@ func TestLocalFlowHonorsQuietDeadlineNotifyOnceAndLegacyClients(t *testing.T) {
 		}
 		out := localFlowSync(t, a, token, "phone", nil, nil)
 		f := out["local_flows"].([]any)[0].(map[string]any)
+		if f["quiet_start"] != "" || f["quiet_end"] != "" {
+			t.Fatal("obsolete quiet hours in new authorization")
+		}
 		for _, raw := range f["steps"].([]any) {
 			s := raw.(map[string]any)
 			at, _ := time.Parse(time.RFC3339Nano, s["scheduled_at"].(string))
-			if at.After(deadline) || (at.In(now.Location()).Hour() == 9 && at.In(now.Location()).Minute() >= 14 && at.In(now.Location()).Minute() < 18) {
+			if at.After(deadline) {
 				t.Fatalf("invalid authorized time: %+v", s)
 			}
 		}
