@@ -68,6 +68,9 @@ func (a *App) candidate(t task, now time.Time) (schedule.Occurrence, bool) {
 	return candidate, found
 }
 func (a *App) tick(ctx context.Context) error {
+	if err := a.tickReminderAgent(ctx); err != nil {
+		return err
+	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if err := ctx.Err(); err != nil {
@@ -93,6 +96,13 @@ func (a *App) tick(ctx context.Context) error {
 		return err
 	}
 	for _, t := range tasks {
+		managed, e := a.usesReminderAgent(t.UserID)
+		if e != nil {
+			return e
+		}
+		if managed {
+			continue
+		}
 		occurrence, ok := a.candidate(t, now)
 		if !ok {
 			continue
@@ -149,6 +159,16 @@ func (a *App) tick(ctx context.Context) error {
 		}
 		if e != nil {
 			return e
+		}
+		managed, e := a.usesReminderAgent(t.UserID)
+		if e != nil {
+			return e
+		}
+		if managed {
+			if e = cancel(q.id, "已由多渠道提醒接管"); e != nil {
+				return e
+			}
+			continue
 		}
 		occurrence, ok := a.candidate(t, now)
 		rule, _ := json.Marshal(t.Rule)

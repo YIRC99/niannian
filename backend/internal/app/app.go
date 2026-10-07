@@ -52,6 +52,7 @@ type task struct {
 	ID           string        `json:"id"`
 	Title        string        `json:"title"`
 	Description  string        `json:"description"`
+	FlowerType   string        `json:"flower_type"`
 	Rule         schedule.Rule `json:"rule"`
 	Paused       bool          `json:"paused"`
 	CreatedAt    string        `json:"created_at"`
@@ -82,6 +83,9 @@ type Notification struct {
 	SentAt      string `json:"sent_at"`
 	Status      string `json:"status"`
 	Error       string `json:"error"`
+	Channel     string `json:"channel"`
+	Source      string `json:"source"`
+	Reason      string `json:"reason"`
 }
 
 func New(cfg config.Config) (*App, error) {
@@ -106,13 +110,17 @@ func New(cfg config.Config) (*App, error) {
 	}
 	db.SetMaxOpenConns(1)
 	a := &App{cfg: cfg, db: db, lock: guard, mailer: mail.New(cfg), parser: ai.New(cfg), now: time.Now}
-	if _, err = db.Exec(schema); err != nil {
+	if _, err = db.Exec(schema + reminderSchema + gardenSchema); err != nil {
 		a.Close()
 		return nil, fmt.Errorf("initialize database: %w", err)
 	}
 	// The exclusive directory lock guarantees an interrupted send has no live worker.
 	// SMTP acknowledgement is not transactional: a crash after acceptance may repeat one mail.
 	if _, err = db.Exec(`UPDATE notifications SET status='failed', next_attempt_at='', error='服务重启，等待重试' WHERE status='sending'`); err != nil {
+		a.Close()
+		return nil, err
+	}
+	if _, err = db.Exec(`UPDATE reminder_plans SET status='failed',reported_at=?,error='服务在邮件发送时重启，SMTP是否接受未知，等待重新评估' WHERE channel='email' AND status='sending'`, stamp(a.now())); err != nil {
 		a.Close()
 		return nil, err
 	}
@@ -154,7 +162,7 @@ CREATE INDEX IF NOT EXISTS notification_user ON notifications(user_id,scheduled_
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 200, map[string]string{"status": "ok", "version": "1.8.1"})
+		writeJSON(w, 200, map[string]string{"status": "ok", "version": "2.0.0"})
 	})
 	mux.HandleFunc("POST /api/v1/auth/code", a.requestCode)
 	mux.HandleFunc("POST /api/v1/auth/verify", a.verifyCode)
@@ -174,7 +182,13 @@ func (a *App) Handler() http.Handler {
 	secured("POST /api/v1/tasks/{id}/snooze", a.snoozeTask)
 	secured("GET /api/v1/history", a.history)
 	secured("GET /api/v1/garden", a.garden)
+	secured("POST /api/v1/garden/plants", a.createGardenPlant)
+	secured("POST /api/v1/garden/plants/{id}/water", a.waterGardenPlant)
+	secured("PUT /api/v1/garden/plants/{id}/flower", a.setGardenFlower)
 	secured("GET /api/v1/notifications", a.notifications)
+	secured("GET /api/v1/reminders/settings", a.getReminderSettings)
+	secured("PUT /api/v1/reminders/settings", a.putReminderSettings)
+	secured("POST /api/v1/reminders/sync", a.syncReminders)
 	secured("GET /api/v1/calendar", a.calendar)
 	secured("POST /api/v1/media", a.uploadMedia)
 	secured("GET /api/v1/media/{id}", a.getMedia)

@@ -26,6 +26,9 @@ type calendarEntry struct {
 	SentAt      string   `json:"sent_at,omitempty"`
 	Status      string   `json:"status,omitempty"`
 	Error       string   `json:"error,omitempty"`
+	Channel     string   `json:"channel,omitempty"`
+	Source      string   `json:"source,omitempty"`
+	Reason      string   `json:"reason,omitempty"`
 	Text        string   `json:"text,omitempty"`
 	MediaIDs    []string `json:"media_ids"`
 	CreatedAt   string   `json:"created_at,omitempty"`
@@ -233,6 +236,11 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 	defer a.mu.Unlock()
 	now := a.now()
 	userID := currentUser(r).ID
+	managed, dbErr := a.usesReminderAgent(userID)
+	if dbErr != nil {
+		dbFailure(w)
+		return
+	}
 	tasks, dbErr := a.allTasks(userID, false)
 	if dbErr != nil {
 		dbFailure(w)
@@ -252,7 +260,7 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 	truncated := false
 	// Keep records in their original rule/cycle, even if the task was edited or
 	// archived. SQL bounds plus the limit prevent an unbounded response.
-	rows, dbErr := a.db.QueryContext(r.Context(), `SELECT id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot FROM notifications WHERE user_id=? AND unixepoch(scheduled_at)>=? AND unixepoch(scheduled_at)<? ORDER BY unixepoch(scheduled_at),id LIMIT ?`, userID, start.Unix(), end.Unix(), calendarEntryLimit+1)
+	rows, dbErr := a.db.QueryContext(r.Context(), `SELECT id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,channel,source,reason FROM (SELECT id,user_id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,'email' AS channel,'legacy' AS source,'' AS reason FROM notifications UNION ALL SELECT id,user_id,task_id,title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,channel,source,reason FROM reminder_plans) WHERE user_id=? AND unixepoch(scheduled_at)>=? AND unixepoch(scheduled_at)<? ORDER BY unixepoch(scheduled_at),id LIMIT ?`, userID, start.Unix(), end.Unix(), calendarEntryLimit+1)
 	if dbErr != nil {
 		dbFailure(w)
 		return
@@ -260,7 +268,7 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var n calendarNotification
 		var raw string
-		if dbErr = rows.Scan(&n.entry.ID, &n.entry.TaskID, &n.entry.TaskTitle, &n.entry.CycleKey, &n.entry.ScheduledAt, &n.entry.SentAt, &n.entry.Status, &n.entry.Error, &raw); dbErr != nil {
+		if dbErr = rows.Scan(&n.entry.ID, &n.entry.TaskID, &n.entry.TaskTitle, &n.entry.CycleKey, &n.entry.ScheduledAt, &n.entry.SentAt, &n.entry.Status, &n.entry.Error, &raw, &n.entry.Channel, &n.entry.Source, &n.entry.Reason); dbErr != nil {
 			break
 		}
 		n.at, dbErr = time.Parse(time.RFC3339Nano, n.entry.ScheduledAt)
@@ -342,6 +350,11 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 			from = effective
 		}
 		p := projection{t: t, cycles: map[string]schedule.Cycle{}, from: from, to: end.Add(-time.Nanosecond)}
+		// Once the agent is explicitly enabled, future reminders come only from
+		// its real permission/quiet-hour constrained plan ledger.
+		if managed && p.to.After(now) {
+			p.to = now.Add(-time.Nanosecond)
+		}
 		snooze, hasSnooze := calendarSnooze(t)
 		if t.Rule.Kind == "minute_interval" {
 			first, _ := time.Parse(time.RFC3339Nano, t.Rule.FirstAt)
@@ -398,7 +411,7 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		dbFailure(w)
 		return
 	}
-	rows, dbErr = a.db.QueryContext(r.Context(), `SELECT task_id,cycle_key,COUNT(*),SUM(CASE WHEN unixepoch(scheduled_at)<? THEN 1 ELSE 0 END) FROM notifications WHERE user_id=? AND status='sent' GROUP BY task_id,cycle_key`, start.Unix(), userID)
+	rows, dbErr = a.db.QueryContext(r.Context(), `SELECT task_id,cycle_key,COUNT(*),SUM(CASE WHEN unixepoch(scheduled_at)<? THEN 1 ELSE 0 END) FROM (SELECT user_id,task_id,cycle_key,scheduled_at FROM notifications WHERE status='sent' UNION ALL SELECT user_id,task_id,cycle_key,scheduled_at FROM reminder_plans WHERE status IN ('delivered','accepted') OR (status='scheduled' AND channel='calendar' AND scheduled_at<=?)) WHERE user_id=? GROUP BY task_id,cycle_key`, start.Unix(), stamp(now), userID)
 	if dbErr != nil {
 		dbFailure(w)
 		return
@@ -423,7 +436,7 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, n := range notifications {
-		if n.entry.Status == "sent" {
+		if n.entry.Status == "sent" || n.entry.Status == "delivered" || n.entry.Status == "accepted" || (n.entry.Status == "scheduled" && n.entry.Channel == "calendar" && !n.at.After(now)) {
 			data := cycles[calendarCycleID{n.entry.TaskID, n.entry.CycleKey}]
 			data.sentInMonth = append(data.sentInMonth, n.at)
 		}

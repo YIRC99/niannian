@@ -2,6 +2,7 @@ package dev.niannian.reminder;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +17,7 @@ public final class GardenFlowers {
             R.drawable.garden_flower_hydrangea
     };
     private static final String[] NAMES = {"郁金香", "雏菊", "羽扇豆", "绣球"};
+    private static final String[] TYPES = {"tulip", "daisy", "lupine", "hydrangea"};
     // Keep confirmed values across account switches: a failed preferences commit may still alter
     // Android's in-memory preferences, and must not become an accepted choice after switching back.
     private static final Map<String, Scope> SCOPES = new HashMap<>();
@@ -63,6 +65,20 @@ public final class GardenFlowers {
     public static int resourceFor(String taskId) {
         return RESOURCES[indexFor(taskId)];
     }
+
+    public static String id(JSONObject plant) {
+        return plant.optString("id", plant.optString("task_id"));
+    }
+
+    public static int indexFor(JSONObject plant) {
+        String type = plant.optString("flower_type");
+        for (int i = 0; i < TYPES.length; i++) if (TYPES[i].equals(type)) return i;
+        return indexFor(id(plant));
+    }
+
+    public static int resourceFor(JSONObject plant) { return RESOURCES[indexFor(plant)]; }
+    public static String nameFor(JSONObject plant) { return NAMES[indexFor(plant)]; }
+    public static String typeFor(int index) { return TYPES[Math.floorMod(index, TYPES.length)]; }
 
     public static String nameFor(String taskId) {
         return NAMES[indexFor(taskId)];

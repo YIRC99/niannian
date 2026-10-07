@@ -204,8 +204,8 @@ func TestGardenDuplicateCompletionOnlyGrowsOnce(t *testing.T) {
 		}
 	}
 	status, out := gardenRequest(t, a, token, "")
-	if status != 200 || out["total_completions"] != float64(1) || out["plants"].([]any)[0].(map[string]any)["stage"] != "sprout" {
-		t.Fatalf("duplicate completion inflated growth: %d %+v", status, out)
+	if status != 200 || out["total_completions"] != float64(1) || out["plants"].([]any)[0].(map[string]any)["stage"] != "seed" || out["wallet"].(map[string]any)["balance"] != float64(3) {
+		t.Fatalf("duplicate completion inflated growth or rewards: %d %+v", status, out)
 	}
 }
 

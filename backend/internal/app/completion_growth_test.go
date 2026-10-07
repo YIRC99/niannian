@@ -26,19 +26,19 @@ func TestCompletionGrowthFirstAndDuplicateUseRealCounts(t *testing.T) {
 	if status != 200 || first["task_id"] != id || first["text"] != "已完成" || first["id"] == "" || first["created_at"] != stamp(*now) {
 		t.Fatalf("first completion: %d %+v", status, first)
 	}
-	assertCompletionGrowth(t, first, 0, 1, "seed", "sprout", true)
+	assertCompletionGrowth(t, first, 0, 0, "seed", "seed", false)
 	status, duplicate := request(t, a, "POST", path, token, map[string]any{"text": "重试"})
 	if status != 200 || duplicate["id"] != first["id"] || duplicate["text"] != first["text"] {
 		t.Fatalf("duplicate completion: %d %+v", status, duplicate)
 	}
-	assertCompletionGrowth(t, duplicate, 1, 1, "sprout", "sprout", false)
+	assertCompletionGrowth(t, duplicate, 0, 0, "seed", "seed", false)
 	// An old response's count is not the retry count: use all current stored rows.
 	addGardenCompletion(t, a, id, stamp(*now))
 	status, duplicate = request(t, a, "POST", path, token, map[string]any{})
 	if status != 200 || duplicate["id"] != first["id"] {
 		t.Fatalf("later duplicate completion: %d %+v", status, duplicate)
 	}
-	assertCompletionGrowth(t, duplicate, 2, 2, "sprout", "sprout", false)
+	assertCompletionGrowth(t, duplicate, 1, 1, "sprout", "sprout", false)
 	for _, route := range []string{"/api/v1/history", "/api/v1/export", "/api/v1/garden"} {
 		status, out := request(t, a, "GET", route, token, nil)
 		if status != 200 {
@@ -76,9 +76,9 @@ func TestCompletionGrowthStageThresholds(t *testing.T) {
 			if status != 200 {
 				t.Fatalf("complete: %d %+v", status, out)
 			}
-			assertCompletionGrowth(t, out, tc.from, tc.from+1, tc.fromStage, tc.stage, true)
+			assertCompletionGrowth(t, out, tc.from, tc.from, tc.fromStage, tc.fromStage, false)
 			status, garden := gardenRequest(t, a, token, "")
-			if status != 200 || garden["plants"].([]any)[0].(map[string]any)["completion_count"] != out["growth"].(map[string]any)["to_count"] {
+			if status != 200 || garden["plants"].([]any)[0].(map[string]any)["growth_count"] != out["growth"].(map[string]any)["to_count"] {
 				t.Fatalf("growth disagrees with garden: %d %+v", status, garden)
 			}
 		})
@@ -106,12 +106,12 @@ func TestCompletionGrowthIsolatesOwnersAndRejectsArchivedTasks(t *testing.T) {
 	if status != 200 {
 		t.Fatalf("owned task completion: %d %+v", status, out)
 	}
-	assertCompletionGrowth(t, out, 0, 1, "seed", "sprout", true)
+	assertCompletionGrowth(t, out, 0, 0, "seed", "seed", false)
 	status, out = request(t, a, "POST", path, one, map[string]any{})
 	if status != 200 {
 		t.Fatalf("owned task retry: %d %+v", status, out)
 	}
-	assertCompletionGrowth(t, out, 1, 1, "sprout", "sprout", false)
+	assertCompletionGrowth(t, out, 0, 0, "seed", "seed", false)
 	if status, out := request(t, a, "DELETE", "/api/v1/tasks/"+id, one, nil); status != 200 {
 		t.Fatalf("archive: %d %+v", status, out)
 	}

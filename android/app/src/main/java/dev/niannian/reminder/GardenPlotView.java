@@ -108,7 +108,7 @@ public final class GardenPlotView extends FrameLayout {
         if (plants != null) {
             ArrayList<JSONObject> ordered = new ArrayList<>();
             for (JSONObject record : plants) if (record != null) ordered.add(record);
-            ordered.sort((first, second) -> first.optString("task_id").compareTo(second.optString("task_id")));
+            ordered.sort((first, second) -> GardenFlowers.id(first).compareTo(GardenFlowers.id(second)));
             for (JSONObject record : ordered) {
                 if (planted.size() == CAPACITY) break;
                 PlantView plant = new PlantView(getContext(), record, planted.size());
@@ -273,7 +273,7 @@ public final class GardenPlotView extends FrameLayout {
             super(context);
             this.record = record;
             this.position = position;
-            taskId = record.optString("task_id");
+            taskId = GardenFlowers.id(record);
             title = record.optString("title").trim();
             String stageName = record.optString("stage");
             stage = "bloom".equals(stageName) ? 3 : "leaf".equals(stageName) ? 2
@@ -281,7 +281,8 @@ public final class GardenPlotView extends FrameLayout {
             // Identity controls appearance, never completion count or the current selection.
             variation = .97f + Math.floorMod(taskId.hashCode(), 7) * .01f;
             motionOffset = Math.floorMod(taskId.hashCode(), 628) / 100f;
-            art = GardenArtCache.plant(getResources(), stage, taskId);
+            art = stage == 3 ? GardenArtCache.load(getResources(), GardenFlowers.resourceFor(record))
+                    : GardenArtCache.plant(getResources(), stage, taskId);
             labelPaint.setTextSize(11f * getResources().getDisplayMetrics().scaledDensity);
             labelPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
             labelPaint.setTextAlign(Paint.Align.CENTER);
@@ -294,7 +295,7 @@ public final class GardenPlotView extends FrameLayout {
             String stageLabel = stage == 3 ? "已经开花" : stage == 2 ? "枝叶舒展"
                     : stage == 1 ? "小芽冒头" : "刚刚播种";
             setContentDescription((title.isEmpty() ? "未命名的小事" : title) + "，" + stageLabel
-                    + "，已完成 " + record.optInt("completion_count") + " 次"
+                    + "，成长 " + record.optInt("growth_count", record.optInt("completion_count")) + " 点"
                     + (record.optBoolean("archived") ? "，已归档" : "，正在花园里生长") + "，点按选中");
             setOnClickListener(view -> {
                 setSelectedPlantId(taskId);

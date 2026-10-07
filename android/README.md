@@ -1,6 +1,12 @@
 # 念念提醒 Android
 
-原生 Java + Android Views，Android 8.0 及以上。仅使用 AndroidX Core 的 FileProvider，无 WebView，不需要手机后台常驻。应用内不包含 DeepSeek 或 SMTP 凭据。
+原生 Java + Android Views，Android 8.0 及以上，使用 AndroidX Core，无 WebView。应用内不包含 DeepSeek 或 SMTP 凭据。手机提醒通过 AlarmManager、通知、CalendarContract 和定期 JobScheduler 同步执行，不使用常驻前台服务；后台任务仍受系统省电和强行停止限制。
+
+## 2.0.0 AI 多渠道与水滴花园
+
+versionCode 24，需配套 2.0.0 后端。播种页与我的页面可开通通知、日历、闹钟和可选邮件；AI 决策在后端，手机负责真实权限、系统排程、取消与执行反馈。每次完成赚 3 滴通用水滴，可自由浇任意花；种花、花种、钱包及成长由服务端保存，旧本机花种保持兼容。登录页复用透明花草，花园维持固定场景/抽屉并统一图标箭头。
+
+验证入口仍为 `scripts/test-android-logic.ps1` 和 Gradle Release 构建/Lint。实际系统通知、日历提供者、闹钟、省电和重启恢复需要真机验收，细节见 [交付检查](../docs/VERIFICATION.md)。
 
 界面开发先看 [UI 开发规划](../UI设计/开发规划.md)，再按 [图片索引](../UI设计/README.md) 打开对应设计稿；全部 24 张图片、页面编号和生成提示词均保存在项目根目录的 `UI设计/`。
 
