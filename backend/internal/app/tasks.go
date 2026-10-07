@@ -58,6 +58,7 @@ func stopForRule(rule schedule.Rule, complete bool, sent int) bool {
 	return complete || (rule.Mode == "notify_once" && sent >= 1) || (rule.MaxReminders > 0 && sent >= rule.MaxReminders)
 }
 func (a *App) view(t task) task {
+	t.ReminderStrategy = a.taskReminderStrategy(t)
 	_ = a.db.QueryRow(`SELECT flower_type FROM garden_plants WHERE task_id=? AND user_id=?`, t.ID, t.UserID).Scan(&t.FlowerType)
 	t.Summary = schedule.Summary(t.Rule)
 	now := a.now()
@@ -123,8 +124,11 @@ func (a *App) view(t task) task {
 		// ledger. A rule slot suppressed by quiet hours is not a scheduled alert.
 		t.NextReminder = ""
 		if settings.Enabled {
-			_ = a.db.QueryRow(`SELECT scheduled_at FROM reminder_plans WHERE task_id=? AND device_id=? AND status IN ('pending','scheduled') AND scheduled_at>? AND expires_at>? AND NOT EXISTS(SELECT 1 FROM completions c WHERE c.task_id=reminder_plans.task_id AND c.cycle_key=reminder_plans.cycle_key) ORDER BY scheduled_at LIMIT 1`, t.ID, device, stamp(now), stamp(now)).Scan(&t.NextReminder)
+			_ = a.db.QueryRow(`SELECT scheduled_at FROM reminder_plans WHERE task_id=? AND device_id=? AND status IN ('pending','scheduled') AND expires_at>? AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=?) AND NOT EXISTS(SELECT 1 FROM completions c WHERE c.task_id=reminder_plans.task_id AND c.cycle_key=reminder_plans.cycle_key) ORDER BY scheduled_at LIMIT 1`, t.ID, device, stamp(now), stamp(now)).Scan(&t.NextReminder)
 		}
+	}
+	if t.ReminderStrategy != nil {
+		t.ReminderStrategy.NextReminder = t.NextReminder
 	}
 	return t
 }
@@ -224,6 +228,11 @@ func (a *App) createTask(w http.ResponseWriter, r *http.Request) {
 		dbFailure(w)
 		return
 	}
+	// Plan with the most recently confirmed device permissions during creation.
+	// Model unavailability uses the rules strategy and never rolls back the task.
+	a.mu.Unlock()
+	_ = a.prepareTaskReminderStrategy(r.Context(), user.ID, t.ID)
+	a.mu.Lock()
 	writeJSON(w, 201, a.view(t))
 }
 func (a *App) getTask(w http.ResponseWriter, r *http.Request) {

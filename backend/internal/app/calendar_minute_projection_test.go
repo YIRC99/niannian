@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestMinuteCalendarTruncationKeepsEarlierPlansFromOtherTasks(t *testing.T) {
+func TestMinuteCalendarDailyAggregationKeepsOtherTasks(t *testing.T) {
 	a, m, now := setup(t)
 	token := login(t, a, m, "one@example.com")
 	*now = time.Date(2026, 10, 1, 0, 0, 0, 0, now.Location())
@@ -14,7 +14,7 @@ func TestMinuteCalendarTruncationKeepsEarlierPlansFromOtherTasks(t *testing.T) {
 	*now = now.Add(time.Second)
 	createMinuteTask(t, a, token, now.Add(15*time.Minute), 1)
 	code, out := request(t, a, "GET", "/api/v1/calendar?month=2026-10&timezone=Asia%2FShanghai", token, nil)
-	if code != 200 || out["truncated"] != true {
+	if code != 200 || out["truncated"] != false || len(out["entries"].([]any)) != 62 {
 		t.Fatalf("dense calendar: %d truncated=%v", code, out["truncated"])
 	}
 	want := stamp(time.Date(2026, 10, 1, 12, 0, 0, 0, now.Location()))
@@ -58,7 +58,7 @@ func TestMinuteCalendarPastCapPreservesUnsentHistoryAndOtherTasks(t *testing.T) 
 	}
 	*now = time.Date(2026, 11, 1, 8, 0, 0, 0, now.Location())
 	entries := calendarEntries(t, a, token, "2026-10", "Asia/Shanghai")
-	daily, actual, missed := 0, 0, map[string]bool{}
+	daily, actual, reminders := 0, 0, 0
 	for _, entry := range entries {
 		if entry["task_id"] == dailyID && entry["type"] == "planned" {
 			daily++
@@ -66,12 +66,14 @@ func TestMinuteCalendarPastCapPreservesUnsentHistoryAndOtherTasks(t *testing.T) 
 		if entry["task_id"] == minuteID {
 			if entry["type"] == "notification" {
 				actual++
-			} else if entry["type"] == "planned" {
-				missed[entry["at"].(string)] = true
+				reminders += int(entry["reminder_count"].(float64))
+				if entry["last_reminder_at"] != stamp(first.Add(3*time.Minute)) {
+					t.Fatalf("lost latest actual reminder: %+v", entry)
+				}
 			}
 		}
 	}
-	if daily != 31 || actual != 2 || len(missed) != 2 || !missed[stamp(first.Add(time.Minute))] || !missed[stamp(first.Add(2*time.Minute))] {
-		t.Fatalf("past cap lost or invented history: daily=%d actual=%d missed=%v", daily, actual, missed)
+	if daily != 31 || actual != 1 || reminders != 2 || len(entries) != 32 {
+		t.Fatalf("past cap lost or invented daily history: daily=%d actual=%d reminders=%d", daily, actual, reminders)
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"niannian/internal/schedule"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -14,28 +15,127 @@ const calendarEntryLimit = 20000
 const calendarByteLimit = 6 * 1024 * 1024
 
 type calendarEntry struct {
-	ID          string   `json:"id"`
-	Type        string   `json:"type"`
-	TaskID      string   `json:"task_id"`
-	TaskTitle   string   `json:"task_title"`
-	At          string   `json:"at"`
-	State       string   `json:"state"`
-	CycleKey    string   `json:"cycle_key"`
-	CycleEnd    string   `json:"cycle_end"`
-	ScheduledAt string   `json:"scheduled_at,omitempty"`
-	SentAt      string   `json:"sent_at,omitempty"`
-	Status      string   `json:"status,omitempty"`
-	Error       string   `json:"error,omitempty"`
-	Channel     string   `json:"channel,omitempty"`
-	Source      string   `json:"source,omitempty"`
-	Reason      string   `json:"reason,omitempty"`
-	Text        string   `json:"text,omitempty"`
-	MediaIDs    []string `json:"media_ids"`
-	CreatedAt   string   `json:"created_at,omitempty"`
+	ID                 string          `json:"id"`
+	Type               string          `json:"type"`
+	TaskID             string          `json:"task_id"`
+	TaskTitle          string          `json:"task_title"`
+	At                 string          `json:"at"`
+	State              string          `json:"state"`
+	CycleKey           string          `json:"cycle_key"`
+	CycleEnd           string          `json:"cycle_end"`
+	ScheduledAt        string          `json:"scheduled_at,omitempty"`
+	SentAt             string          `json:"sent_at,omitempty"`
+	Status             string          `json:"status,omitempty"`
+	Error              string          `json:"error,omitempty"`
+	Channel            string          `json:"channel,omitempty"`
+	Source             string          `json:"source,omitempty"`
+	Reason             string          `json:"reason,omitempty"`
+	Text               string          `json:"text,omitempty"`
+	MediaIDs           []string        `json:"media_ids"`
+	CreatedAt          string          `json:"created_at,omitempty"`
+	LocalDate          string          `json:"local_date"`
+	ReminderCount      int             `json:"reminder_count"`
+	LastReminderAt     string          `json:"last_reminder_at,omitempty"`
+	LastReminderStatus string          `json:"last_reminder_status,omitempty"`
+	CompletionCount    int             `json:"completion_count,omitempty"`
+	CompletionRecords  []calendarEntry `json:"completion_records,omitempty"`
 }
 
-// Internally retain instants, not timestamp text: old records with different
-// offsets must still replace the same projected notification slot.
+type calendarDayID struct{ task, day string }
+
+func calendarPrefers(candidate, current calendarEntry, now time.Time) bool {
+	rank := func(e calendarEntry) int {
+		switch e.Type {
+		case "completion":
+			return 3
+		case "notification":
+			return 2
+		default:
+			return 1
+		}
+	}
+	if rank(candidate) != rank(current) {
+		return rank(candidate) > rank(current)
+	}
+	if candidate.Type == "planned" {
+		// An actual pending plan keeps its identity and channel instead of being
+		// replaced by a rule projection, which has no execution guarantee.
+		if (candidate.Status != "") != (current.Status != "") {
+			return candidate.Status != ""
+		}
+		futureCandidate, futureCurrent := candidate.At >= stamp(now), current.At >= stamp(now)
+		if futureCandidate != futureCurrent {
+			return futureCandidate
+		}
+		if candidate.At != current.At && futureCandidate {
+			return candidate.At < current.At
+		}
+	}
+	if candidate.At != current.At {
+		return candidate.At > current.At
+	}
+	return candidate.ID < current.ID
+}
+
+func calendarCompletionRecords(entry calendarEntry) []calendarEntry {
+	if entry.Type != "completion" {
+		return nil
+	}
+	if len(entry.CompletionRecords) > 0 {
+		return entry.CompletionRecords
+	}
+	entry.ReminderCount, entry.CompletionCount = 0, 0
+	entry.LastReminderAt, entry.LastReminderStatus = "", ""
+	return []calendarEntry{entry}
+}
+
+// Keep one display item per task/day without discarding the underlying notes,
+// photos or successful reminder count. The representative retains its real ID.
+func calendarMerge(current, incoming calendarEntry, now time.Time) calendarEntry {
+	out := current
+	if calendarPrefers(incoming, current, now) {
+		out = incoming
+	}
+	out.ReminderCount = current.ReminderCount + incoming.ReminderCount
+	out.LastReminderAt, out.LastReminderStatus = current.LastReminderAt, current.LastReminderStatus
+	if incoming.LastReminderAt > out.LastReminderAt {
+		out.LastReminderAt, out.LastReminderStatus = incoming.LastReminderAt, incoming.LastReminderStatus
+	}
+	records := append(calendarCompletionRecords(current), calendarCompletionRecords(incoming)...)
+	out.CompletionCount = len(records)
+	if len(records) > 1 {
+		sort.Slice(records, func(i, j int) bool {
+			if records[i].At == records[j].At {
+				return records[i].ID < records[j].ID
+			}
+			return records[i].At < records[j].At
+		})
+		out.CompletionRecords = records
+		out.MediaIDs = []string{}
+		seen := map[string]bool{}
+		texts := []string{}
+		for _, record := range records {
+			if record.Text != "" {
+				texts = append(texts, record.Text)
+			}
+			for _, id := range record.MediaIDs {
+				if !seen[id] {
+					out.MediaIDs = append(out.MediaIDs, id)
+					seen[id] = true
+				}
+			}
+		}
+		out.Text = strings.Join(texts, "\n\n")
+	}
+	return out
+}
+
+func calendarDelivered(entry calendarEntry) bool {
+	return entry.Status == "sent" || entry.Status == "accepted" || (entry.Status == "delivered" && entry.Channel != "calendar")
+}
+
+// Retain the original scheduled instant and rule while aggregating daily
+// display rows, including old records written with different UTC offsets.
 type calendarNotification struct {
 	entry calendarEntry
 	rule  schedule.Rule
@@ -83,9 +183,6 @@ func calendarCycleEnd(end time.Time) string {
 }
 
 func calendarState(at time.Time, cycle schedule.Cycle, data *calendarCycleData, mode string, now time.Time) string {
-	if data != nil && !data.completedAt.IsZero() {
-		return "completed"
-	}
 	if mode == "notify_once" && data != nil && data.sent > 0 {
 		return "notified"
 	}
@@ -160,10 +257,10 @@ func calendarBudgetSlots(t task, cycle schedule.Cycle, data *calendarCycleData, 
 	return out
 }
 
-// Minute rules can have 44,640 slots in one month. Read their ledger before
-// enumerating, then retain only a small chunk per task. Capped future slots
-// come from the lifetime budget, even when they fall outside this month.
-func calendarMinuteCandidates(t task, from, to, now time.Time, data *calendarCycleData, budget map[string]bool) func() (schedule.Occurrence, bool) {
+// Minute rules can have 44,640 slots in one month. Read their ledger first,
+// then visit only one candidate per local day. Capped future slots come from
+// the lifetime budget, even when they fall outside this month.
+func calendarMinuteCandidates(t task, from, to, now time.Time, loc *time.Location, data *calendarCycleData, budget map[string]bool) func() (schedule.Occurrence, bool) {
 	if !data.completedAt.IsZero() && !data.completedAt.After(to) {
 		to = data.completedAt.Add(-time.Nanosecond)
 	}
@@ -191,26 +288,19 @@ func calendarMinuteCandidates(t task, from, to, now time.Time, data *calendarCyc
 	}
 	cursor := from
 	snooze, hasSnooze := calendarSnooze(t)
-	var chunk []schedule.Occurrence
-	chunkIndex, futureIndex := 0, 0
+	futureIndex := 0
 	regularDone := false
 	return func() (schedule.Occurrence, bool) {
 		if !regularDone {
+			next, ok := schedule.Next(t.Rule, cursor)
 			if hasSnooze && snooze.At.After(cursor) {
-				cursor = snooze.At
-				if !cursor.After(regularTo) {
-					return snooze, true
-				}
+				next, ok = snooze.At, true
 			}
-			if chunkIndex == len(chunk) {
-				chunk = schedule.DueLimited(t.Rule, cursor, regularTo, 64)
-				chunkIndex = 0
-			}
-			if chunkIndex < len(chunk) {
-				slot := chunk[chunkIndex]
-				chunkIndex++
-				cursor = slot.At
-				return slot, true
+			if ok && !next.After(regularTo) {
+				day := next.In(loc)
+				// Jump by local calendar dates, including 23/25-hour DST days.
+				cursor = time.Date(day.Year(), day.Month(), day.Day()+1, 0, 0, 0, 0, loc).Add(-time.Nanosecond)
+				return schedule.Occurrence{At: next, CycleKey: "minute_interval"}, true
 			}
 			regularDone = true
 		}
@@ -236,18 +326,13 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 	defer a.mu.Unlock()
 	now := a.now()
 	userID := currentUser(r).ID
-	managed, dbErr := a.usesReminderAgent(userID)
-	if dbErr != nil {
-		dbFailure(w)
-		return
-	}
 	tasks, dbErr := a.allTasks(userID, false)
 	if dbErr != nil {
 		dbFailure(w)
 		return
 	}
 	entries := []calendarEntry{}
-	notifications := []calendarNotification{}
+	notifications := map[calendarDayID]calendarNotification{}
 	cycles := map[calendarCycleID]*calendarCycleData{}
 	needCycle := func(taskID, key string) *calendarCycleData {
 		id := calendarCycleID{taskID, key}
@@ -256,11 +341,12 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		}
 		return cycles[id]
 	}
-	actualSlots := map[string]bool{}
 	truncated := false
 	// Keep records in their original rule/cycle, even if the task was edited or
-	// archived. SQL bounds plus the limit prevent an unbounded response.
-	rows, dbErr := a.db.QueryContext(r.Context(), `SELECT id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,channel,source,reason FROM (SELECT id,user_id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,'email' AS channel,'legacy' AS source,'' AS reason FROM notifications UNION ALL SELECT id,user_id,task_id,title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,channel,source,reason FROM reminder_plans) WHERE user_id=? AND unixepoch(scheduled_at)>=? AND unixepoch(scheduled_at)<? ORDER BY unixepoch(scheduled_at),id LIMIT ?`, userID, start.Unix(), end.Unix(), calendarEntryLimit+1)
+	// archived. Read both scheduled and actual execution months: an execution
+	// after midnight belongs to its actual date, while its original scheduled
+	// instant still consumes the original cycle/month's reminder budget.
+	rows, dbErr := a.db.QueryContext(r.Context(), `SELECT id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,channel,source,reason FROM (SELECT id,user_id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,'email' AS channel,'legacy' AS source,'' AS reason FROM notifications UNION ALL SELECT id,user_id,task_id,title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,channel,source,reason FROM reminder_plans) WHERE user_id=? AND status<>'cancelled' AND ((unixepoch(scheduled_at)>=? AND unixepoch(scheduled_at)<?) OR ((status IN ('sent','accepted') OR (status='delivered' AND channel<>'calendar')) AND unixepoch(sent_at)>=? AND unixepoch(sent_at)<?)) ORDER BY unixepoch(scheduled_at),id`, userID, start.Unix(), end.Unix(), start.Unix(), end.Unix())
 	if dbErr != nil {
 		dbFailure(w)
 		return
@@ -275,14 +361,31 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		if dbErr != nil {
 			break
 		}
-		if n.at.Before(start) || !n.at.Before(end) {
-			continue
+		scheduledInMonth := !n.at.Before(start) && n.at.Before(end)
+		displayAt := n.at
+		if calendarDelivered(n.entry) {
+			if sentAt, err := time.Parse(time.RFC3339Nano, n.entry.SentAt); err == nil {
+				displayAt = sentAt
+			}
 		}
 		n.entry.Type = "notification"
-		n.entry.At = stamp(n.at)
-		n.entry.ScheduledAt = n.entry.At
+		n.entry.At = stamp(displayAt)
+		n.entry.ScheduledAt = stamp(n.at)
 		if n.entry.Status == "sending" {
 			n.entry.Status = "pending"
+		}
+		if n.entry.Status == "pending" || n.entry.Status == "scheduled" || (n.entry.Status == "delivered" && n.entry.Channel == "calendar") {
+			n.entry.Type = "planned"
+		}
+		if calendarDelivered(n.entry) {
+			n.entry.ReminderCount = 1
+		}
+		if n.entry.Type == "notification" {
+			n.entry.LastReminderAt = n.entry.At
+			if sentAt, err := time.Parse(time.RFC3339Nano, n.entry.SentAt); err == nil {
+				n.entry.LastReminderAt = stamp(sentAt)
+			}
+			n.entry.LastReminderStatus = n.entry.Status
 		}
 		_ = json.Unmarshal([]byte(raw), &n.rule)
 		data := needCycle(n.entry.TaskID, n.entry.CycleKey)
@@ -290,8 +393,24 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 			n.entry.CycleEnd = calendarCycleEnd(c.End)
 			data.end = c.End
 		}
-		actualSlots[n.entry.TaskID+"/"+n.entry.At] = true
-		notifications = append(notifications, n)
+		// Calendar insertion consumes its existing execution budget but does
+		// not prove an actual reminder was presented to the user.
+		if scheduledInMonth && (calendarDelivered(n.entry) || n.entry.Status == "delivered" || (n.entry.Status == "scheduled" && n.entry.Channel == "calendar" && !n.at.After(now))) {
+			data.sentInMonth = append(data.sentInMonth, n.at)
+		}
+		if displayAt.Before(start) || !displayAt.Before(end) {
+			continue
+		}
+		day := calendarDayID{n.entry.TaskID, displayAt.In(loc).Format("2006-01-02")}
+		n.entry.LocalDate = day.day
+		if previous, ok := notifications[day]; ok {
+			merged := calendarMerge(previous.entry, n.entry, now)
+			if !calendarPrefers(n.entry, previous.entry, now) {
+				n = previous
+			}
+			n.entry = merged
+		}
+		notifications[day] = n
 	}
 	if dbErr == nil {
 		dbErr = rows.Err()
@@ -301,10 +420,7 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		dbFailure(w)
 		return
 	}
-	if len(notifications) > calendarEntryLimit {
-		truncated = true
-	}
-	rows, dbErr = a.db.QueryContext(r.Context(), `SELECT `+completionColumns+` FROM completions WHERE user_id=? AND unixepoch(created_at)>=? AND unixepoch(created_at)<? ORDER BY unixepoch(created_at),id LIMIT ?`, userID, start.Unix(), end.Unix(), calendarEntryLimit+1)
+	rows, dbErr = a.db.QueryContext(r.Context(), `SELECT `+completionColumns+` FROM completions WHERE user_id=? AND unixepoch(created_at)>=? AND unixepoch(created_at)<? ORDER BY unixepoch(created_at),id`, userID, start.Unix(), end.Unix())
 	if dbErr != nil {
 		dbFailure(w)
 		return
@@ -331,9 +447,6 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		dbFailure(w)
 		return
 	}
-	if len(entries) > calendarEntryLimit {
-		truncated = true
-	}
 	type projection struct {
 		t        task
 		slots    []schedule.Occurrence
@@ -350,11 +463,8 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 			from = effective
 		}
 		p := projection{t: t, cycles: map[string]schedule.Cycle{}, from: from, to: end.Add(-time.Nanosecond)}
-		// Once the agent is explicitly enabled, future reminders come only from
-		// its real permission/quiet-hour constrained plan ledger.
-		if managed && p.to.After(now) {
-			p.to = now.Add(-time.Nanosecond)
-		}
+		// Daily rule overviews remain visible beyond the agent's single pending
+		// plan. They describe intended task dates, never an executed reminder.
 		snooze, hasSnooze := calendarSnooze(t)
 		if t.Rule.Kind == "minute_interval" {
 			first, _ := time.Parse(time.RFC3339Nano, t.Rule.FirstAt)
@@ -435,12 +545,6 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		dbFailure(w)
 		return
 	}
-	for _, n := range notifications {
-		if n.entry.Status == "sent" || n.entry.Status == "delivered" || n.entry.Status == "accepted" || (n.entry.Status == "scheduled" && n.entry.Channel == "calendar" && !n.at.After(now)) {
-			data := cycles[calendarCycleID{n.entry.TaskID, n.entry.CycleKey}]
-			data.sentInMonth = append(data.sentInMonth, n.at)
-		}
-	}
 	for _, data := range cycles {
 		// SQL unixepoch orders whole seconds; old records may differ only in
 		// fractional seconds, so cap cutoffs must use the original instants.
@@ -455,7 +559,11 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		if !ok || cycle.Key != n.entry.CycleKey {
 			cycle = schedule.Cycle{}
 		}
-		n.entry.State = calendarState(n.at, cycle, data, n.rule.Mode, now)
+		mode := ""
+		if calendarDelivered(n.entry) {
+			mode = n.rule.Mode
+		}
+		n.entry.State = calendarState(n.at, cycle, data, mode, now)
 		entries = append(entries, n.entry)
 	}
 	streams := calendarPlanHeap{}
@@ -480,7 +588,7 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 			if data == nil {
 				continue
 			}
-			candidate = calendarMinuteCandidates(p.t, p.from, p.to, now, data, budget["minute_interval"])
+			candidate = calendarMinuteCandidates(p.t, p.from, p.to, now, loc, data, budget["minute_interval"])
 		}
 		stream := &calendarPlanStream{t: p.t, cycles: p.cycles}
 		stream.next = func() (schedule.Occurrence, bool) {
@@ -490,9 +598,6 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 					return schedule.Occurrence{}, false
 				}
 				at := stamp(slot.At)
-				if actualSlots[p.t.ID+"/"+at] {
-					continue
-				}
 				data := cycles[calendarCycleID{p.t.ID, slot.CycleKey}]
 				if !data.completedAt.IsZero() && !slot.At.Before(data.completedAt) {
 					continue
@@ -522,22 +627,39 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 			heap.Push(&streams, stream)
 		}
 	}
-	// Merge eligible plans by instant so a newer high-density task cannot hide
-	// earlier plans from another task. Suppressed slots never consume the cap.
-	for projected := 0; streams.Len() > 0 && projected <= calendarEntryLimit; projected++ {
+	// Merge daily items before limiting the response. Minute candidates already
+	// jump by local date; denser reminder rules also collapse into these groups.
+	daily := map[calendarDayID]calendarEntry{}
+	addDaily := func(entry calendarEntry) {
+		at, _ := time.Parse(time.RFC3339Nano, entry.At)
+		entry.LocalDate = at.In(loc).Format("2006-01-02")
+		if entry.Type == "completion" {
+			entry.CompletionCount = 1
+		}
+		key := calendarDayID{entry.TaskID, entry.LocalDate}
+		if previous, ok := daily[key]; ok {
+			entry = calendarMerge(previous, entry, now)
+		}
+		daily[key] = entry
+	}
+	for _, entry := range entries {
+		addDaily(entry)
+	}
+	for streams.Len() > 0 {
 		stream := heap.Pop(&streams).(*calendarPlanStream)
 		slot := stream.slot
 		at := stamp(slot.At)
 		c := stream.cycles[slot.CycleKey]
 		data := cycles[calendarCycleID{stream.t.ID, slot.CycleKey}]
-		entries = append(entries, calendarEntry{ID: "planned:" + stream.t.ID + ":" + at, Type: "planned", TaskID: stream.t.ID, TaskTitle: stream.t.Title, At: at, ScheduledAt: at, State: calendarState(slot.At, c, data, stream.t.Rule.Mode, now), CycleKey: slot.CycleKey, CycleEnd: calendarCycleEnd(c.End)})
+		addDaily(calendarEntry{ID: "planned:" + stream.t.ID + ":" + at, Type: "planned", TaskID: stream.t.ID, TaskTitle: stream.t.Title, At: at, ScheduledAt: at, State: calendarState(slot.At, c, data, "", now), CycleKey: slot.CycleKey, CycleEnd: calendarCycleEnd(c.End)})
 		if next, ok := stream.next(); ok {
 			stream.slot = next
 			heap.Push(&streams, stream)
 		}
 	}
-	if streams.Len() > 0 {
-		truncated = true
+	entries = make([]calendarEntry, 0, len(daily))
+	for _, entry := range daily {
+		entries = append(entries, entry)
 	}
 	sort.Slice(entries, func(i, j int) bool {
 		if entries[i].At == entries[j].At {

@@ -61,11 +61,11 @@ final class ReminderSettings {
             detail.addView(start); detail.addView(end); detail.addView(interval);
             start.setOnClickListener(view -> pickTime(true)); end.setOnClickListener(view -> pickTime(false));
             interval.setOnClickListener(view -> {
-                int[] values = {5, 10, 15, 30, 60}; String[] labels = {"5 分钟", "10 分钟", "15 分钟", "30 分钟", "60 分钟"};
+                int[] values = {1, 2, 5, 10, 15, 30, 60}; String[] labels = {"1 分钟", "2 分钟", "5 分钟", "10 分钟", "15 分钟", "30 分钟", "60 分钟"};
                 new android.app.AlertDialog.Builder(activity).setTitle("同一事项至少间隔多久")
                         .setItems(labels, (dialog, which) -> { minutes = values[which]; dirty = true; refreshText(); }).show();
             });
-            detail.addView(label("静默起止相同表示不设静默。同一事项每天最多 32 次，本机每天最多 128 次。后台同步至少间隔 15 分钟，系统省电或强行停止可能延迟；已安排的闹钟由系统执行。", 12, false));
+            detail.addView(label("静默起止相同表示不设静默。同一事项每天最多 32 次，本机每天最多 128 次。每次只安排下一条，提醒后联网继续跟进；日历同一事项每天一项。断网时只能执行已同步的提醒，系统省电或强行停止可能延迟。", 12, false));
             status = label("", 12, false); detail.addView(status);
             save = button("保存渠道安排"); save.setTextColor(0xffffffff); save.setBackgroundTintList(ColorStateList.valueOf(GREEN)); detail.addView(save);
             save.setOnClickListener(view -> save());

@@ -103,7 +103,7 @@ func TestCalendarActualOffsetTimestampsCrossDisplayMonth(t *testing.T) {
 		t.Fatal(err)
 	}
 	entries := calendarEntries(t, a, token, "2026-10", "UTC")
-	if len(entries) != 2 {
+	if len(entries) != 1 || entries[0]["type"] != "completion" || entries[0]["reminder_count"] != float64(1) {
 		t.Fatalf("offset records lost %+v", entries)
 	}
 	for _, e := range entries {
@@ -145,10 +145,10 @@ func TestCalendarCompletedMonthlyCycleAndIndependentDays(t *testing.T) {
 					}
 				}
 			}
-			if completion != 1 || (mode == "until_done" && future != 0) || (mode == "every_day" && future != 24) {
+			if completion != 1 || (mode == "until_done" && future != 0) || (mode == "every_day" && future != 12) {
 				t.Fatalf("completion=%d future=%d %+v", completion, future, entries)
 			}
-			if entries := calendarEntries(t, a, token, "2026-11", "Asia/Shanghai"); len(entries) != 30 {
+			if entries := calendarEntries(t, a, token, "2026-11", "Asia/Shanghai"); len(entries) != 15 {
 				t.Fatalf("next month lost: %d", len(entries))
 			}
 		})
@@ -223,10 +223,7 @@ func TestCalendarCapsAndSnooze(t *testing.T) {
 				t.Fatal(c)
 			}
 			entries := calendarEntries(t, a, token, "2026-10", "Asia/Shanghai")
-			want := 2
-			if mode == "notify_once" {
-				want = 1
-			}
+			want := 1 // Two reminder slots on the same date are one daily task.
 			if len(entries) != want || entries[0]["at"] != stamp(now.Add(300*time.Minute)) {
 				t.Fatalf("caps snooze %+v", entries)
 			}
@@ -327,17 +324,12 @@ func TestCalendarSentBudgetAndLongFutureCycle(t *testing.T) {
 			}
 		}
 		entries := calendarEntries(t, a, token, "2026-10", "Asia/Shanghai")
-		planned := 0
-		for _, e := range entries {
-			if e["type"] == "planned" {
-				planned++
-				if kind == "ongoing" && e["cycle_end"] != "" {
-					t.Fatalf("sentinel date %+v", e)
-				}
-			}
-		}
-		if planned != 1 {
+		// The remaining future slot shares the same day as both actual attempts.
+		if len(entries) != 1 || entries[0]["reminder_count"] != float64(1) || entries[0]["last_reminder_status"] != "failed" {
 			t.Fatalf("successful send budget %+v", entries)
+		}
+		if kind == "ongoing" && entries[0]["cycle_end"] != "" {
+			t.Fatalf("sentinel date %+v", entries[0])
 		}
 		if entries := calendarEntries(t, a, token, "2037-11", "Asia/Shanghai"); len(entries) != 0 {
 			t.Fatalf("long-range cycle resets cap %+v", entries)
@@ -422,7 +414,11 @@ func TestCalendarLimitAndPayloadBudgetAreExplicit(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			for i := 0; i < 100; i++ {
+			taskCount := 700 // The item cap applies to distinct task/date pairs.
+			if largeNotes {
+				taskCount = 100
+			}
+			for i := 0; i < taskCount; i++ {
 				taskID := fmt.Sprint("large-", i)
 				if _, err = tx.Exec(`INSERT INTO tasks(id,user_id,title,description,rule,created_at,updated_at) VALUES(?,?,?,?,?,?,?)`, taskID, base.UserID, "任务", "", string(raw), stamp(*now), stamp(*now)); err != nil {
 					t.Fatal(err)

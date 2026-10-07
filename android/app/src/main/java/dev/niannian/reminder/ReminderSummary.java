@@ -22,7 +22,7 @@ final class ReminderSummary {
     static String followUp(String kind, String mode) {
         if ("notify_once".equals(mode) && !"minute_interval".equals(kind) && !"ongoing".equals(kind))
             return "once".equals(kind) ? "仅提醒一次，不再催办。" : "每期只提醒一次，不再催办。";
-        return "未完成时按规则跟进，必要时换用已授权方式；遵守静默时段与提醒上限。";
+        return "保存时确定跟进流程，未完成才逐步换用已授权方式；每次只安排下一条，遵守静默时段与提醒上限。";
     }
 
     static String[] labels(String kind) {

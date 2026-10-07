@@ -589,7 +589,8 @@ public class MainActivity extends Activity {
             }else{
                 TextView badge=text(taskStatusLabel(task),10,statusColor(status),false);badge.setMaxWidth(dp(78));badge.setGravity(Gravity.CENTER);badge.setPadding(dp(6),dp(4),dp(6),dp(4));badge.setBackground(shape(status.equals("done")?PALE:0xfff0f0e9,9));line.addView(badge);
             }
-            addReminderSwitch(line,task,true);card.addView(line);card.setContentDescription(task.optString("title")+"，"+taskStatusLabel(task)+"，"+summary+"，查看详情");
+            if(filter.equals("全部")||filter.equals("已暂停"))addReminderSwitch(line,task,true);
+            card.addView(line);card.setContentDescription(task.optString("title")+"，"+taskStatusLabel(task)+"，"+summary+"，查看详情");
             card.setOnClickListener(v->{selected=task;detailBack="home";navigate("detail");});
         }
         if(visible==0){empty(taskList,!search.isEmpty()?"没有找到这件小事":taskData.length()==0?"从一颗小小的种子开始":"这里暂时没有提醒",!search.isEmpty()?"换个关键词试试，或者清除搜索。":taskData.length()==0?"把想做的小事交给 AI 安排。完成赚水滴，再去花园浇花。":"换个筛选条件，或者播下一颗新种子。");if(!search.isEmpty()){Button clear=button("清除搜索",false);taskList.addView(clear);clear.setOnClickListener(v->{search="";homeSearchExpanded=false;render();});}else if(taskData.length()==0){Button create=button("播下第一颗种子",true);taskList.addView(create);create.setOnClickListener(v->openEditor(null));}}
@@ -754,7 +755,7 @@ public class MainActivity extends Activity {
         int count=plant.optInt("growth_count",plant.optInt("completion_count"));
         TextView progress=text(GardenFlowers.nameFor(plant)+" · "+Math.min(count,7)+" / 7 成长",11,MUTED,false);progress.setSingleLine(true);progress.setEllipsize(TextUtils.TruncateAt.END);copy.addView(progress);line.addView(copy,new LinearLayout.LayoutParams(0,-2,1));
         if(gardenData!=null&&gardenData.has("wallet")){
-            Button water=smallButton(count>=7?"已开花":"浇水 · 1滴");water.setTextSize(12);water.setEnabled(count<7&&waterBalance()>0&&!gardenCareBusy);line.addView(water);water.setOnClickListener(v->waterPlant(plant,water));
+            Button water=smallButton(count>=7?"已开花":"浇水 · 1滴");water.setTextSize(12);water.setEnabled(count<7&&!gardenCareBusy);line.addView(water);water.setOnClickListener(v->waterPlant(plant,water));
             if(!plant.optString("task_id").isEmpty()){Button open=iconButton("chevron_right","查看这株花原来的小事");line.addView(open);open.setOnClickListener(v->openGardenTask(plant,open));}
         }else{Button open=smallButton("查看小事");line.addView(open);open.setOnClickListener(v->openGardenTask(plant,open));}
         gardenSelection.addView(line);
@@ -773,12 +774,17 @@ public class MainActivity extends Activity {
         });botanicalFooter(R.drawable.sowing_footer_foliage,100);
     }
     private void waterPlant(JSONObject plant,Button trigger){
-        if(gardenCareBusy)return;String id=GardenFlowers.id(plant);String request=waterRequests.computeIfAbsent(id,key->UUID.randomUUID().toString());gardenCareBusy=true;
+        if(gardenCareBusy)return;
+        if(waterBalance()<=0){showWaterNeeded();return;}
+        String id=GardenFlowers.id(plant);String request=waterRequests.computeIfAbsent(id,key->UUID.randomUUID().toString());gardenCareBusy=true;
         run(trigger,a->a.json("POST","/api/v1/garden/plants/"+Uri.encode(id)+"/water",object("request_id",request)),result->{
             gardenCareBusy=false;waterRequests.remove(id);JSONObject updated=result.optJSONObject("plant");
             completedRecord=object("id",request,"task_id",id,"task_title",plant.optString("title"),"growth",result.optJSONObject("growth"),"_watering",true);
             if(updated!=null)GardenFlowers.remember(id,GardenFlowers.indexFor(updated));invalidateCalendar();navigate("grown");
-        },failure->{gardenCareBusy=false;showError(failureMessage(failure));});
+        },failure->{gardenCareBusy=false;String message=failureMessage(failure);if(failure instanceof Api.Failure&&message.contains("水滴")&&(message.contains("不足")||message.contains("不够"))){loadGarden();showWaterNeeded();}else{confirmAction("这次还没浇上水",message,"先逛逛","重试",false,()->waterPlant(plant,trigger));}});
+    }
+    private void showWaterNeeded(){
+        confirmAction("还差一滴水", "浇一次花需要 1 滴水。完成一件小事就能获得 3 滴，再回来照料这朵花吧。", "先逛逛", "去完成小事", false, ()->{filter="待完成";search="";navigate("home");});
     }
     private void addGardenStage(LinearLayout parent,int resource,String name,int count){LinearLayout group=row();group.setGravity(Gravity.CENTER);group.addView(art(resource,27));gapHorizontal(group,2);TextView label=text(name+" "+count,11,MUTED,false);label.setIncludeFontPadding(false);group.addView(label);parent.addView(group,new LinearLayout.LayoutParams(0,dp(36),1));}
     private void openGardenTask(JSONObject plant,View trigger){int request=++gardenTaskRequest;trigger.setEnabled(false);run(null,a->a.json("GET","/api/v1/tasks/"+plant.optString("task_id"),null),result->{trigger.setEnabled(true);if(request!=gardenTaskRequest)return;selected=result;detailBack="garden";navigate("detail");},failure->{trigger.setEnabled(true);if(request!=gardenTaskRequest)return;showError(failure.getMessage()==null?"这株植物的提醒暂时打不开，请重试。":failure.getMessage());});}
@@ -854,8 +860,6 @@ public class MainActivity extends Activity {
         }else recordInfoRow(info,"history","提醒规则",selected.optString("summary","规则信息暂不可用"));
         if(!archived){calendarDivider(info);recordInfoRow(info,"clock","下一次提醒",selected.optString("next_reminder").isEmpty()?"当前没有待发送的提醒":formatFull(selected.optString("next_reminder")));}
         if(archived){if(!selected.optString("description").isEmpty()){section(body,"这件小事");body.addView(text(selected.optString("description"),14,INK,false));}botanicalFooter(R.drawable.sowing_footer_foliage,112);return;}
-        LinearLayout toggle=card(body);addReminderSwitch(toggle,selected);
-        if(selected.optString("status").equals("expired"))note(toggle,"开关开启也不会越过截止时间。");
         String status=selected.optString("status");
         if(status.equals("pending")) {
             Button done=button("这件事已完成",true);body.addView(done);done.setOnClickListener(v->openComplete());gap(body,10);
@@ -866,13 +870,45 @@ public class MainActivity extends Activity {
             if(mode.equals("notify_once"))doneCopy="本期已经提醒，不需要再点击完成。";
             infoStrip(body,"info",status.equals("done")?doneCopy:status.equals("upcoming")?"还没有到本期时间，开始后再记录完成。":status.equals("expired")?"这条提醒已过截止时间，记录依然保留。":"已暂停提醒，可以随时恢复。",status.equals("expired"));
         }
+        addReminderStrategy(body,selected);
         if(!selected.optString("description").isEmpty()){note(body,selected.optString("description"));}
         LinearLayout actions=column();GradientDrawable outline=shape(PAPER,14);outline.setStroke(dp(1),LINE);actions.setBackground(outline);body.addView(actions);
         ProfileAction edit=new ProfileAction(actions,"edit","编辑提醒","");edit.setOnClickListener(v->openEditor(selected));
+        ProfileAction manage=new ProfileAction(actions,"cycle","到全部小事管理提醒开关","");manage.setOnClickListener(v->{filter="全部";search="";navigate("home");});
         ProfileAction records=new ProfileAction(actions,"history","查看日历安排","");records.setOnClickListener(v->{LocalDate next=RecordDates.localDate(selected.optString("next_reminder"),ZoneId.systemDefault());calendarDate=next==null?LocalDate.now():next;calendarMonth=YearMonth.from(calendarDate);recordPage=0;navigate("history");});gap(body,12);
         Button archive=linkButton("归档这条提醒");archive.setTextColor(RED);body.addView(archive,new LinearLayout.LayoutParams(-1,-2));archive.setOnClickListener(v->confirmAction("归档这条提醒？","归档后停止发送提醒，已完成的文字、照片和邮件记录会保留。","再想想","归档",true,()->{
             String id=selected.optString("id");run(archive,a->mutateTask(a,"DELETE","/api/v1/tasks/"+id,null,id),r->{taskData=new JSONArray();invalidateCalendar();toast("已归档，记录已保留");navigate(detailBack.equals("garden")||detailBack.equals("record")&&recordBack.equals("garden")?"garden":calendarDetailBack()?"history":"home");});
         }));botanicalFooter(R.drawable.sowing_footer_foliage,76);
+    }
+    private void addReminderStrategy(LinearLayout parent,JSONObject task){
+        JSONObject strategy=task.optJSONObject("reminder_strategy");
+        if(strategy==null)return;
+        LinearLayout panel=card(parent);LinearLayout heading=row();
+        heading.addView(text("接下来怎样提醒",16,INK,true),new LinearLayout.LayoutParams(0,-2,1));
+        String state=strategy.optString("state"),source="ready".equals(state)?("ai".equals(strategy.optString("source"))?"AI 安排":"按规则安排"):"awaiting_sync".equals(state)?"更新中":"待开通";
+        heading.addView(text(source,11,MUTED,false));panel.addView(heading);gap(panel,12);
+        JSONArray steps=strategy.optJSONArray("steps");
+        if(steps==null||steps.length()==0){
+            if("awaiting_sync".equals(state)){
+                note(panel,"跟进流程正在更新，同步后即可查看。");Button refresh=button("刷新流程",false);panel.addView(refresh);refresh.setOnClickListener(v->reloadSelected());return;
+            }
+            note(panel,"开通可用的提醒方式后，念念会为这件事确定跟进流程。");
+            Button setup=button("去设置提醒方式",false);panel.addView(setup);setup.setOnClickListener(v->{reminderSettingsBack="home";navigate("reminders");});return;
+        }
+        for(int i=0;i<steps.length();i++){
+            JSONObject step=steps.optJSONObject(i);if(step==null)continue;
+            LinearLayout line=row();TextView index=text(String.valueOf(i+1),12,BLUE,true);index.setGravity(Gravity.CENTER);index.setBackground(shape(PALE,12));line.addView(index,new LinearLayout.LayoutParams(dp(24),dp(24)));gapHorizontal(line,10);
+            String wait=i==0?"到约定时间": "仍未完成，再等 "+step.optInt("wait_minutes")+" 分钟";
+            LinearLayout copy=column();copy.addView(text(notificationChannel(step),14,INK,true));gap(copy,3);copy.addView(text(wait,12,MUTED,false));line.addView(copy,new LinearLayout.LayoutParams(0,-2,1));panel.addView(line);if(i<steps.length()-1)gap(panel,12);
+        }
+        gap(panel,12);JSONObject rule=task.optJSONObject("rule");boolean once=rule!=null&&"notify_once".equals(rule.optString("mode"));
+        note(panel,once?"每期只成功提醒一次。":"上一步有执行结果或等待超时后，才开始下一步。末步后逐渐延长间隔；遵守静默和次数上限，完成、暂停或到期即停止本期提醒。");
+        String reason=strategy.optString("reason");
+        if(!reason.isEmpty()){
+            Button why=linkButton("为什么这样安排");panel.addView(why);LinearLayout explanation=column();explanation.setVisibility(View.GONE);note(explanation,reason);
+            for(int i=0;i<steps.length();i++){JSONObject step=steps.optJSONObject(i);if(step!=null&&!step.optString("reason").isEmpty())note(explanation,(i+1)+". "+step.optString("reason"));}
+            panel.addView(explanation);why.setOnClickListener(v->{boolean open=explanation.getVisibility()!=View.VISIBLE;explanation.setVisibility(open?View.VISIBLE:View.GONE);why.setText(open?"收起说明":"为什么这样安排");});
+        }
     }
     private void sceneHeader(boolean completion){
         FrameLayout scene=new FrameLayout(this);scene.addView(scenery(R.drawable.calendar_header),new FrameLayout.LayoutParams(-1,-1));
@@ -1423,6 +1459,7 @@ public class MainActivity extends Activity {
         ZoneId zone=ZoneId.systemDefault();Map<LocalDate,int[]> marks=new HashMap<>();List<JSONObject> chosen=new ArrayList<>();int invalid=0;
         for(JSONObject entry:calendarEntries()){
             LocalDate day=RecordDates.localDate(entry.optString("_at"),zone);
+            try{if(!entry.optString("local_date").isEmpty())day=LocalDate.parse(entry.optString("local_date"));}catch(java.time.DateTimeException ignored){}
             if(day==null){invalid++;continue;}
             int[] counts=marks.computeIfAbsent(day,k->new int[4]);counts[calendarStateIndex(entry)]++;
             if(day.equals(calendarDate))chosen.add(entry);
@@ -1455,7 +1492,7 @@ public class MainActivity extends Activity {
             }
             tile.addView(dots,new LinearLayout.LayoutParams(-1,dp(8)));
             hit.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),null,shape(PAPER,13)));
-            hit.setContentDescription(date+"，待提醒或已提醒 "+counts[0]+" 条，已完成 "+counts[1]+" 条，未完成 "+counts[2]+" 条，已过期 "+counts[3]+" 条"+(isToday?"，今天":"")+(chosenDate?"，已选择":""));
+            hit.setContentDescription(date+"，待提醒或已提醒 "+counts[0]+" 件，已完成 "+counts[1]+" 件，未完成 "+counts[2]+" 件，已过期 "+counts[3]+" 件"+(isToday?"，今天":"")+(chosenDate?"，已选择":""));
             hit.setSelected(chosenDate);hit.setFocusable(true);
             hit.setOnClickListener(v->{plannedTaskRequest++;calendarDate=date;recordPage=0;drawCalendar();});
         }
@@ -1467,7 +1504,7 @@ public class MainActivity extends Activity {
         boolean stale=calendarLoaded()&&!calendarNotice.isEmpty();
         LinearLayout heading=row();
         heading.addView(text(calendarDate.format(DateTimeFormatter.ofPattern("M月d日 EEEE",Locale.CHINA)),17,HOME_TITLE,true),new LinearLayout.LayoutParams(0,-2,1));
-        heading.addView(text(stale?"上次读取":calendarLoaded()?entries.size()+" 条":"",12,MUTED,false));
+        heading.addView(text(stale?"上次读取":calendarLoaded()?entries.size()+" 件小事":"",12,MUTED,false));
         calendarRecords.addView(heading);gap(calendarRecords,10);
         if(calendarTruncated)note(calendarRecords,"这个月的安排较多，目前只显示部分内容。");
         if(invalid>0)note(calendarRecords,invalid+" 条记录的时间无法识别，未归入日历。");
@@ -1498,7 +1535,9 @@ public class MainActivity extends Activity {
             top.addView(time,new LinearLayout.LayoutParams(dp(48),-2));
             TextView title=text(entry.optString("task_title","已归档的提醒"),15,INK,true);title.setMaxLines(2);title.setEllipsize(TextUtils.TruncateAt.END);
             top.addView(title,new LinearLayout.LayoutParams(0,-2,1));words.addView(top);gap(words,5);
-            String summary=calendarStateLabel(entry)+(planned?" · 计划安排":reminder?" · 提醒记录":" · 完成记录");
+            String summary=calendarStateLabel(entry)+(planned?" · 当天安排":reminder?" · 提醒记录":" · 完成记录");
+            if(entry.optInt("reminder_count")>0)summary+=" · 当天已提醒 "+entry.optInt("reminder_count")+" 次";
+            if(entry.optInt("completion_count")>1)summary+=" · 完成 "+entry.optInt("completion_count")+" 次";
             words.addView(text(summary,11,calendarStateColor(entry),false));
             if(reminder&&!entry.optString("status").equals("sent")){
                 gap(words,3);words.addView(text(notificationLabel(entry),11,entry.optString("status").equals("failed")?RED:MUTED,false));
@@ -1527,7 +1566,7 @@ public class MainActivity extends Activity {
             previous.setOnClickListener(v->{recordPage--;drawCalendarRecords(entries,invalid);calendarRecords.requestRectangleOnScreen(new Rect(0,0,calendarRecords.getWidth(),dp(90)),false);});
             next.setOnClickListener(v->{recordPage++;drawCalendarRecords(entries,invalid);calendarRecords.requestRectangleOnScreen(new Rect(0,0,calendarRecords.getWidth(),dp(90)),false);});
         }else{
-            gap(calendarRecords,14);TextView hint=text("点击安排或记录，回看每一件小事",11,MUTED,false);hint.setGravity(Gravity.CENTER);calendarRecords.addView(hint);
+            gap(calendarRecords,14);TextView hint=text("同一件事每天只显示一次，点击查看详情",11,MUTED,false);hint.setGravity(Gravity.CENTER);calendarRecords.addView(hint);
         }
     }
     // Record artwork is an identity decoration, never an inferred growth stage.
@@ -1575,6 +1614,16 @@ public class MainActivity extends Activity {
         LinearLayout statusRow=row();statusRow.addView(recordBadge(badge,color,reminder?(failed?"info":sent?"send":"clock"):"circle_check"));
         if(reminder&&selectedRecord.has("state")){gapHorizontal(statusRow,10);statusRow.addView(text(calendarStateLabel(selectedRecord),12,calendarStateColor(selectedRecord),false));}
         info.addView(statusRow);
+        if(selectedRecord.optInt("reminder_count")>0){gap(info,8);note(info,"当天已提醒 "+selectedRecord.optInt("reminder_count")+" 次，同一天的跟进已合并在这里。");}
+        JSONArray dayRecords=selectedRecord.optJSONArray("completion_records");
+        if(dayRecords!=null&&dayRecords.length()>1){
+            gap(info,12);info.addView(text("当天的 "+dayRecords.length()+" 次完成",14,INK,true));
+            for(int i=0;i<dayRecords.length();i++){
+                JSONObject record=dayRecords.optJSONObject(i);if(record==null)continue;
+                Button memory=linkButton(RecordDates.localTime(record.optString("at"),ZoneId.systemDefault())+" · 查看这次留念");info.addView(memory);
+                memory.setOnClickListener(v->{selectedRecord=copy(record);try{selectedRecord.put("_type","completion");selectedRecord.put("_at",record.optString("at"));}catch(JSONException ignored){}navigate("record");});
+            }
+        }
         if(reminder){
             gap(info,14);calendarDivider(info);
             recordInfoRow(info,"clock","计划提醒",formatFull(selectedRecord.optString("scheduled_at")));
@@ -1639,7 +1688,7 @@ public class MainActivity extends Activity {
         return selectedRecord.optString("_type").equals("notification")||photos==null||photos.length()==0;
     }
     private boolean isFixedMailRecord(){
-        return screen.equals("record")&&selectedRecord.optString("_type").equals("notification")&&selectedRecord.optString("status").equals("sent");
+        return screen.equals("record")&&selectedRecord.optString("_type").equals("notification")&&selectedRecord.optString("status").equals("sent")&&selectedRecord.optInt("reminder_count")<=1;
     }
     private LinearLayout recordBadge(String label,int color,String icon){
         LinearLayout badge=row();badge.setPadding(dp(12),dp(8),dp(14),dp(8));

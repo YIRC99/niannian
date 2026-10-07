@@ -157,7 +157,7 @@ func TestMinuteCalendarCadenceAndPermanentCompletion(t *testing.T) {
 	first := now.Add(15 * time.Minute)
 	id := createMinuteTask(t, a, token, first, 5)
 	entries := calendarEntries(t, a, token, "2026-10", "Asia/Shanghai")
-	if len(entries) != 2 || entries[0]["at"] != stamp(first) || entries[1]["at"] != stamp(first.Add(5*time.Minute)) {
+	if len(entries) != 1 || entries[0]["at"] != stamp(first) {
 		t.Fatalf("wrong minute calendar: %+v", entries)
 	}
 	m.messages = nil
@@ -166,8 +166,8 @@ func TestMinuteCalendarCadenceAndPermanentCompletion(t *testing.T) {
 	*now = first.Add(time.Minute)
 	request(t, a, "POST", "/api/v1/tasks/"+id+"/complete", token, map[string]any{})
 	entries = calendarEntries(t, a, token, "2026-10", "Asia/Shanghai")
-	if len(entries) != 2 {
-		t.Fatalf("history must keep actual reminder and completion: %+v", entries)
+	if len(entries) != 1 || entries[0]["type"] != "completion" || entries[0]["reminder_count"] != float64(1) {
+		t.Fatalf("daily history must keep actual reminder count and completion: %+v", entries)
 	}
 	for _, entry := range entries {
 		if entry["state"] != "completed" {
@@ -194,10 +194,10 @@ func TestMinuteCalendarBoundsDenseProjection(t *testing.T) {
 	*now = time.Date(2026, 10, 1, 0, 0, 0, 0, now.Location())
 	createMinuteTask(t, a, token, now.Add(15*time.Minute), 1)
 	code, out := request(t, a, "GET", "/api/v1/calendar?month=2026-10&timezone=Asia%2FShanghai", token, nil)
-	if code != 200 || out["truncated"] != true {
-		t.Fatalf("dense calendar must report truncation: %d truncated=%v", code, out["truncated"])
+	if code != 200 || out["truncated"] != false {
+		t.Fatalf("one dense task must not truncate daily calendar: %d truncated=%v", code, out["truncated"])
 	}
-	if entries := out["entries"].([]any); len(entries) == 0 || len(entries) > calendarEntryLimit {
-		t.Fatalf("unbounded/empty calendar: %d", len(entries))
+	if entries := out["entries"].([]any); len(entries) != 31 {
+		t.Fatalf("expected 31 daily entries: %d", len(entries))
 	}
 }

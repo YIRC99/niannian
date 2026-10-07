@@ -49,22 +49,23 @@ type User struct {
 }
 type userContextKey struct{}
 type task struct {
-	ID           string        `json:"id"`
-	Title        string        `json:"title"`
-	Description  string        `json:"description"`
-	FlowerType   string        `json:"flower_type"`
-	Rule         schedule.Rule `json:"rule"`
-	Paused       bool          `json:"paused"`
-	CreatedAt    string        `json:"created_at"`
-	UpdatedAt    string        `json:"updated_at"`
-	Summary      string        `json:"summary"`
-	Status       string        `json:"status"`
-	NextReminder string        `json:"next_reminder"`
-	CycleKey     string        `json:"cycle_key"`
-	UserID       string        `json:"-"`
-	Archived     bool          `json:"archived,omitempty"`
-	SnoozeUntil  string        `json:"-"`
-	SnoozeCycle  string        `json:"-"`
+	ID               string            `json:"id"`
+	Title            string            `json:"title"`
+	Description      string            `json:"description"`
+	FlowerType       string            `json:"flower_type"`
+	Rule             schedule.Rule     `json:"rule"`
+	Paused           bool              `json:"paused"`
+	CreatedAt        string            `json:"created_at"`
+	UpdatedAt        string            `json:"updated_at"`
+	Summary          string            `json:"summary"`
+	Status           string            `json:"status"`
+	NextReminder     string            `json:"next_reminder"`
+	ReminderStrategy *reminderStrategy `json:"reminder_strategy,omitempty"`
+	CycleKey         string            `json:"cycle_key"`
+	UserID           string            `json:"-"`
+	Archived         bool              `json:"archived,omitempty"`
+	SnoozeUntil      string            `json:"-"`
+	SnoozeCycle      string            `json:"-"`
 }
 type Completion struct {
 	ID        string   `json:"id"`
@@ -162,7 +163,7 @@ CREATE INDEX IF NOT EXISTS notification_user ON notifications(user_id,scheduled_
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 200, map[string]string{"status": "ok", "version": "2.1.0"})
+		writeJSON(w, 200, map[string]string{"status": "ok", "version": "2.2.0"})
 	})
 	mux.HandleFunc("POST /api/v1/auth/code", a.requestCode)
 	mux.HandleFunc("POST /api/v1/auth/verify", a.verifyCode)

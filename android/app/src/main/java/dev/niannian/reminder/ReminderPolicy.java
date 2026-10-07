@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Locale;
+import java.util.Base64;
 
 /** Platform independent limits; platform delivery always checks them again at execution time. */
 final class ReminderPolicy {
@@ -22,7 +23,7 @@ final class ReminderPolicy {
     }
     static boolean due(long now, long scheduled, long expires, long last, int interval, int taskCount, int totalCount) {
         return scheduled > 0 && expires > scheduled && now >= scheduled && now < expires
-                && (last == 0 || now - last >= Math.max(5, interval) * 60000L)
+                && (last == 0 || now - last >= Math.max(1, interval) * 60000L)
                 && taskCount < 32 && totalCount < MAX_PLANS;
     }
     static String scope(String base, String email) {
@@ -39,5 +40,10 @@ final class ReminderPolicy {
     }
     static boolean fresh(long expected, String scope, long actual, String currentScope) {
         return !scope.isEmpty() && expected == actual && scope.equals(currentScope);
+    }
+    static String calendarMarker(String scope, String task, long scheduled, String zone) {
+        String safeTask = Base64.getUrlEncoder().withoutPadding().encodeToString(task.getBytes(StandardCharsets.UTF_8));
+        return "niannian://reminder/" + scope + "/task/" + safeTask + "/day/"
+                + Instant.ofEpochMilli(scheduled).atZone(ZoneId.of(zone)).toLocalDate();
     }
 }

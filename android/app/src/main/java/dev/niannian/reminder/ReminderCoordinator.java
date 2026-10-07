@@ -33,6 +33,7 @@ public final class ReminderCoordinator {
     private static final int PERIODIC_JOB = 62101, IMMEDIATE_JOB = 62102;
     private static final String STORE = "reminder_execution_v1";
     interface Result { void done(boolean success, String message); }
+    interface SyncFinished { void done(boolean retry); }
     private ReminderCoordinator() { }
 
     private static SharedPreferences prefs(Context context) { return context.getSharedPreferences(STORE, Context.MODE_PRIVATE); }
@@ -250,9 +251,14 @@ public final class ReminderCoordinator {
         WORK.execute(() -> { try { syncNow(context, snapshot, claim); } finally { if (finished != null) finished.run(); } });
     }
 
-    static void background(Context source, Runnable finished) {
+    static void background(Context source, SyncFinished finished) {
         Context context = source.getApplicationContext();
-        submit(context, snapshot(context, new Session(context)), false, finished);
+        Snapshot snapshot = snapshot(context, new Session(context));
+        if (snapshot == null) { finished.done(false); return; }
+        WORK.execute(() -> {
+            boolean success = syncNow(context, snapshot, false);
+            finished.done(!success && isCurrent(context, snapshot));
+        });
     }
 
     private static boolean syncNow(Context context, Snapshot snapshot, boolean claim) {
@@ -330,33 +336,59 @@ public final class ReminderCoordinator {
         for (int i = 0; i < oldPlans.length(); i++) { JSONObject plan = oldPlans.optJSONObject(i); if (plan != null) old.put(plan.optString("id"), plan); }
         List<JSONObject> sorted = new ArrayList<>();
         for (int i = 0; i < received.length() && i < 512; i++) { JSONObject plan = received.optJSONObject(i); if (plan != null) sorted.add(plan); }
-        sorted.sort(Comparator.comparingLong(plan -> ReminderPolicy.timestamp(plan.optString("scheduled_at"))));
+        sorted.sort(Comparator.comparingLong((JSONObject plan) -> ReminderPolicy.timestamp(plan.optString("scheduled_at")))
+                .thenComparing(plan -> plan.optString("id")));
         long now = System.currentTimeMillis();
         Set<String> seen = new HashSet<>();
-        Map<String, Long> previous = new HashMap<>();
-        Map<String, Integer> counts = new HashMap<>();
+        Set<String> pendingTasks = new HashSet<>();
+        Map<String, JSONObject> calendarPlans = new HashMap<>();
         for (JSONObject plan : sorted) {
+            // Local execution fields only come from our stored copy, never from the server.
+            plan = new JSONObject(plan.toString());
+            plan.remove("local_event_id"); plan.remove("local_scheduled");
             String id = plan.optString("id"), task = plan.optString("task_id"), channel = plan.optString("channel");
             long at = ReminderPolicy.timestamp(plan.optString("scheduled_at")), until = ReminderPolicy.timestamp(plan.optString("expires_at"));
             if (id.isEmpty() || task.isEmpty() || !seen.add(id) || delivered.has(id)) continue;
             if (!allowed(context, plan, settings) || at <= 0 || until <= now || until <= at || at > now + 2 * 86400000L
                     || ReminderPolicy.inQuiet(at, settings.optString("timezone", TimeZone.getDefault().getID()), settings.optString("quiet_start", "22:00"), settings.optString("quiet_end", "08:00"))) {
-                feedback(context, id, "failed", "计划过期、静默时段或渠道未授权"); continue;
+                JSONObject prior = old.get(id);
+                // Calendar only confirms insertion, not actual presentation. Expiry must not rewrite that history.
+                boolean expiredCalendar = "calendar".equals(channel) && until <= now && prior != null && prior.optBoolean("local_scheduled", false);
+                if (!expiredCalendar) feedback(context, id, "failed", "计划过期、静默时段或渠道未授权");
+                continue;
             }
-            String dayKey = task + ":" + Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDate();
-            long last = previous.containsKey(task) ? previous.get(task) : 0;
-            if (next.length() >= ReminderPolicy.MAX_PLANS || counts.getOrDefault(dayKey, 0) >= 32 || (last > 0 && at - last < Math.max(5, settings.optInt("min_interval_minutes", 15)) * 60000L)) {
+            if (pendingTasks.contains(task)) {
+                feedback(context, id, "cancelled", "同一事项只保留最近一条待执行提醒"); continue;
+            }
+            if (next.length() >= ReminderPolicy.MAX_PLANS) {
                 feedback(context, id, "failed", "已达到提醒频率或数量上限"); continue;
             }
             JSONObject existing = old.remove(id);
             if (existing != null && existing.optString("scheduled_at").equals(plan.optString("scheduled_at")) && existing.optString("channel").equals(channel)) {
                 if (existing.has("local_event_id")) plan.put("local_event_id", existing.optLong("local_event_id"));
                 plan.put("local_scheduled", existing.optBoolean("local_scheduled", false));
-            } else if (existing != null) ReminderPlatform.cancel(context, active, existing);
-            previous.put(task, at); counts.put(dayKey, counts.getOrDefault(dayKey, 0) + 1);
+            } else if (existing != null) {
+                boolean keepCalendar = "calendar".equals(channel) && "calendar".equals(existing.optString("channel"))
+                        && calendarMarker(active, plan).equals(calendarMarker(active, existing));
+                if (keepCalendar && existing.has("local_event_id")) plan.put("local_event_id", existing.optLong("local_event_id"));
+                ReminderPlatform.cancel(context, active, existing, true, keepCalendar);
+            }
+            pendingTasks.add(task);
+            if ("calendar".equals(channel)) calendarPlans.put(calendarMarker(active, plan), plan);
             next.put(plan);
         }
-        for (JSONObject plan : old.values()) ReminderPlatform.cancel(context, active, plan, !delivered.has(plan.optString("id")));
+        for (JSONObject plan : old.values()) {
+            boolean keepCalendar = false;
+            if ("calendar".equals(plan.optString("channel"))) {
+                JSONObject replacement = calendarPlans.get(calendarMarker(active, plan));
+                long eventId = plan.optLong("local_event_id", -1);
+                if (replacement != null && eventId > 0) {
+                    if (!replacement.has("local_event_id")) replacement.put("local_event_id", eventId);
+                    keepCalendar = replacement.optLong("local_event_id", -1) == eventId;
+                }
+            }
+            ReminderPlatform.cancel(context, active, plan, !delivered.has(plan.optString("id")), keepCalendar);
+        }
         // Persist before creating OS objects, so a killed process can still cancel/recover them.
         if (!prefs(context).edit().putString("plans", next.toString()).commit()) throw new java.io.IOException("无法保存本机提醒计划");
         for (int i = 0; i < next.length(); i++) {
@@ -377,6 +409,11 @@ public final class ReminderCoordinator {
             }
             prefs(context).edit().putString("plans", next.toString()).commit();
         }
+    }
+
+    private static String calendarMarker(String scope, JSONObject plan) {
+        return ReminderPolicy.calendarMarker(scope, plan.optString("task_id"),
+                ReminderPolicy.timestamp(plan.optString("scheduled_at")), TimeZone.getDefault().getID());
     }
 
     static void fire(Context source, String expectedScope, String id) {
@@ -481,13 +518,15 @@ public final class ReminderCoordinator {
     static boolean hasCalendarCleanup(Context context) { return array(prefs(context).getString("calendar_cleanup", "[]")).length() > 0; }
     private static void schedulePeriodic(Context context) {
         JobInfo job = new JobInfo.Builder(PERIODIC_JOB, new ComponentName(context, ReminderSyncJob.class))
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).setPersisted(true).setPeriodic(15 * 60000L).build();
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).setPersisted(true).setPeriodic(15 * 60000L)
+                .setBackoffCriteria(60000L, JobInfo.BACKOFF_POLICY_EXPONENTIAL).build();
         context.getSystemService(JobScheduler.class).schedule(job);
     }
     static void enqueueSync(Context context) {
         if (prefs(context).getString("scope", "").isEmpty()) return;
         JobInfo job = new JobInfo.Builder(IMMEDIATE_JOB, new ComponentName(context, ReminderSyncJob.class))
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).setMinimumLatency(1000).build();
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).setMinimumLatency(1000)
+                .setBackoffCriteria(60000L, JobInfo.BACKOFF_POLICY_EXPONENTIAL).build();
         context.getSystemService(JobScheduler.class).schedule(job);
     }
 }

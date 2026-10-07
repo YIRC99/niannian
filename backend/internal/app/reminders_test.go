@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -25,7 +26,7 @@ func TestReminderAgentUsesAndCachesRealModelDecision(t *testing.T) {
 		if r.Header.Get("Authorization") != "Bearer test-secret" {
 			t.Error("model request missing auth")
 		}
-		fmt.Fprint(w, `{"choices":[{"finish_reason":"stop","message":{"content":"{\"channel\":\"calendar\",\"reason\":\"申报事项适合先写入日程\"}"}}]}`)
+		fmt.Fprint(w, `{"choices":[{"finish_reason":"stop","message":{"content":"{\"steps\":[{\"channel\":\"calendar\",\"wait_minutes\":0,\"reason\":\"先写入日程\"}],\"reason\":\"申报事项适合先写入日程\"}"}}]}`)
 	}))
 	defer server.Close()
 	a, m, _ := setup(t)
@@ -44,7 +45,7 @@ func TestReminderAgentUsesAndCachesRealModelDecision(t *testing.T) {
 
 func TestReminderAgentRejectsUnauthorizedModelChannel(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"choices":[{"finish_reason":"stop","message":{"content":"{\"channel\":\"email\",\"reason\":\"发邮件\"}"}}]}`)
+		fmt.Fprint(w, `{"choices":[{"finish_reason":"stop","message":{"content":"{\"steps\":[{\"channel\":\"email\",\"wait_minutes\":0,\"reason\":\"发邮件\"}],\"reason\":\"发邮件\"}"}}]}`)
 	}))
 	defer server.Close()
 	a, m, _ := setup(t)
@@ -340,8 +341,8 @@ func TestPhonePreferencesRespectDeadlineAndStopLegacyEmail(t *testing.T) {
 	enablePhone(t, a, token, []string{"notification"})
 	out := phoneSync(t, a, token, "phone", nil)
 	plans := out["plans"].([]any)
-	if len(plans) != 3 {
-		t.Fatalf("frequency preference ignored: %+v", plans)
+	if len(plans) != 1 {
+		t.Fatalf("must queue only the next reminder: %+v", plans)
 	}
 	for _, raw := range plans {
 		p := raw.(map[string]any)
@@ -419,8 +420,8 @@ func TestAgentCalendarUsesActualPlansAndDeliveryCounts(t *testing.T) {
 				t.Fatal("missing channel")
 			}
 		}
-		if at.After(*now) && entry["type"] == "planned" {
-			t.Fatal("unexecuted synthetic reminder shown after phone takeover")
+		if at.After(*now) && strings.HasPrefix(entry["id"].(string), "planned:") && (entry["type"] != "planned" || entry["reminder_count"] != float64(0)) {
+			t.Fatal("future daily overview counted as an executed reminder")
 		}
 	}
 	if !found {

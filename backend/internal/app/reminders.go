@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -21,6 +20,7 @@ CREATE TABLE IF NOT EXISTS reminder_devices(user_id TEXT NOT NULL REFERENCES use
 CREATE TABLE IF NOT EXISTS reminder_plans(id TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id),task_id TEXT NOT NULL REFERENCES tasks(id),device_id TEXT NOT NULL,title TEXT NOT NULL,body TEXT NOT NULL,cycle_key TEXT NOT NULL,channel TEXT NOT NULL,scheduled_at TEXT NOT NULL,expires_at TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',source TEXT NOT NULL,reason TEXT NOT NULL,error TEXT NOT NULL DEFAULT '',generation TEXT NOT NULL,sent_at TEXT NOT NULL DEFAULT '',reported_at TEXT NOT NULL DEFAULT '',rule_snapshot TEXT NOT NULL DEFAULT '{}',UNIQUE(task_id,scheduled_at,channel,generation));
 CREATE INDEX IF NOT EXISTS reminder_plan_user ON reminder_plans(user_id,device_id,status,scheduled_at);
 CREATE TABLE IF NOT EXISTS reminder_decisions(task_id TEXT PRIMARY KEY REFERENCES tasks(id),generation TEXT NOT NULL,channel TEXT NOT NULL,source TEXT NOT NULL,reason TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS reminder_strategies(task_id TEXT PRIMARY KEY REFERENCES tasks(id),generation TEXT NOT NULL,strategy TEXT NOT NULL);
 `
 
 type reminderSettings struct {
@@ -68,12 +68,13 @@ type reminderPlan struct {
 	Error       string `json:"error"`
 	Generation  string `json:"-"`
 	SentAt      string `json:"sent_at"`
+	ReportedAt  string `json:"-"`
 }
 
-const reminderPlanColumns = `id,task_id,title,body,cycle_key,channel,scheduled_at,expires_at,status,source,reason,error,generation,sent_at`
+const reminderPlanColumns = `id,task_id,title,body,cycle_key,channel,scheduled_at,expires_at,status,source,reason,error,generation,sent_at,reported_at`
 
 func scanReminderPlan(s scanner) (p reminderPlan, err error) {
-	err = s.Scan(&p.ID, &p.TaskID, &p.Title, &p.Body, &p.CycleKey, &p.Channel, &p.ScheduledAt, &p.ExpiresAt, &p.Status, &p.Source, &p.Reason, &p.Error, &p.Generation, &p.SentAt)
+	err = s.Scan(&p.ID, &p.TaskID, &p.Title, &p.Body, &p.CycleKey, &p.Channel, &p.ScheduledAt, &p.ExpiresAt, &p.Status, &p.Source, &p.Reason, &p.Error, &p.Generation, &p.SentAt, &p.ReportedAt)
 	return
 }
 func (a *App) reminderSettingsFor(user string) (reminderSettings, string, error) {
@@ -111,8 +112,8 @@ func (a *App) putReminderSettings(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "提醒时区不正确")
 		return
 	}
-	if s.MinInterval < 5 || s.MinInterval > 1440 {
-		writeError(w, 400, "提醒间隔需为5–1440分钟")
+	if s.MinInterval < 1 || s.MinInterval > 1440 {
+		writeError(w, 400, "提醒间隔需为1–1440分钟")
 		return
 	}
 	if (s.QuietStart == "") != (s.QuietEnd == "") {
@@ -220,7 +221,7 @@ func (a *App) syncReminders(w http.ResponseWriter, r *http.Request) {
 			if status == "delivered" {
 				sentAt = stamp(a.now())
 			}
-			_, err = a.db.Exec(`UPDATE reminder_plans SET status=?,error=?,sent_at=?,reported_at=? WHERE id=? AND user_id=? AND device_id=? AND channel<>'email' AND (status IN ('pending','scheduled') OR (status='unconfirmed' AND ? IN ('scheduled','delivered'))) AND (?<>'delivered' OR scheduled_at<=?)`, status, result.Error, sentAt, stamp(a.now()), result.PlanID, user, in.DeviceID, status, status, stamp(a.now().Add(time.Minute)))
+			_, err = a.db.Exec(`UPDATE reminder_plans SET status=?,error=?,sent_at=?,reported_at=? WHERE id=? AND user_id=? AND device_id=? AND channel<>'email' AND (status IN ('pending','scheduled') OR (status='unconfirmed' AND ?='delivered')) AND (?<>'delivered' OR scheduled_at<=?) AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=? AND ? IN ('failed','cancelled'))`, status, result.Error, sentAt, stamp(a.now()), result.PlanID, user, in.DeviceID, status, status, stamp(a.now().Add(time.Minute)), stamp(a.now()), status)
 			if err != nil {
 				break
 			}
@@ -251,7 +252,7 @@ func (a *App) syncReminders(w http.ResponseWriter, r *http.Request) {
 	plans := []reminderPlan{}
 	cancelIDs := []string{}
 	truncated := false
-	rows, err := a.db.Query(`SELECT `+reminderPlanColumns+` FROM reminder_plans WHERE user_id=? AND device_id=? AND scheduled_at>=? ORDER BY scheduled_at,id`, user, in.DeviceID, stamp(a.now().Add(-7*24*time.Hour)))
+	rows, err := a.db.Query(`SELECT `+reminderPlanColumns+` FROM reminder_plans WHERE user_id=? AND device_id=? AND (scheduled_at>=? OR status='cancelled') ORDER BY scheduled_at,id`, user, in.DeviceID, stamp(a.now().Add(-7*24*time.Hour)))
 	if err != nil {
 		dbFailure(w)
 		return
@@ -267,7 +268,7 @@ func (a *App) syncReminders(w http.ResponseWriter, r *http.Request) {
 			if len(cancelIDs) < 2000 {
 				cancelIDs = append(cancelIDs, p.ID)
 			}
-		} else if (p.Status == "pending" || p.Status == "scheduled") && p.Channel != "email" && p.ExpiresAt > stamp(a.now()) {
+		} else if (p.Status == "pending" || p.Status == "scheduled") && p.Channel != "email" && p.ExpiresAt > stamp(a.now()) && !(p.Channel == "calendar" && p.Status == "scheduled" && p.ScheduledAt <= stamp(a.now())) {
 			if len(plans) < 256 {
 				plans = append(plans, p)
 			} else {
@@ -291,7 +292,7 @@ func (a *App) syncReminders(w http.ResponseWriter, r *http.Request) {
 	} else if len(availableReminderChannels(s, in.Capabilities)) == 0 {
 		agentStatus = "no_authorized_channel"
 	}
-	agentMessage := "按已授权渠道安排；排程成功不代表用户已看到"
+	agentMessage := "每件事只安排下一条；收到执行反馈或超时且仍未完成后，按已保存流程继续"
 	if len(plans) == 0 && agentStatus == "ready" {
 		agentMessage = "当前没有可执行的手机提醒；已遵守完成状态、静默时段、最短间隔和截止时间"
 	}
@@ -362,45 +363,133 @@ func afterReminderQuiet(at time.Time, s reminderSettings, zone string) time.Time
 	}
 	return time.Date(day.Year(), day.Month(), day.Day(), end.Hour(), end.Minute(), 0, 0, loc)
 }
-func reminderGeneration(t task, s reminderSettings, device string, channels []string, previous reminderPlan) string {
-	raw, _ := json.Marshal([]any{t.ID, t.Title, t.Description, t.Rule, t.UpdatedAt, t.SnoozeUntil, t.SnoozeCycle, s, s.Revision, device, channels, previous.ID, previous.Status})
+func reminderGeneration(t task, s reminderSettings, device string, channels []string) string {
+	raw, _ := json.Marshal([]any{"sequential-v1", t.ID, t.Title, t.Description, t.Rule, t.UpdatedAt, t.SnoozeUntil, t.SnoozeCycle, s, s.Revision, device, channels})
 	return digest(string(raw))
 }
-func ruleReminderDecision(channels []string, previous reminderPlan) (string, string) {
-	ch := channels[0]
-	if previous.Channel != "" && (previous.Status == "failed" || previous.Status == "unconfirmed" || previous.Status == "delivered" || previous.Status == "accepted" || (previous.Status == "scheduled" && previous.Channel == "calendar")) {
-		for i, c := range channels {
-			if c == previous.Channel && len(channels) > 1 {
-				ch = channels[(i+1)%len(channels)]
-				break
-			}
+
+type reminderStrategy struct {
+	TaskID       string            `json:"task_id"`
+	State        string            `json:"state"`
+	Source       string            `json:"source"`
+	Reason       string            `json:"reason"`
+	Steps        []ai.ReminderStep `json:"steps"`
+	RepeatPolicy string            `json:"repeat_policy"`
+	NextReminder string            `json:"next_reminder,omitempty"`
+	Generation   string            `json:"-"`
+}
+
+// A strategy is a small policy, not a queue of future notification events.
+func ruleReminderStrategy(t task, s reminderSettings, channels []string) reminderStrategy {
+	steps := []ai.ReminderStep{{Channel: channels[0], WaitMinutes: 0, Reason: "按事项首次时间轻提醒"}}
+	base := max(1, s.MinInterval)
+	if t.Rule.Kind == "minute_interval" {
+		base = max(base, t.Rule.RepeatMinutes)
+	}
+	if t.Rule.Mode != "notify_once" {
+		for i := 1; i < 3; i++ {
+			steps = append(steps, ai.ReminderStep{Channel: channels[i%len(channels)], WaitMinutes: min(1440, base*(1<<(i-1))), Reason: "留出处理时间，仍未完成再跟进"})
 		}
 	}
-	reason := "按授权渠道先使用轻提醒"
-	if ch != previous.Channel && previous.Channel != "" {
-		reason = "上次渠道失败或提醒后仍未完成，切换另一种已授权渠道"
+	return reminderStrategy{TaskID: t.ID, State: "ready", Source: "rules", Reason: "规则保底：按已授权渠道逐步跟进，持续未完成时延长等待", Steps: steps, RepeatPolicy: "last_step_backoff"}
+}
+func (a *App) storedReminderStrategy(taskID string) (reminderStrategy, error) {
+	var p reminderStrategy
+	var raw string
+	err := a.db.QueryRow(`SELECT generation,strategy FROM reminder_strategies WHERE task_id=?`, taskID).Scan(&p.Generation, &raw)
+	if err != nil {
+		return p, err
 	}
-	return ch, reason
+	err = json.Unmarshal([]byte(raw), &p)
+	return p, err
+}
+func (a *App) reminderDeviceCapabilities(user, device string) (reminderCapabilities, error) {
+	var caps reminderCapabilities
+	if device == "" {
+		return caps, nil
+	}
+	var raw string
+	err := a.db.QueryRow(`SELECT capabilities FROM reminder_devices WHERE user_id=? AND device_id=?`, user, device).Scan(&raw)
+	if err == sql.ErrNoRows {
+		return caps, nil
+	}
+	if err != nil {
+		return caps, err
+	}
+	err = json.Unmarshal([]byte(raw), &caps)
+	return caps, err
+}
+func (a *App) taskReminderStrategy(t task) *reminderStrategy {
+	s, device, err := a.reminderSettingsFor(t.UserID)
+	if err != nil {
+		return nil
+	}
+	waiting := &reminderStrategy{TaskID: t.ID, State: "awaiting_authorization", Source: "rules", Reason: "开启提醒并同步已授权的手机渠道后生成跟进流程", Steps: []ai.ReminderStep{}, RepeatPolicy: "last_step_backoff"}
+	if !s.Configured || !s.Enabled {
+		return waiting
+	}
+	caps, err := a.reminderDeviceCapabilities(t.UserID, device)
+	if err != nil {
+		return waiting
+	}
+	channels := availableReminderChannels(s, caps)
+	if len(channels) == 0 {
+		return waiting
+	}
+	p, err := a.storedReminderStrategy(t.ID)
+	if err != nil || p.Generation != reminderGeneration(t, s, device, channels) {
+		waiting.State = "awaiting_sync"
+		waiting.Reason = "跟进流程正在更新，同步后即可查看"
+		return waiting
+	}
+	p.NextReminder = t.NextReminder
+	return &p
+}
+func (a *App) prepareTaskReminderStrategy(ctx context.Context, user, taskID string) error {
+	s, device, err := a.reminderSettingsFor(user)
+	if err != nil || !s.Configured || !s.Enabled {
+		return err
+	}
+	caps, err := a.reminderDeviceCapabilities(user, device)
+	if err != nil {
+		return err
+	}
+	t, err := a.findTask(taskID, user)
+	if err != nil {
+		return err
+	}
+	budget := 1
+	return a.buildTaskReminderPlan(ctx, t, s, device, availableReminderChannels(s, caps), &budget)
 }
 func (a *App) latestReminderResult(taskID string) (reminderPlan, error) {
-	p, err := scanReminderPlan(a.db.QueryRow(`SELECT `+reminderPlanColumns+` FROM reminder_plans WHERE task_id=? AND (status IN ('delivered','accepted','failed','unconfirmed') OR (status='scheduled' AND channel='calendar' AND scheduled_at<=?)) ORDER BY reported_at DESC,scheduled_at DESC,id DESC LIMIT 1`, taskID, stamp(a.now())))
+	p, err := scanReminderPlan(a.db.QueryRow(`SELECT `+reminderPlanColumns+` FROM reminder_plans WHERE task_id=? AND (status IN ('delivered','accepted','failed','unconfirmed') OR (status='scheduled' AND channel='calendar' AND expires_at<=?)) ORDER BY scheduled_at DESC,reported_at DESC,id DESC LIMIT 1`, taskID, stamp(a.now())))
 	if err == sql.ErrNoRows {
 		return reminderPlan{}, nil
 	}
 	return p, err
 }
+
+// Expire missing receipts before advancing. Calendar retains its true scheduled
+// status in history; after its trigger window it no longer blocks the next step.
+func (a *App) expireReminderPlans(user string) error {
+	_, err := a.db.Exec(`UPDATE reminder_plans SET status='unconfirmed',reported_at=?,error='触发窗口已过，未收到执行回执，无法确认是否展示' WHERE user_id=? AND expires_at<=? AND (status='pending' OR (status='scheduled' AND channel<>'calendar'))`, stamp(a.now()), user, stamp(a.now()))
+	return err
+}
 func (a *App) buildReminderPlans(ctx context.Context, user, device string, caps reminderCapabilities) error {
+	a.mu.Lock()
 	s, active, err := a.reminderSettingsFor(user)
+	if err == nil {
+		err = a.expireReminderPlans(user)
+	}
+	if err == nil {
+		err = a.cancelInvalidReminderPlans(user, active, s)
+	}
+	a.mu.Unlock()
 	if err != nil {
 		return err
 	}
 	if !s.Configured || !s.Enabled || active != device {
 		return nil
-	}
-	// A queued local plan is not proof that Android ever displayed it. Keep
-	// missing receipts explicit and let the agent try another permitted route.
-	if _, err = a.db.Exec(`UPDATE reminder_plans SET status='unconfirmed',reported_at=?,error='触发窗口已过，未收到设备回执，无法确认是否展示' WHERE user_id=? AND channel<>'email' AND expires_at<=? AND (status='pending' OR (status='scheduled' AND channel<>'calendar'))`, stamp(a.now()), user, stamp(a.now())); err != nil {
-		return err
 	}
 	channels := availableReminderChannels(s, caps)
 	if len(channels) == 0 {
@@ -411,229 +500,290 @@ func (a *App) buildReminderPlans(ctx context.Context, user, device string, caps 
 	if err != nil {
 		return err
 	}
-	modelBudget := 2
+	budget := 2
 	for _, t := range tasks {
 		if err = ctx.Err(); err != nil {
 			return err
 		}
-		if t.Paused {
-			continue
-		}
-		failureRows, failureErr := a.db.Query(`SELECT DISTINCT channel FROM reminder_plans WHERE task_id=? AND status IN ('failed','unconfirmed') AND reported_at>?`, t.ID, stamp(a.now().Add(-15*time.Minute)))
-		if failureErr != nil {
-			return failureErr
-		}
-		failedChannels := map[string]bool{}
-		for failureRows.Next() {
-			var failedChannel string
-			if failureErr = failureRows.Scan(&failedChannel); failureErr != nil {
-				failureRows.Close()
-				return failureErr
-			}
-			failedChannels[failedChannel] = true
-		}
-		failureErr = failureRows.Err()
-		failureRows.Close()
-		if failureErr != nil {
-			return failureErr
-		}
-		taskChannels := []string{}
-		for _, ch := range channels {
-			if !failedChannels[ch] {
-				taskChannels = append(taskChannels, ch)
-			}
-		}
-		if len(taskChannels) == 0 {
-			if _, err = a.db.Exec(`UPDATE reminder_plans SET status='cancelled',error='渠道连续失败，暂停15分钟后重试；请检查设备授权' WHERE task_id=? AND status IN ('pending','scheduled') AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=?)`, t.ID, stamp(a.now())); err != nil {
-				return err
-			}
-			continue
-		}
-		previous, e := a.latestReminderResult(t.ID)
-		if e != nil {
-			return e
-		}
-		generation := reminderGeneration(t, s, device, taskChannels, previous)
-		var channel, source, reason, storedGeneration string
-		e = a.db.QueryRow(`SELECT generation,channel,source,reason FROM reminder_decisions WHERE task_id=?`, t.ID).Scan(&storedGeneration, &channel, &source, &reason)
-		if e != nil && e != sql.ErrNoRows {
-			return e
-		}
-		if storedGeneration != generation || (source == "rules" && strings.Contains(reason, "本轮决策额度") && modelBudget > 0) {
-			channel, reason = ruleReminderDecision(taskChannels, previous)
-			source = "rules"
-			input := ai.ReminderContext{Title: t.Title, Description: t.Description, Schedule: schedule.Summary(t.Rule), AllowedChannels: taskChannels, PreviousChannel: previous.Channel, PreviousStatus: previous.Status, PreviousAt: previous.ScheduledAt, Now: stamp(a.now())}
-			// Model I/O runs without the mutation mutex. Every constraint and task
-			// revision is checked again before committing its decision.
-			if modelBudget > 0 {
-				if a.cfg.DeepSeekAPIKey != "" {
-					modelBudget--
-				}
-				decision, decisionErr := ai.New(a.cfg).DecideReminder(ctx, input)
-				if decisionErr == nil {
-					channel = decision.Channel
-					reason = decision.Reason
-					source = "ai"
-				} else {
-					reason = "规则保底（AI 未配置或暂不可用）：" + reason
-				}
-			} else {
-				reason = "规则保底（本轮决策额度已用完，下轮再尝试AI）：" + reason
-			}
-		}
-		a.mu.Lock()
-		latest, findErr := a.findTask(t.ID, user)
-		freshSettings, freshDevice, settingsErr := a.reminderSettingsFor(user)
-		freshPrevious, previousErr := a.latestReminderResult(t.ID)
-		if findErr == sql.ErrNoRows || latest.Paused || freshDevice != device || !freshSettings.Enabled || settingsErr != nil || previousErr != nil || reminderGeneration(latest, freshSettings, device, taskChannels, freshPrevious) != generation {
-			a.mu.Unlock()
-			continue
-		}
-		if findErr != nil {
-			a.mu.Unlock()
-			return findErr
-		}
-		if _, err = a.db.Exec(`INSERT INTO reminder_decisions(task_id,generation,channel,source,reason) VALUES(?,?,?,?,?) ON CONFLICT(task_id) DO UPDATE SET generation=excluded.generation,channel=excluded.channel,source=excluded.source,reason=excluded.reason`, t.ID, generation, channel, source, reason); err != nil {
-			a.mu.Unlock()
+		if err = a.buildTaskReminderPlan(ctx, t, s, device, channels, &budget); err != nil {
 			return err
 		}
-		if _, err = a.db.Exec(`UPDATE reminder_plans SET status='cancelled',error='安排已更新' WHERE task_id=? AND status IN ('pending','scheduled') AND generation<>? AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=?)`, t.ID, generation, stamp(a.now())); err != nil {
-			a.mu.Unlock()
-			return err
-		}
-		err = a.saveReminderSlots(latest, s, device, generation, channel, source, reason, previous)
-		a.mu.Unlock()
-		if err != nil {
-			return err
-		}
-	}
-	return a.cancelInvalidReminderPlans(user, device, s)
-}
-func (a *App) saveReminderSlots(t task, s reminderSettings, device, generation, channel, source, reason string, previous reminderPlan) error {
-	now := a.now()
-	start := now
-	until := now.Add(24 * time.Hour)
-	var futureCount int
-	if err := a.db.QueryRow(`SELECT COUNT(*) FROM reminder_plans WHERE task_id=? AND generation=? AND status IN ('pending','scheduled') AND scheduled_at>?`, t.ID, generation, stamp(now)).Scan(&futureCount); err != nil {
-		return err
-	}
-	if futureCount > 0 {
-		return nil
-	}
-	// Re-evaluate all future slots; the unique generation/slot key makes sync
-	// idempotent. A snooze suppresses every earlier occurrence, across channels.
-	var snooze time.Time
-	if t.SnoozeUntil != "" {
-		snooze, _ = time.Parse(time.RFC3339Nano, t.SnoozeUntil)
-		if snooze.After(start) {
-			start = snooze.Add(-time.Nanosecond)
-		}
-	}
-	slots := schedule.DueLimited(t.Rule, start, until, 1500)
-	if snooze.After(now) && !snooze.After(until) {
-		if cycle, ok := schedule.CycleAt(t.Rule, snooze); ok && cycle.Key == t.SnoozeCycle {
-			slots = append([]schedule.Occurrence{{At: snooze, CycleKey: cycle.Key}}, slots...)
-		}
-	}
-	// A failed channel can be replaced within the same original reminder slot.
-	// The retry is never moved past its precise deadline or into quiet hours.
-	if previous.Status == "failed" || previous.Status == "unconfirmed" {
-		failedAt, _ := time.Parse(time.RFC3339Nano, previous.ScheduledAt)
-		retryAt := failedAt
-		if retryAt.Before(now) {
-			retryAt = now.Add(time.Minute)
-		}
-		if c, ok := schedule.CycleAt(t.Rule, retryAt); ok && !retryAt.After(until) && (!snooze.After(now) || !retryAt.Before(snooze)) {
-			slots = append(slots, schedule.Occurrence{At: retryAt, CycleKey: c.Key})
-		}
-	}
-	// A task that requires completion remains the agent's responsibility after
-	// its final explicit slot. Continue within that same completion cycle only;
-	// notify_once never acquires extra reminders or a new completion meaning.
-	if t.Rule.Mode != "notify_once" && previous.ID != "" && (previous.Status == "delivered" || previous.Status == "accepted" || previous.Status == "scheduled") {
-		hasSameCycleSlot := false
-		for _, slot := range slots {
-			if slot.CycleKey == previous.CycleKey {
-				hasSameCycleSlot = true
-				break
-			}
-		}
-		if !hasSameCycleSlot {
-			last, _ := time.Parse(time.RFC3339Nano, previous.ScheduledAt)
-			next := last.Add(time.Duration(s.MinInterval) * time.Minute)
-			if !next.After(now) {
-				next = now.Add(time.Minute)
-			}
-			for i := 0; i < 1500 && len(slots) < 1500 && !next.After(until); i++ {
-				cycle, ok := schedule.CycleAt(t.Rule, next)
-				if !ok || cycle.Key != previous.CycleKey {
-					break
-				}
-				slots = append(slots, schedule.Occurrence{At: next, CycleKey: cycle.Key})
-				next = next.Add(time.Duration(s.MinInterval) * time.Minute)
-			}
-		}
-	}
-	sort.Slice(slots, func(i, j int) bool { return slots[i].At.Before(slots[j].At) })
-	lastAt := time.Time{}
-	if previous.Status != "failed" && previous.Status != "unconfirmed" {
-		lastAt, _ = time.Parse(time.RFC3339Nano, previous.ScheduledAt)
-	}
-	used := map[string]int{}
-	created := 0
-	for _, slot := range slots {
-		if created >= 32 {
-			break
-		}
-		if quietReminder(slot.At, s, t.Rule.Timezone) {
-			deferred := afterReminderQuiet(slot.At, s, t.Rule.Timezone)
-			cycle, ok := schedule.CycleAt(t.Rule, deferred)
-			if !ok || cycle.Key != slot.CycleKey || deferred.After(until) {
-				continue
-			}
-			slot.At = deferred
-		}
-		if !lastAt.IsZero() && slot.At.Sub(lastAt) < time.Duration(s.MinInterval)*time.Minute {
-			continue
-		}
-		complete, sent, err := a.cycleCounts(t.ID, slot.CycleKey)
-		if err != nil {
-			return err
-		}
-		if stopForRule(t.Rule, complete, sent+used[slot.CycleKey]) {
-			continue
-		}
-		cycle, ok := schedule.CycleAt(t.Rule, slot.At)
-		if !ok {
-			continue
-		}
-		expires := cycle.End
-		// A local occurrence expires before the next allowed reminder, preventing
-		// a resumed phone from replaying a stale queue of missed alarms.
-		if expiry := slot.At.Add(time.Duration(s.MinInterval) * time.Minute); expiry.Before(expires) {
-			expires = expiry
-		}
-		if t.Rule.EndAt != "" {
-			end, _ := time.Parse(time.RFC3339Nano, t.Rule.EndAt)
-			if !expires.Before(end) {
-				expires = end.Add(time.Second)
-			}
-		}
-		explanation := reason + fmt.Sprintf("；遵守%s–%s静默与至少%d分钟间隔，精确截止后停止", s.QuietStart, s.QuietEnd, s.MinInterval)
-		if s.QuietStart == "" {
-			explanation = reason + fmt.Sprintf("；至少间隔%d分钟，完成、暂停或截止后停止", s.MinInterval)
-		}
-		ruleSnapshot, _ := json.Marshal(t.Rule)
-		_, err = a.db.Exec(`INSERT INTO reminder_plans(id,user_id,task_id,device_id,title,body,cycle_key,channel,scheduled_at,expires_at,source,reason,generation,rule_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(task_id,scheduled_at,channel,generation) DO UPDATE SET status='pending',error='' WHERE reminder_plans.status='cancelled'`, randomID(), t.UserID, t.ID, device, t.Title, t.Description, slot.CycleKey, channel, stamp(slot.At), stamp(expires), source, explanation, generation, string(ruleSnapshot))
-		if err != nil {
-			return err
-		}
-		used[slot.CycleKey]++
-		created++
-		lastAt = slot.At
 	}
 	return nil
 }
+func (a *App) buildTaskReminderPlan(ctx context.Context, t task, s reminderSettings, device string, channels []string, budget *int) error {
+	if t.Paused || len(channels) == 0 {
+		return nil
+	}
+	generation := reminderGeneration(t, s, device, channels)
+	strategy, err := a.storedReminderStrategy(t.ID)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	if strategy.Generation != generation {
+		strategy = ruleReminderStrategy(t, s, channels)
+		minimumWait := max(1, s.MinInterval)
+		if t.Rule.Kind == "minute_interval" {
+			minimumWait = max(minimumWait, t.Rule.RepeatMinutes)
+		}
+		if *budget > 0 {
+			if a.cfg.DeepSeekAPIKey != "" {
+				*budget--
+			}
+			decision, decisionErr := ai.New(a.cfg).DecideReminder(ctx, ai.ReminderContext{Title: t.Title, Description: t.Description, Schedule: schedule.Summary(t.Rule), AllowedChannels: channels, Now: stamp(a.now()), MinInterval: minimumWait, Deadline: t.Rule.EndAt})
+			if decisionErr == nil {
+				strategy.Steps = decision.Steps
+				strategy.Reason = decision.Reason
+				strategy.Source = "ai"
+			}
+		}
+		strategy.Generation = generation
+		if t.Rule.Mode == "notify_once" {
+			strategy.Steps = strategy.Steps[:1]
+			strategy.RepeatPolicy = "none"
+			if strategy.Source == "rules" {
+				strategy.Reason = "规则保底：按已授权渠道提醒一次"
+			}
+		}
+	}
+	// Recheck owner, device, permissions and rule after model I/O without holding
+	// the mutex. Competing sync/tick calls reuse the first committed strategy.
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	latest, err := a.findTask(t.ID, t.UserID)
+	if err == sql.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	fresh, active, err := a.reminderSettingsFor(t.UserID)
+	if err != nil {
+		return err
+	}
+	caps, err := a.reminderDeviceCapabilities(t.UserID, active)
+	if err != nil {
+		return err
+	}
+	freshChannels := availableReminderChannels(fresh, caps)
+	if latest.Paused || active != device || !fresh.Enabled || reminderGeneration(latest, fresh, device, freshChannels) != generation {
+		return nil
+	}
+	if existing, e := a.storedReminderStrategy(t.ID); e == nil && existing.Generation == generation {
+		strategy = existing
+	}
+	raw, _ := json.Marshal(strategy)
+	if _, err = a.db.Exec(`INSERT INTO reminder_strategies(task_id,generation,strategy) VALUES(?,?,?) ON CONFLICT(task_id) DO UPDATE SET generation=excluded.generation,strategy=excluded.strategy`, t.ID, generation, string(raw)); err != nil {
+		return err
+	}
+	if err = a.expireReminderPlans(t.UserID); err != nil {
+		return err
+	}
+	if err = a.cancelInvalidReminderPlans(t.UserID, device, fresh); err != nil {
+		return err
+	}
+	if err = a.cancelStoppedReminderPlans(latest); err != nil {
+		return err
+	}
+	if _, err = a.db.Exec(`UPDATE reminder_plans SET status='cancelled',error='跟进流程已更新，仅保留下一条安排' WHERE task_id=? AND generation<>? AND status IN ('pending','scheduled') AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=?)`, t.ID, generation, stamp(a.now())); err != nil {
+		return err
+	}
+	// Cancel legacy batches, retaining their rows and returning their IDs for
+	// device cleanup. A sending email takes precedence over any queued work.
+	if _, err = a.db.Exec(`UPDATE reminder_plans SET status='cancelled',error='已改为逐步跟进，撤销多余预排程' WHERE task_id=? AND status IN ('pending','scheduled') AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=?) AND id<>(SELECT id FROM reminder_plans WHERE task_id=? AND (status IN ('pending','sending') OR (status='scheduled' AND expires_at>?)) ORDER BY CASE WHEN status='sending' THEN 0 ELSE 1 END,scheduled_at,id LIMIT 1)`, t.ID, stamp(a.now()), t.ID, stamp(a.now())); err != nil {
+		return err
+	}
+	var outstanding int
+	if err = a.db.QueryRow(`SELECT COUNT(*) FROM reminder_plans WHERE task_id=? AND (status IN ('pending','sending') OR (status='scheduled' AND expires_at>?))`, t.ID, stamp(a.now())).Scan(&outstanding); err != nil {
+		return err
+	}
+	if outstanding > 0 {
+		return nil
+	}
+	previous, err := a.latestReminderResult(t.ID)
+	if err != nil {
+		return err
+	}
+	return a.saveNextReminder(latest, fresh, device, strategy, previous)
+}
+
+// A late delivery receipt can use the final notify_once/max-reminders budget
+// after a timeout retry was queued. Recheck the budget before reusing that row.
+func (a *App) cancelStoppedReminderPlans(t task) error {
+	rows, err := a.db.Query(`SELECT id,cycle_key FROM reminder_plans WHERE task_id=? AND status IN ('pending','scheduled') AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=?)`, t.ID, stamp(a.now()))
+	if err != nil {
+		return err
+	}
+	type queuedCycle struct{ id, cycle string }
+	queue := []queuedCycle{}
+	for rows.Next() {
+		var p queuedCycle
+		if err = rows.Scan(&p.id, &p.cycle); err != nil {
+			rows.Close()
+			return err
+		}
+		queue = append(queue, p)
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	for _, p := range queue {
+		complete, sent, e := a.cycleCounts(t.ID, p.cycle)
+		if e != nil {
+			return e
+		}
+		if stopForRule(t.Rule, complete, sent) {
+			if _, err = a.db.Exec(`UPDATE reminder_plans SET status='cancelled',error='任务已完成或已达到本周期提醒次数' WHERE id=? AND status IN ('pending','scheduled')`, p.id); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Exactly one candidate is derived, then bounded by the task's completion cycle.
+// Waiting starts at actual delivery/acceptance/timeout, never at a sync request.
+func (a *App) saveNextReminder(t task, s reminderSettings, device string, strategy reminderStrategy, previous reminderPlan) error {
+	now := a.now()
+	next, ok := schedule.Next(t.Rule, now)
+	cycle := schedule.Cycle{}
+	stepIndex := 0
+	if ok {
+		cycle, ok = schedule.CycleAt(t.Rule, next)
+	}
+	if previous.ID != "" {
+		var priorRule string
+		if err := a.db.QueryRow(`SELECT rule_snapshot FROM reminder_plans WHERE id=?`, previous.ID).Scan(&priorRule); err != nil {
+			return err
+		}
+		currentRule, _ := json.Marshal(t.Rule)
+		if priorRule != string(currentRule) {
+			// An edited first time/deadline starts a new flow. Its predecessor
+			// remains history and must never pull the new first reminder forward.
+			previous = reminderPlan{}
+		}
+	}
+	if previous.ID != "" {
+		anchor, _ := time.Parse(time.RFC3339Nano, previous.ScheduledAt)
+		if resultAt, e := time.Parse(time.RFC3339Nano, previous.ReportedAt); e == nil && resultAt.After(anchor) {
+			anchor = resultAt
+		}
+		if previous.Channel == "calendar" && previous.Status == "scheduled" {
+			if expiry, e := time.Parse(time.RFC3339Nano, previous.ExpiresAt); e == nil && expiry.After(anchor) {
+				anchor = expiry
+			}
+		}
+		priorCycle, active := schedule.CycleAt(t.Rule, anchor)
+		if active && priorCycle.Key == previous.CycleKey {
+			complete, sent, err := a.cycleCounts(t.ID, priorCycle.Key)
+			if err != nil {
+				return err
+			}
+			if !stopForRule(t.Rule, complete, sent) {
+				if err = a.db.QueryRow(`SELECT COUNT(*) FROM reminder_plans WHERE task_id=? AND generation=? AND cycle_key=? AND (status IN ('delivered','accepted','failed','unconfirmed') OR (status='scheduled' AND channel='calendar' AND expires_at<=?))`, t.ID, strategy.Generation, priorCycle.Key, stamp(now)).Scan(&stepIndex); err != nil {
+					return err
+				}
+				if stepIndex == 0 {
+					stepIndex = 1
+				}
+				step := strategy.Steps[min(stepIndex, len(strategy.Steps)-1)]
+				wait := max(s.MinInterval, step.WaitMinutes)
+				if t.Rule.Kind == "minute_interval" {
+					wait = max(wait, t.Rule.RepeatMinutes)
+				}
+				for i := len(strategy.Steps); i <= stepIndex && wait < 1440; i++ {
+					wait = min(1440, wait*2)
+				}
+				follow := anchor.Add(time.Duration(max(1, wait)) * time.Minute)
+				if !follow.After(now) {
+					follow = now.Add(time.Minute)
+				}
+				followCycle, active := schedule.CycleAt(t.Rule, follow)
+				if active && followCycle.Key == priorCycle.Key {
+					next, cycle, ok = follow, followCycle, true
+				} else {
+					// The prior cycle ended. Keep the ordinary next-cycle slot and
+					// restart its first step rather than carrying old follow-ups.
+					// A precise deadline cannot fall back to an earlier same-cycle
+					// slot, which would bypass the strategy wait/minimum interval.
+					if !ok || cycle.Key == priorCycle.Key {
+						return nil
+					}
+					stepIndex = 0
+				}
+			}
+		}
+	}
+	snooze, _ := time.Parse(time.RFC3339Nano, t.SnoozeUntil)
+	if snooze.After(now) && (!ok || next.Before(snooze)) {
+		next = snooze
+		cycle, ok = schedule.CycleAt(t.Rule, next)
+		ok = ok && cycle.Key == t.SnoozeCycle
+	}
+	// Skip stopped cycles in one jump; no dense enumeration of minute slots.
+	for i := 0; ok && i < 600; i++ {
+		complete, sent, err := a.cycleCounts(t.ID, cycle.Key)
+		if err != nil {
+			return err
+		}
+		if !stopForRule(t.Rule, complete, sent) {
+			break
+		}
+		next, ok = schedule.Next(t.Rule, cycle.End.Add(-time.Nanosecond))
+		if ok {
+			cycle, ok = schedule.CycleAt(t.Rule, next)
+		}
+		stepIndex = 0
+	}
+	if !ok || next.After(now.Add(24*time.Hour)) {
+		return nil
+	}
+	// Editing or changing permissions resets the strategy, not the user's
+	// global minimum gap after an already executed reminder for this task.
+	var lastExecuted string
+	if err := a.db.QueryRow(`SELECT COALESCE(MAX(CASE WHEN sent_at<>'' THEN sent_at ELSE scheduled_at END),'') FROM reminder_plans WHERE task_id=? AND (status IN ('delivered','accepted') OR (status='scheduled' AND channel='calendar' AND scheduled_at<=?))`, t.ID, stamp(now)).Scan(&lastExecuted); err != nil {
+		return err
+	}
+	if last, e := time.Parse(time.RFC3339Nano, lastExecuted); e == nil {
+		minimumAt := last.Add(time.Duration(s.MinInterval) * time.Minute)
+		if next.Before(minimumAt) {
+			adjusted, active := schedule.CycleAt(t.Rule, minimumAt)
+			if !active || adjusted.Key != cycle.Key {
+				return nil
+			}
+			next = minimumAt
+		}
+	}
+	if quietReminder(next, s, t.Rule.Timezone) {
+		deferred := afterReminderQuiet(next, s, t.Rule.Timezone)
+		adjusted, active := schedule.CycleAt(t.Rule, deferred)
+		if !active || adjusted.Key != cycle.Key {
+			return nil
+		}
+		next = deferred
+	}
+	complete, sent, err := a.cycleCounts(t.ID, cycle.Key)
+	if err != nil || stopForRule(t.Rule, complete, sent) {
+		return err
+	}
+	step := strategy.Steps[min(stepIndex, len(strategy.Steps)-1)]
+	expires := next.Add(time.Duration(max(1, s.MinInterval)) * time.Minute)
+	if cycle.End.Before(expires) {
+		expires = cycle.End
+	}
+	// Android stores epoch milliseconds. Preserve the inclusive deadline point
+	// instead of truncating its one-nanosecond window to an already-expired plan.
+	if expires.After(next) && expires.UnixMilli() <= next.UnixMilli() {
+		expires = time.UnixMilli(next.UnixMilli() + 1)
+	}
+	explanation := step.Reason + fmt.Sprintf("；流程第%d步，仅安排下一条，至少间隔%d分钟，完成、暂停或截止后停止", min(stepIndex+1, len(strategy.Steps)), s.MinInterval)
+	ruleSnapshot, _ := json.Marshal(t.Rule)
+	_, err = a.db.Exec(`INSERT INTO reminder_plans(id,user_id,task_id,device_id,title,body,cycle_key,channel,scheduled_at,expires_at,source,reason,generation,rule_snapshot) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(task_id,scheduled_at,channel,generation) DO NOTHING`, randomID(), t.UserID, t.ID, device, t.Title, t.Description, cycle.Key, step.Channel, stamp(next), stamp(expires), strategy.Source, explanation, strategy.Generation, string(ruleSnapshot))
+	return err
+}
+
 func (a *App) cancelInvalidReminderPlans(user, device string, s reminderSettings) error {
 	if !s.Enabled || !s.Configured {
 		_, err := a.db.Exec(`UPDATE reminder_plans SET status='cancelled',error='提醒已停用' WHERE user_id=? AND status IN ('pending','scheduled') AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=?)`, user, stamp(a.now()))

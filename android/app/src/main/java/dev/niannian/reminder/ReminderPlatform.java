@@ -20,6 +20,8 @@ import android.os.Build;
 import android.provider.CalendarContract;
 import android.provider.Settings;
 import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TimeZone;
 
 /** Only Android system operations; no network calls, clocks kept by AlarmManager. */
@@ -122,9 +124,14 @@ final class ReminderPlatform {
     }
 
     static void cancel(Context context, String scope, JSONObject plan, boolean removeNotice) {
+        cancel(context, scope, plan, removeNotice, false);
+    }
+
+    static void cancel(Context context, String scope, JSONObject plan, boolean removeNotice, boolean keepCalendar) {
         PendingIntent pending = alarmIntent(context, scope, plan, PendingIntent.FLAG_NO_CREATE);
         if (pending != null) { context.getSystemService(AlarmManager.class).cancel(pending); pending.cancel(); }
         if (removeNotice) context.getSystemService(NotificationManager.class).cancel(scope + ":" + plan.optString("id"), 1);
+        if (keepCalendar) return;
         long eventId = plan.optLong("local_event_id", -1);
         if (eventId > 0 && calendar(context)) {
             try {
@@ -192,14 +199,32 @@ final class ReminderPlatform {
 
     static long calendarEvent(Context context, long calendarId, String scope, JSONObject plan) {
         if (!calendar(context)) throw new SecurityException("日历权限未开启");
-        String marker = "niannian://reminder/" + scope + "/" + plan.optString("id");
-        long eventId = -1;
-        try (Cursor cursor = context.getContentResolver().query(CalendarContract.Events.CONTENT_URI, new String[]{CalendarContract.Events._ID},
-                CalendarContract.Events.CALENDAR_ID + "=? AND " + CalendarContract.Events.CUSTOM_APP_URI + "=?",
-                new String[]{String.valueOf(calendarId), marker}, null)) {
-            if (cursor != null && cursor.moveToFirst()) eventId = cursor.getLong(0);
-        }
         long at = ReminderPolicy.timestamp(plan.optString("scheduled_at"));
+        String marker = ReminderPolicy.calendarMarker(scope, plan.optString("task_id"), at, TimeZone.getDefault().getID());
+        // The old app could die after insertion but before persisting local_event_id.
+        // Match its exact plan marker as well; never sweep other tasks or accounts.
+        String legacyMarker = "niannian://reminder/" + scope + "/" + plan.optString("id");
+        long eventId = -1;
+        List<Long> duplicates = new ArrayList<>();
+        try (Cursor cursor = context.getContentResolver().query(CalendarContract.Events.CONTENT_URI, new String[]{CalendarContract.Events._ID},
+                CalendarContract.Events.CALENDAR_ID + "=? AND " + CalendarContract.Events.CUSTOM_APP_PACKAGE + "=? AND (" + CalendarContract.Events.CUSTOM_APP_URI + "=? OR " + CalendarContract.Events.CUSTOM_APP_URI + "=?)",
+                new String[]{String.valueOf(calendarId), context.getPackageName(), marker, legacyMarker}, CalendarContract.Events._ID + " ASC")) {
+            if (cursor != null) while (cursor.moveToNext()) {
+                if (eventId <= 0) eventId = cursor.getLong(0);
+                else duplicates.add(cursor.getLong(0));
+            }
+        }
+        // Recover the old per-plan event only when reconciliation retained it for this task/day.
+        long retainedId = plan.optLong("local_event_id", -1);
+        if (retainedId > 0 && retainedId != eventId && ownsCalendarItem(context, retainedId, false, scope)) {
+            try (Cursor cursor = context.getContentResolver().query(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, retainedId),
+                    new String[]{CalendarContract.Events.CALENDAR_ID}, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst() && cursor.getLong(0) == calendarId) {
+                    if (eventId <= 0) eventId = retainedId;
+                    else duplicates.add(retainedId);
+                }
+            }
+        }
         ContentValues values = new ContentValues();
         values.put(CalendarContract.Events.CALENDAR_ID, calendarId);
         values.put(CalendarContract.Events.TITLE, plan.optString("title"));
@@ -223,6 +248,10 @@ final class ReminderPlatform {
         } catch (RuntimeException failure) {
             context.getContentResolver().delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, eventId), null, null);
             throw failure;
+        }
+        for (long duplicate : duplicates) {
+            try { context.getContentResolver().delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, duplicate), null, null); }
+            catch (RuntimeException unavailable) { ReminderCoordinator.calendarCleanup(context, duplicate, false); }
         }
         return eventId;
     }
