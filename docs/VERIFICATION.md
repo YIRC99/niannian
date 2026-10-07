@@ -1,6 +1,14 @@
 # 交付检查记录
 
-日期：2026-10-07。当前交付客户端与后端 2.0.0；未替换现有服务或手机安装版。以下 1.9.0 及更早内容为历史记录。
+日期：2026-10-07。当前客户端 2.0.1、后端 2.0.0；客户端已覆盖安装并验证启动。以下按交付批次记录，旧版本的安装与验证范围属于当时状态。
+
+## 2.0.1 Android 启动闪退修复
+
+- 真机 2.0.0 崩溃日志确认：已有会话启动时，`ReminderCoordinator.attach → schedulePeriodic → JobScheduler.schedule` 抛出 `SecurityException: android.permission.ACCESS_NETWORK_STATE required for jobs with a connectivity constraint`。Manifest 缺少网络状态权限，周期和即时同步都使用网络约束。
+- 补齐 `ACCESS_NETWORK_STATE`，客户端升级至 2.0.1 / versionCode 25；不改变后端或提醒策略。相邻的持久化任务、JobService 权限和声明经独立只读复核，无其他明确遗漏。
+- `:app:assembleRelease :app:lintRelease --no-daemon` 成功，APK v2 签名通过，打包权限与版本核对通过。产物 `release/niannian-2.0.1.apk`，31,815,805 字节，SHA256 `b47c239fc11f69e2f3c1b808a4d74a43dc7c1c0193526f61c882934c0dbe36d4`。
+- Android 16 真机 25098PN5AC 覆盖安装返回 Success，保留原数据。强制停止后冷启动返回 `Status: ok`、266 ms；20 秒后同一进程仍存活，主 Activity 在前台，启动后的该进程崩溃日志无异常。包管理器确认网络状态权限已授予，系统任务列表确认 15 分钟持久化联网任务已注册。
+- 启动证据位于 `work/startup-fix-2.0.1/`。本次验证覆盖安装、启动与任务注册，不代表通知、日历或闹钟完整交付验收。未启动项目服务，保留用户运行的后端进程。
 
 ## 2.0.0 AI 多渠道与自由花园
 
