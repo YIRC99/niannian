@@ -125,6 +125,9 @@ func (a *App) view(t task) task {
 		t.NextReminder = ""
 		if settings.Enabled {
 			_ = a.db.QueryRow(`SELECT scheduled_at FROM reminder_plans WHERE task_id=? AND device_id=? AND status IN ('pending','scheduled') AND expires_at>? AND NOT(channel='calendar' AND status='scheduled' AND scheduled_at<=?) AND NOT EXISTS(SELECT 1 FROM completions c WHERE c.task_id=reminder_plans.task_id AND c.cycle_key=reminder_plans.cycle_key) ORDER BY scheduled_at LIMIT 1`, t.ID, device, stamp(now), stamp(now)).Scan(&t.NextReminder)
+			if t.NextReminder == "" {
+				t.NextReminder = a.nextLocalFlowReminder(t, device)
+			}
 		}
 	}
 	if t.ReminderStrategy != nil {

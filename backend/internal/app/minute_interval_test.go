@@ -197,7 +197,7 @@ func TestMinuteCalendarBoundsDenseProjection(t *testing.T) {
 	if code != 200 || out["truncated"] != false {
 		t.Fatalf("one dense task must not truncate daily calendar: %d truncated=%v", code, out["truncated"])
 	}
-	if entries := out["entries"].([]any); len(entries) != 31 {
-		t.Fatalf("expected 31 daily entries: %d", len(entries))
+	if entries := out["entries"].([]any); len(entries) != 1 {
+		t.Fatalf("expected one pending task: %d", len(entries))
 	}
 }

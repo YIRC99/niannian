@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS reminder_plans(id TEXT PRIMARY KEY,user_id TEXT NOT N
 CREATE INDEX IF NOT EXISTS reminder_plan_user ON reminder_plans(user_id,device_id,status,scheduled_at);
 CREATE TABLE IF NOT EXISTS reminder_decisions(task_id TEXT PRIMARY KEY REFERENCES tasks(id),generation TEXT NOT NULL,channel TEXT NOT NULL,source TEXT NOT NULL,reason TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS reminder_strategies(task_id TEXT PRIMARY KEY REFERENCES tasks(id),generation TEXT NOT NULL,strategy TEXT NOT NULL);
-`
+` + reminderLocalFlowSchema
 
 type reminderSettings struct {
 	Revision          string   `json:"-"`
@@ -39,6 +39,7 @@ type reminderCapabilities struct {
 	Calendar     bool `json:"calendar"`
 	Alarm        bool `json:"alarm"`
 	ExactAlarm   bool `json:"exact_alarm"`
+	LocalFlowV1  bool `json:"local_flow_v1"`
 }
 type reminderResult struct {
 	PlanID string `json:"plan_id"`
@@ -52,6 +53,8 @@ type reminderSyncInput struct {
 	Results      []reminderResult     `json:"results"`
 	Claim        bool                 `json:"claim"`
 	Detach       bool                 `json:"detach"`
+	FlowResults  []localFlowResult    `json:"flow_results"`
+	ClosedFlows  []string             `json:"closed_flow_ids"`
 }
 type reminderPlan struct {
 	ID          string `json:"id"`
@@ -174,7 +177,7 @@ func (a *App) syncReminders(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in) {
 		return
 	}
-	if !validReminderDevice(in.DeviceID) || len(in.Results) > 2000 {
+	if !validReminderDevice(in.DeviceID) || len(in.Results) > 2000 || len(in.FlowResults) > 256 || len(in.ClosedFlows) > 256 {
 		writeError(w, 400, "设备标识或执行反馈不正确")
 		return
 	}
@@ -227,6 +230,11 @@ func (a *App) syncReminders(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	flowAcks := []localFlowAck{}
+	closedAcks := []string{}
+	if err == nil {
+		flowAcks, closedAcks, err = a.receiveLocalFlowResults(user, in.DeviceID, in.FlowResults, in.ClosedFlows, in.Detach)
+	}
 	a.mu.Unlock()
 	if err != nil {
 		dbFailure(w)
@@ -246,6 +254,11 @@ func (a *App) syncReminders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err = a.cancelInvalidReminderPlans(user, active, s); err != nil {
+		dbFailure(w)
+		return
+	}
+	localFlows, revokedFlows, err := a.localFlowsForSync(user, in.DeviceID, in.Capabilities.LocalFlowV1 && active == in.DeviceID && !in.Detach)
+	if err != nil {
 		dbFailure(w)
 		return
 	}
@@ -293,7 +306,9 @@ func (a *App) syncReminders(w http.ResponseWriter, r *http.Request) {
 		agentStatus = "no_authorized_channel"
 	}
 	agentMessage := "每件事只安排下一条；收到执行反馈或超时且仍未完成后，按已保存流程继续"
-	if len(plans) == 0 && agentStatus == "ready" {
+	if len(localFlows) > 0 {
+		agentMessage = "已把有限的通知和闹钟步骤交给手机系统，未完成时可离线逐步跟进；到期或步骤用完后联网续领"
+	} else if len(plans) == 0 && agentStatus == "ready" {
 		agentMessage = "当前没有可执行的手机提醒；已遵守完成状态、静默时段、最短间隔和截止时间"
 	}
 	if agentStatus == "no_authorized_channel" {
@@ -302,7 +317,8 @@ func (a *App) syncReminders(w http.ResponseWriter, r *http.Request) {
 	if agentStatus == "legacy_email" {
 		agentMessage = "尚未启用手机提醒，原邮件提醒继续执行"
 	}
-	writeJSON(w, 200, map[string]any{"plans": plans, "cancel_ids": cancelIDs, "settings": s, "active_device": active == in.DeviceID && !in.Detach, "agent_status": agentStatus, "agent_message": agentMessage, "sync_after_seconds": 900, "horizon_hours": 24, "truncated": truncated})
+	writeJSON(w, 200, map[string]any{"plans": plans, "cancel_ids": cancelIDs, "settings": s, "active_device": active == in.DeviceID && !in.Detach, "agent_status": agentStatus, "agent_message": agentMessage, "sync_after_seconds": 900, "horizon_hours": 24, "truncated": truncated,
+		"local_flow_version": 1, "local_flows": localFlows, "revoked_flow_ids": revokedFlows, "flow_result_acks": flowAcks, "closed_flow_acks": closedAcks})
 }
 func availableReminderChannels(s reminderSettings, c reminderCapabilities) []string {
 	out := []string{}
@@ -462,7 +478,7 @@ func (a *App) prepareTaskReminderStrategy(ctx context.Context, user, taskID stri
 	return a.buildTaskReminderPlan(ctx, t, s, device, availableReminderChannels(s, caps), &budget)
 }
 func (a *App) latestReminderResult(taskID string) (reminderPlan, error) {
-	p, err := scanReminderPlan(a.db.QueryRow(`SELECT `+reminderPlanColumns+` FROM reminder_plans WHERE task_id=? AND (status IN ('delivered','accepted','failed','unconfirmed') OR (status='scheduled' AND channel='calendar' AND expires_at<=?)) ORDER BY scheduled_at DESC,reported_at DESC,id DESC LIMIT 1`, taskID, stamp(a.now())))
+	p, err := scanReminderPlan(a.db.QueryRow(`SELECT `+reminderPlanColumns+` FROM reminder_plans WHERE task_id=? AND (status IN ('delivered','accepted','failed','unconfirmed') OR `+receivedLocalFlowCancellationSQL+` OR (status='scheduled' AND channel='calendar' AND expires_at<=?)) ORDER BY scheduled_at DESC,reported_at DESC,id DESC LIMIT 1`, taskID, stamp(a.now())))
 	if err == sql.ErrNoRows {
 		return reminderPlan{}, nil
 	}
@@ -478,6 +494,9 @@ func (a *App) expireReminderPlans(user string) error {
 func (a *App) buildReminderPlans(ctx context.Context, user, device string, caps reminderCapabilities) error {
 	a.mu.Lock()
 	s, active, err := a.reminderSettingsFor(user)
+	if err == nil {
+		err = a.reconcileLocalFlows(user)
+	}
 	if err == nil {
 		err = a.expireReminderPlans(user)
 	}
@@ -568,6 +587,9 @@ func (a *App) buildTaskReminderPlan(ctx context.Context, t task, s reminderSetti
 	freshChannels := availableReminderChannels(fresh, caps)
 	if latest.Paused || active != device || !fresh.Enabled || reminderGeneration(latest, fresh, device, freshChannels) != generation {
 		return nil
+	}
+	if reserved, e := a.localFlowReserved(t.ID); e != nil || reserved {
+		return e
 	}
 	if existing, e := a.storedReminderStrategy(t.ID); e == nil && existing.Generation == generation {
 		strategy = existing
@@ -682,7 +704,7 @@ func (a *App) saveNextReminder(t task, s reminderSettings, device string, strate
 				return err
 			}
 			if !stopForRule(t.Rule, complete, sent) {
-				if err = a.db.QueryRow(`SELECT COUNT(*) FROM reminder_plans WHERE task_id=? AND generation=? AND cycle_key=? AND (status IN ('delivered','accepted','failed','unconfirmed') OR (status='scheduled' AND channel='calendar' AND expires_at<=?))`, t.ID, strategy.Generation, priorCycle.Key, stamp(now)).Scan(&stepIndex); err != nil {
+				if err = a.db.QueryRow(`SELECT COUNT(*) FROM reminder_plans WHERE task_id=? AND generation=? AND cycle_key=? AND (status IN ('delivered','accepted','failed','unconfirmed') OR `+receivedLocalFlowCancellationSQL+` OR (status='scheduled' AND channel='calendar' AND expires_at<=?))`, t.ID, strategy.Generation, priorCycle.Key, stamp(now)).Scan(&stepIndex); err != nil {
 					return err
 				}
 				if stepIndex == 0 {
@@ -865,6 +887,13 @@ func (a *App) tickReminderAgent(ctx context.Context) error {
 		}
 		if p.Status != "pending" || !s.Enabled || !containsReminderChannel(s.Channels, "email") {
 			a.mu.Unlock()
+			continue
+		}
+		if reserved, e := a.localFlowReserved(p.TaskID); e != nil || reserved {
+			a.mu.Unlock()
+			if e != nil {
+				return e
+			}
 			continue
 		}
 		complete, sent, e := a.cycleCounts(p.TaskID, p.CycleKey)

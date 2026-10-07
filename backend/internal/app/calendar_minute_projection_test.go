@@ -14,7 +14,7 @@ func TestMinuteCalendarDailyAggregationKeepsOtherTasks(t *testing.T) {
 	*now = now.Add(time.Second)
 	createMinuteTask(t, a, token, now.Add(15*time.Minute), 1)
 	code, out := request(t, a, "GET", "/api/v1/calendar?month=2026-10&timezone=Asia%2FShanghai", token, nil)
-	if code != 200 || out["truncated"] != false || len(out["entries"].([]any)) != 62 {
+	if code != 200 || out["truncated"] != false || len(out["entries"].([]any)) != 32 {
 		t.Fatalf("dense calendar: %d truncated=%v", code, out["truncated"])
 	}
 	want := stamp(time.Date(2026, 10, 1, 12, 0, 0, 0, now.Location()))

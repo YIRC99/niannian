@@ -34,7 +34,8 @@ final class ReminderPlatform {
         NotificationChannel normal = new NotificationChannel(NOTIFICATION, "事项提醒", NotificationManager.IMPORTANCE_DEFAULT);
         normal.setDescription("念念安排的事项通知，遵守系统勿扰和通知设置");
         NotificationChannel alarm = new NotificationChannel(ALARM, "闹钟提醒", NotificationManager.IMPORTANCE_HIGH);
-        alarm.setDescription("用户允许的定时闹钟提醒；仅响一次，不循环轰炸");
+        alarm.setDescription("到点响铃，最长一分钟；可随时停止，不会自动完成事项");
+        alarm.enableVibration(true);
         alarm.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM), new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
         manager.createNotificationChannel(normal);
@@ -128,6 +129,7 @@ final class ReminderPlatform {
     }
 
     static void cancel(Context context, String scope, JSONObject plan, boolean removeNotice, boolean keepCalendar) {
+        if (removeNotice) ReminderAlarmService.stopForPlan(context, scope, plan.optString("id"));
         PendingIntent pending = alarmIntent(context, scope, plan, PendingIntent.FLAG_NO_CREATE);
         if (pending != null) { context.getSystemService(AlarmManager.class).cancel(pending); pending.cancel(); }
         if (removeNotice) context.getSystemService(NotificationManager.class).cancel(scope + ":" + plan.optString("id"), 1);
@@ -158,6 +160,10 @@ final class ReminderPlatform {
         boolean alarm = "alarm".equals(plan.optString("channel"));
         String channel = alarm ? ALARM : NOTIFICATION;
         if (!notifications(context, channel)) throw new SecurityException("系统通知已关闭");
+        if (alarm) {
+            ReminderAlarmService.start(context, scope, plan);
+            return;
+        }
         Notification notification = new Notification.Builder(context, channel)
                 .setSmallIcon(R.drawable.ic_reminder).setContentTitle(plan.optString("title", "念念提醒"))
                 .setContentText(plan.optString("body", "该处理这件小事了"))

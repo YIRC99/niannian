@@ -56,7 +56,7 @@ final class ReminderSettings {
                     access[i].setOnClickListener(view -> { ReminderPlatform.request(activity, keys[index]); });
                 }
             }
-            detail.addView(label("通知遵守系统勿扰；闹钟使用本应用的系统定时提醒，只响一次。日历只写入念念创建的本地日历，是否弹出由日历应用决定。", 12, false));
+            detail.addView(label("闹钟提前交给系统定时，到点持续响铃，手动停止或 60 秒后自动停止。日历只写入念念的本地日历，是否弹出由日历应用决定。", 12, false));
             start = button("静默开始 22:00"); end = button("静默结束 08:00"); interval = button("最短间隔 5 分钟");
             detail.addView(start); detail.addView(end); detail.addView(interval);
             start.setOnClickListener(view -> pickTime(true)); end.setOnClickListener(view -> pickTime(false));
@@ -65,12 +65,15 @@ final class ReminderSettings {
                 new android.app.AlertDialog.Builder(activity).setTitle("同一事项至少间隔多久")
                         .setItems(labels, (dialog, which) -> { minutes = values[which]; dirty = true; refreshText(); }).show();
             });
-            detail.addView(label("静默起止相同表示不设静默。同一事项每天最多 32 次，本机每天最多 128 次。每次只安排下一条，提醒后联网继续跟进；日历同一事项每天一项。断网时只能执行已同步的提醒，系统省电或强行停止可能延迟。", 12, false));
+            detail.addView(label("静默起止相同表示不设静默。同一事项每天最多 32 次，本机每天最多 128 次。已确认的通知和闹钟流程会提前交给手机，断网也能按已保存的步骤跟进；邮件及后续新流程需要联网。完成或暂停会撤销本机后续提醒，日历同一事项每天一项。强行停止应用会清除系统定时。", 12, false));
             status = label("", 12, false); detail.addView(status);
             save = button("保存渠道安排"); save.setTextColor(0xffffffff); save.setBackgroundTintList(ColorStateList.valueOf(GREEN)); detail.addView(save);
             save.setOnClickListener(view -> save());
             Button refresh = button("重新同步"); detail.addView(refresh);
             refresh.setOnClickListener(view -> { ReminderCoordinator.sync(activity, session); status.setText("正在同步…"); refresh(); });
+            Button test=button("10 秒后测试闹钟"),cancelTest=button("取消测试闹钟");detail.addView(test);detail.addView(cancelTest);
+            test.setOnClickListener(view->{try{ReminderCoordinator.testAlarm(activity,session);status.setText("测试闹钟已交给系统，10 秒后响铃；可返回桌面等待。");}catch(Exception failure){status.setText(failure.getMessage());}});
+            cancelTest.setOnClickListener(view->{ReminderCoordinator.cancelTestAlarm(activity);status.setText("测试闹钟已取消，不会到点响铃。");});
             listener = (prefs, key) -> {
                 if ("settings".equals(key) || "configured".equals(key) || "status".equals(key) || "calendar_cleanup".equals(key)) activity.runOnUiThread(this::refresh);
             };

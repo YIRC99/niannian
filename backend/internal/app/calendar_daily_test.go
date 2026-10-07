@@ -21,8 +21,8 @@ func TestCalendarDailyDenseMinuteProjection(t *testing.T) {
 	*now = time.Date(2026, 10, 1, 0, 0, 0, 0, now.Location())
 	id := createMinuteTask(t, a, token, now.Add(15*time.Minute), 1)
 	entries := calendarEntries(t, a, token, "2026-10", "Asia/Shanghai")
-	if len(entries) != 31 {
-		t.Fatalf("one minute task should occupy 31 daily entries, got %d", len(entries))
+	if len(entries) != 1 {
+		t.Fatalf("one minute task should occupy one pending entry, got %d", len(entries))
 	}
 	for i, entry := range entries {
 		if entry["task_id"] != id || entry["local_date"] != fmt.Sprintf("2026-10-%02d", i+1) || entry["type"] != "planned" || entry["reminder_count"] != float64(0) {
@@ -90,9 +90,6 @@ func TestCalendarDailyRawRowsDoNotConsumeDisplayLimit(t *testing.T) {
 	a, m, now := setup(t)
 	token := login(t, a, m, "one@example.com")
 	id := createMinuteTask(t, a, token, now.Add(15*time.Minute), 1)
-	if _, err := a.db.Exec(`UPDATE tasks SET paused=1 WHERE id=?`, id); err != nil {
-		t.Fatal(err)
-	}
 	tx, err := a.db.Begin()
 	if err != nil {
 		t.Fatal(err)
@@ -112,7 +109,7 @@ func TestCalendarDailyRawRowsDoNotConsumeDisplayLimit(t *testing.T) {
 	}
 }
 
-func TestCalendarDailyCompletionDoesNotCompleteEarlierDays(t *testing.T) {
+func TestCalendarDailyCompletionDoesNotInventEarlierDays(t *testing.T) {
 	a, m, now := setup(t)
 	token := login(t, a, m, "one@example.com")
 	id := createMinuteTask(t, a, token, now.Add(15*time.Minute), 1)
@@ -121,17 +118,12 @@ func TestCalendarDailyCompletionDoesNotCompleteEarlierDays(t *testing.T) {
 		t.Fatalf("complete: %d %+v", code, out)
 	}
 	entries := calendarEntries(t, a, token, "2026-10", "Asia/Shanghai")
-	if len(entries) != 3 || entries[2]["type"] != "completion" || entries[2]["local_date"] != "2026-10-05" {
-		t.Fatalf("completion should keep earlier daily plans: %+v", entries)
-	}
-	for _, entry := range entries[:2] {
-		if entry["state"] == "completed" || entry["type"] != "planned" || entry["reminder_count"] != float64(0) {
-			t.Fatalf("later completion rewrote earlier history: %+v", entry)
-		}
+	if len(entries) != 1 || entries[0]["type"] != "completion" || entries[0]["local_date"] != "2026-10-05" {
+		t.Fatalf("completion must not invent earlier daily plans: %+v", entries)
 	}
 }
 
-func TestCalendarDailyAgentShowsFutureDatesWithoutCreatingPlans(t *testing.T) {
+func TestCalendarDailyAgentKeepsOneBoundedTaskWithoutCreatingPlans(t *testing.T) {
 	a, m, now := setup(t)
 	token := login(t, a, m, "one@example.com")
 	*now = time.Date(2026, 10, 1, 9, 0, 0, 0, now.Location())
@@ -148,8 +140,8 @@ func TestCalendarDailyAgentShowsFutureDatesWithoutCreatingPlans(t *testing.T) {
 		t.Fatal(err)
 	}
 	entries := calendarEntries(t, a, token, "2026-10", "Asia/Shanghai")
-	if len(entries) != 4 {
-		t.Fatalf("four-day task should show every daily overview, got %d", len(entries))
+	if len(entries) != 1 {
+		t.Fatalf("one task with a four-day deadline must remain one entry, got %d", len(entries))
 	}
 	if entries[0]["id"] != plans[0].(map[string]any)["id"] {
 		t.Fatalf("real next plan must represent the first day: %+v", entries[0])

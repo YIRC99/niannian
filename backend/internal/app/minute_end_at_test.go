@@ -118,6 +118,11 @@ func TestMinuteEndAtCalendarExcludesPlansAfterPreciseDeadline(t *testing.T) {
 	end := first.Add(10 * time.Minute)
 	createMinuteWindow(t, a, token, first, end, 5)
 	entries := calendarEntries(t, a, token, "2026-11", "Asia/Shanghai")
+	if len(entries) != 0 {
+		t.Fatalf("October task must not create a second pending task in November: %+v", entries)
+	}
+	*now = first.Add(5 * time.Minute)
+	entries = calendarEntries(t, a, token, "2026-11", "Asia/Shanghai")
 	if len(entries) != 1 || entries[0]["at"] != stamp(first.Add(5*time.Minute)) || entries[0]["cycle_end"] != stamp(end.Add(time.Nanosecond)) {
 		t.Fatalf("calendar escaped precise window: %+v", entries)
 	}

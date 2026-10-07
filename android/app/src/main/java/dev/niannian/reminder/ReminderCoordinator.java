@@ -25,6 +25,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /** Account-scoped durable execution. No running service or Activity is retained. */
 public final class ReminderCoordinator {
@@ -40,6 +41,95 @@ public final class ReminderCoordinator {
     private static JSONObject object(String raw) { try { return new JSONObject(raw); } catch (Exception ignored) { return new JSONObject(); } }
     private static JSONArray array(String raw) { try { return new JSONArray(raw); } catch (Exception ignored) { return new JSONArray(); } }
     private static void put(JSONObject target, String name, Object value) { try { target.put(name, value); } catch (Exception ignored) { } }
+
+    /** A short ringing grant outlives delivery reconciliation, never task cancellation. */
+    static boolean isCurrentAlarm(Context context, String expectedScope, String id) {
+        synchronized (LOCK) {
+            JSONObject ringing=object(prefs(context).getString("ringing", "{}"));
+            return expectedScope.equals(prefs(context).getString("scope", ""))
+                    && expectedScope.equals(scope(new Session(context))) && id.equals(ringing.optString("id"))
+                    && expectedScope.equals(ringing.optString("scope")) && ringing.optLong("until")>System.currentTimeMillis()
+                    && allowed(context, object("{\"channel\":\"alarm\"}"), settings(context));
+        }
+    }
+    static void alarmStopped(Context context, String expectedScope, String id) {
+        synchronized (LOCK) {
+            JSONObject ringing=object(prefs(context).getString("ringing", "{}"));
+            if(expectedScope.equals(ringing.optString("scope"))&&id.equals(ringing.optString("id")))prefs(context).edit().remove("ringing").commit();
+        }
+    }
+    static void alarmDismissed(Context context,String expectedScope,String id){
+        synchronized(LOCK){
+            JSONObject ringing=object(prefs(context).getString("ringing","{}"));
+            if(expectedScope.equals(prefs(context).getString("scope",""))&&expectedScope.equals(ringing.optString("scope"))
+                    &&id.equals(ringing.optString("id"))&&!ringing.optString("flow_id").isEmpty()){
+                JSONObject receipt=flowReceipts(context).optJSONObject(id);
+                if(receipt!=null&&"executing".equals(receipt.optString("status"))){
+                    flowFeedback(context,ringing.optString("flow_id"),id,ringing.optString("task_id"),"cancelled","用户停止本次响铃，事项仍待完成",System.currentTimeMillis());
+                    finishConsumedFlows(context);enqueueSync(context);
+                }
+            }
+            alarmStopped(context,expectedScope,id);
+        }
+    }
+    static void alarmPlaybackStarted(Context context,String expectedScope,String id){
+        synchronized(LOCK){
+            if(!isCurrentAlarm(context,expectedScope,id))return;
+            if(id.equals(object(prefs(context).getString("alarm_test","{}")).optString("id")))return;
+            JSONObject ringing=object(prefs(context).getString("ringing","{}"));
+            if(!ringing.optString("flow_id").isEmpty()){
+                flowFeedback(context,ringing.optString("flow_id"),id,ringing.optString("task_id"),"delivered","",System.currentTimeMillis());
+                finishConsumedFlows(context);enqueueSync(context);return;
+            }
+            feedback(context,id,"delivered","");enqueueSync(context);
+        }
+    }
+    static void alarmPlaybackFailed(Context context,String expectedScope,String id){
+        synchronized(LOCK){
+            if(!isCurrentAlarm(context,expectedScope,id))return;
+            if(!id.equals(object(prefs(context).getString("alarm_test","{}")).optString("id"))){
+                JSONObject ringing=object(prefs(context).getString("ringing","{}"));
+                if(!ringing.optString("flow_id").isEmpty()){
+                    flowFeedback(context,ringing.optString("flow_id"),id,ringing.optString("task_id"),"failed","闹钟未能开始播放，请检查闹钟声音设置",System.currentTimeMillis());finishConsumedFlows(context);
+                }else feedback(context,id,"failed","闹钟未能开始播放，请检查闹钟声音设置");
+                enqueueSync(context);
+            }
+            alarmStopped(context,expectedScope,id);
+        }
+    }
+    private static void grantAlarm(Context context,String active,JSONObject plan){
+        JSONObject ringing=new JSONObject();put(ringing,"scope",active);put(ringing,"id",plan.optString("id"));put(ringing,"task_id",plan.optString("task_id"));put(ringing,"until",System.currentTimeMillis()+65000);
+        put(ringing,"flow_id",plan.optString("_flow_id"));
+        if(!prefs(context).edit().putString("ringing",ringing.toString()).commit())throw new IllegalStateException("无法保存响铃状态");
+    }
+    private static void stopRinging(Context context,String active,String taskId){
+        JSONObject ringing=object(prefs(context).getString("ringing", "{}"));
+        if(active.equals(ringing.optString("scope"))&&(taskId==null||taskId.equals(ringing.optString("task_id")))){
+            prefs(context).edit().remove("ringing").commit();ReminderAlarmService.stopForPlan(context,active,ringing.optString("id"));
+        }
+    }
+    static void testAlarm(Context context,Session session)throws Exception{
+        synchronized(LOCK){
+            String active=scope(session);
+            if(active.isEmpty()||!active.equals(prefs(context).getString("scope","")))throw new IllegalStateException("请先登录");
+            JSONObject plan=new JSONObject().put("channel","alarm");
+            if(!allowed(context,plan,settings(context)))throw new IllegalStateException("请先保存闹钟开关，并允许精确闹钟和通知权限");
+            cancelTestAlarm(context);
+            long at=System.currentTimeMillis()+10000;
+            plan.put("id","test-"+UUID.randomUUID()).put("task_id","alarm-test").put("title","念念闹钟测试").put("_diagnostic",true)
+                    .put("body","这是一次手机响铃测试，不会创建任务或完成记录。")
+                    .put("scheduled_at",Instant.ofEpochMilli(at).toString()).put("expires_at",Instant.ofEpochMilli(at+120000).toString());
+            if(!prefs(context).edit().putString("alarm_test",plan.toString()).commit())throw new IllegalStateException("测试未保存，请重试");
+            try{ReminderPlatform.schedule(context,active,plan);}catch(Exception failure){prefs(context).edit().remove("alarm_test").commit();throw failure;}
+        }
+    }
+    static void cancelTestAlarm(Context context){
+        synchronized(LOCK){
+            JSONObject plan=object(prefs(context).getString("alarm_test","{}"));String active=prefs(context).getString("scope","");
+            if(!plan.optString("id").isEmpty())ReminderPlatform.cancel(context,active,plan);
+            stopRinging(context,active,"alarm-test");prefs(context).edit().remove("alarm_test").commit();
+        }
+    }
 
     static String scope(Session session) {
         synchronized (session) { return session.token.isEmpty() ? "" : ReminderPolicy.scope(session.base, session.email); }
@@ -76,12 +166,31 @@ public final class ReminderCoordinator {
         submit(context, snapshot(context, session), false, null);
     }
 
+    /** Call from the task-write worker after taskChanged; never repeats the task mutation. */
+    public static boolean awaitTaskSync(Context source, String base, String token) {
+        Context context=source.getApplicationContext();
+        Session session=new Session(context);
+        if(!session.base.equals(base)||!session.token.equals(token))return false;
+        Snapshot expected=snapshot(context,session);
+        if(expected==null)return false;
+        if(!configured(context))return true;
+        boolean phone=false;
+        for(String channel:selectedChannels(settings(context)))if(!"email".equals(channel))phone=true;
+        if(!phone||!settings(context).optBoolean("enabled",false))return true;
+        try{return WORK.submit(()->{synchronized(LOCK){return current(context,expected)
+                &&prefs(context).getLong("last_sync_generation",-1)==expected.generation
+                &&prefs(context).getBoolean("last_schedule_ready",false);}}).get(15,TimeUnit.SECONDS);}
+        catch(Exception pending){return false;}
+    }
+
     /** Call after a successful task write; cancellation happens before the next network request. */
     public static void taskChanged(Context source, Session session, String taskId) {
         Context context = source.getApplicationContext();
         synchronized (LOCK) {
             if (!scope(session).equals(prefs(context).getString("scope", ""))) return;
             advance(context);
+            stopRinging(context,scope(session),taskId);
+            cancelFlows(context,taskId,true);
             JSONArray plans = plans(context), kept = new JSONArray();
             String active = prefs(context).getString("scope", "");
             for (int i = 0; i < plans.length(); i++) {
@@ -118,8 +227,12 @@ public final class ReminderCoordinator {
         Snapshot old;
         synchronized (LOCK) { old = snapshot(context, new Session(context)); clearLocked(context); }
         if (old != null) WORK.execute(() -> {
-            try { JSONObject body = new JSONObject().put("device_id", old.device).put("detach", true);
-                old.api.json("POST", "/api/v1/reminders/sync", body);
+            try { JSONArray flowSent,closedSent;
+                synchronized(LOCK){flowSent=firstItems(flowOutbox(context,old.scope),256);closedSent=firstItems(closedFlows(context,old.scope),256);}
+                JSONObject body = new JSONObject().put("device_id", old.device).put("detach", true)
+                        .put("flow_results",flowSent).put("closed_flow_ids",closedSent);
+                JSONObject response=sendReminderSync(old.api,body);
+                synchronized(LOCK){acknowledgeFlows(context,old.scope,flowSent,response);}
             } catch (Exception ignored) { /* Local cancellation is immediate even while offline. */ }
         });
     }
@@ -131,6 +244,8 @@ public final class ReminderCoordinator {
         SharedPreferences preferences = prefs(context);
         advance(context);
         String active = preferences.getString("scope", "");
+        cancelTestAlarm(context);stopRinging(context,active,null);
+        cancelFlows(context,null,true);
         JSONArray plans = plans(context);
         for (int i = 0; i < plans.length(); i++) {
             JSONObject plan = plans.optJSONObject(i); if (plan != null) ReminderPlatform.cancel(context, active, plan);
@@ -142,6 +257,7 @@ public final class ReminderCoordinator {
         context.getSystemService(JobScheduler.class).cancel(IMMEDIATE_JOB);
         preferences.edit().remove("scope").remove("plans").remove("feedback").remove("delivered")
                 .remove("settings").remove("configured").remove("calendar").remove("last_sync").remove("status").remove("capabilities").commit();
+        preferences.edit().remove("local_flows").remove("last_sync_generation").remove("last_schedule_ready").commit();
         cleanupCalendar(context);
     }
 
@@ -201,6 +317,7 @@ public final class ReminderCoordinator {
             // Settings may disable a channel or change quiet hours; stop old execution immediately.
             JSONArray plans = plans(context);
             String active = prefs(context).getString("scope", "");
+            stopRinging(context,active,null);cancelTestAlarm(context);cancelFlows(context,null,true);
             for (int i = 0; i < plans.length(); i++) { JSONObject plan = plans.optJSONObject(i); if (plan != null) ReminderPlatform.cancel(context, active, plan); }
             prefs(context).edit().putString("plans", "[]").commit();
             snapshot = snapshot(context, session);
@@ -263,19 +380,22 @@ public final class ReminderCoordinator {
 
     private static boolean syncNow(Context context, Snapshot snapshot, boolean claim) {
         try {
-            JSONArray sent;
+            JSONArray sent,flowSent,closedSent;
             synchronized (LOCK) {
                 if (!current(context, snapshot)) return false;
                 ReminderPlatform.channels(context);
                 cleanupCalendar(context);
                 sent = array(prefs(context).getString("feedback", "[]"));
+                flowSent=firstItems(flowOutbox(context,snapshot.scope),256);closedSent=firstItems(closedFlows(context,snapshot.scope),256);
             }
-            JSONObject request = new JSONObject().put("device_id", snapshot.device).put("capabilities", ReminderPlatform.capabilities(context))
-                    .put("timezone", TimeZone.getDefault().getID()).put("claim", claim).put("results", sent);
-            JSONObject response = snapshot.api.json("POST", "/api/v1/reminders/sync", request);
+            JSONObject request = new JSONObject().put("device_id", snapshot.device).put("capabilities", ReminderPlatform.capabilities(context).put("local_flow_v1",true))
+                    .put("timezone", TimeZone.getDefault().getID()).put("claim", claim).put("results", sent)
+                    .put("flow_results",flowSent).put("closed_flow_ids",closedSent);
+            JSONObject response = sendReminderSync(snapshot.api,request);
             synchronized (LOCK) {
                 if (!current(context, snapshot)) return false;
                 acknowledge(context, sent);
+                acknowledgeFlows(context,snapshot.scope,flowSent,response);
                 JSONObject settings = response.optJSONObject("settings");
                 if (settings != null) prefs(context).edit().putString("settings", settings.toString()).commit();
                 boolean configured = response.optBoolean("configured", settings != null && settings.optBoolean("configured", false));
@@ -284,20 +404,30 @@ public final class ReminderCoordinator {
                 boolean changed = !capabilities.equals(prefs(context).getString("capabilities", ""));
                 // Android removes exact alarms when access is revoked and all alarms on force-stop.
                 // Reopening or changing permissions must rebuild real OS alarms, not trust local flags.
-                reconcile(context, response.optJSONArray("plans"), claim || changed);
+                boolean flowVersion=response.optInt("local_flow_version",0)==1;
+                JSONArray incomingFlows=flowVersion?response.optJSONArray("local_flows"):new JSONArray();
+                boolean ready=reconcile(context, withoutFlowPlans(response.optJSONArray("plans"),incomingFlows), claim || changed);
+                if(flowVersion)ready=reconcileFlows(context,incomingFlows,response.optJSONArray("revoked_flow_ids"),claim||changed)&&ready;
+                else cancelFlows(context,null,true);
+                if(configured&&settings(context).optBoolean("enabled",false)
+                        &&(!response.optBoolean("active_device",true)||"no_authorized_channel".equals(response.optString("agent_status"))))ready=false;
                 prefs(context).edit().putString("capabilities", capabilities).commit();
                 String status = !configured ? "尚未开启渠道安排，原邮件提醒保持不变"
                         : !response.optBoolean("active_device", true) ? "提醒由另一台手机接管，本机已停止"
                         : !settings(context).optBoolean("enabled", false) ? "渠道安排已暂停"
                         : response.optString("agent_status").equals("no_authorized_channel") ? "没有已授权的可用方式，请先开启对应权限"
-                        : plans(context).length()==0 ? response.optString("agent_message","当前没有需要执行的手机提醒")
-                        : "已同步 "+plans(context).length()+" 条手机安排，系统省电可能延迟执行";
+                        : plans(context).length()==0&&localFlows(context).length()==0 ? response.optString("agent_message","当前没有需要执行的手机提醒")
+                        : localFlows(context).length()>0 ? "手机提醒已交给系统；已保存的通知和闹钟流程可离线执行"
+                        : flowVersion ? "当前手机提醒已交给系统，后续步骤按流程联网补充"
+                        : "当前提醒已交给系统；升级后端后，可提前保存后续通知和闹钟步骤";
+                if(!ready)status="事项已保存，部分手机提醒尚未安排成功，请检查权限后联网重试";
                 if(configured&&response.optBoolean("active_device",true)&&settings(context).optBoolean("enabled",false)){
                     JSONObject first=plans(context).optJSONObject(0);
                     if(first!=null&&!first.optString("reason").isEmpty())status+="\n"+("ai".equals(first.optString("source"))?"AI 的安排：":"按规则执行：")+first.optString("reason");
                     if(response.optBoolean("truncated"))status+="\n安排较多，目前只同步最近一批，后续联网继续补充。";
                 }
-                prefs(context).edit().putLong("last_sync", System.currentTimeMillis()).putString("status", status).commit();
+                prefs(context).edit().putLong("last_sync", System.currentTimeMillis()).putString("status", status)
+                        .putLong("last_sync_generation",snapshot.generation).putBoolean("last_schedule_ready",ready).commit();
             }
             return true;
         } catch (Exception failure) {
@@ -314,6 +444,16 @@ public final class ReminderCoordinator {
     }
 
     private static void setStatus(Context context, String message) { prefs(context).edit().putString("status", message).commit(); }
+    private static JSONObject sendReminderSync(Api api,JSONObject request)throws Exception{
+        try{return api.json("POST","/api/v1/reminders/sync",request);}
+        catch(Api.Failure failure){
+            if(failure.status!=400||!"请求内容格式不正确".equals(failure.getMessage()))throw failure;
+            // 2.2 and older reject unknown JSON fields before handling the request.
+            JSONObject legacy=new JSONObject(request.toString());legacy.remove("flow_results");legacy.remove("closed_flow_ids");
+            JSONObject capabilities=legacy.optJSONObject("capabilities");if(capabilities!=null)capabilities.remove("local_flow_v1");
+            return api.json("POST","/api/v1/reminders/sync",legacy);
+        }
+    }
     private static String friendly(Exception failure) { return failure instanceof Api.Failure ? failure.getMessage() : "无法保存，请检查网络后重试"; }
     private static JSONArray plans(Context context) { return array(prefs(context).getString("plans", "[]")); }
 
@@ -327,7 +467,8 @@ public final class ReminderCoordinator {
         return found && ReminderPlatform.capabilities(context).optBoolean(channel, false);
     }
 
-    private static void reconcile(Context context, JSONArray received, boolean restore) throws Exception {
+    private static boolean reconcile(Context context, JSONArray received, boolean restore) throws Exception {
+        boolean ready=true;
         if (received == null) received = new JSONArray();
         String active = prefs(context).getString("scope", "");
         JSONObject settings = settings(context), delivered = object(prefs(context).getString("delivered", "{}"));
@@ -354,7 +495,7 @@ public final class ReminderCoordinator {
                 JSONObject prior = old.get(id);
                 // Calendar only confirms insertion, not actual presentation. Expiry must not rewrite that history.
                 boolean expiredCalendar = "calendar".equals(channel) && until <= now && prior != null && prior.optBoolean("local_scheduled", false);
-                if (!expiredCalendar) feedback(context, id, "failed", "计划过期、静默时段或渠道未授权");
+                if (!expiredCalendar) {feedback(context, id, "failed", "计划过期、静默时段或渠道未授权");ready=false;}
                 continue;
             }
             if (pendingTasks.contains(task)) {
@@ -404,11 +545,292 @@ public final class ReminderCoordinator {
                 plan.put("local_scheduled", true);
                 feedback(context, plan.optString("id"), "scheduled", "");
             } catch (Exception failure) {
+                ready=false;
                 plan.put("local_scheduled", false);
                 feedback(context, plan.optString("id"), "failed", "系统未接受安排，请检查渠道权限");
             }
             prefs(context).edit().putString("plans", next.toString()).commit();
         }
+        return ready;
+    }
+
+    private static JSONArray localFlows(Context context){return array(prefs(context).getString("local_flows","[]"));}
+    private static JSONArray firstItems(JSONArray source,int limit){JSONArray batch=new JSONArray();for(int i=0;i<source.length()&&i<limit;i++)batch.put(source.opt(i));return batch;}
+    private static String flowKey(String type,String scope){return type+"_"+scope;}
+    private static JSONArray flowOutbox(Context context,String scope){return array(prefs(context).getString(flowKey("flow_outbox",scope),"[]"));}
+    private static JSONArray closedFlows(Context context,String scope){return array(prefs(context).getString(flowKey("flow_closed",scope),"[]"));}
+    private static JSONObject flowReceipts(Context context){return object(prefs(context).getString(flowKey("flow_receipts",prefs(context).getString("scope","")),"{}"));}
+
+    private static JSONArray withoutFlowPlans(JSONArray plans,JSONArray flows){
+        Set<String> tasks=new HashSet<>();
+        if(flows!=null)for(int i=0;i<flows.length();i++){JSONObject flow=flows.optJSONObject(i);if(flow!=null)tasks.add(flow.optString("task_id"));}
+        JSONArray remaining=new JSONArray();
+        if(plans!=null)for(int i=0;i<plans.length();i++){JSONObject plan=plans.optJSONObject(i);if(plan!=null&&!tasks.contains(plan.optString("task_id")))remaining.put(plan);}
+        return remaining;
+    }
+
+    private static String stepStatus(JSONObject receipts,JSONObject step){
+        JSONObject receipt=receipts.optJSONObject(step.optString("id"));
+        return receipt==null?step.optString("status","pending"):receipt.optString("status","pending");
+    }
+
+    private static JSONObject flowPlan(JSONObject flow,JSONObject step){
+        JSONObject plan=object(step.toString());
+        put(plan,"task_id",flow.optString("task_id"));put(plan,"_flow_id",flow.optString("id"));
+        return plan;
+    }
+
+    private static void queueClosedFlow(Context context,String scope,String id){
+        if(scope.isEmpty()||id.isEmpty())return;
+        JSONArray closed=closedFlows(context,scope);
+        for(int i=0;i<closed.length();i++)if(id.equals(closed.optString(i)))return;
+        closed.put(id);prefs(context).edit().putString(flowKey("flow_closed",scope),closed.toString()).commit();
+    }
+
+    /** Closing is a separate acknowledged message; unacknowledged execution receipts survive it. */
+    private static void cancelFlows(Context context,String taskId,boolean report){
+        String active=prefs(context).getString("scope","");JSONArray flows=localFlows(context),kept=new JSONArray();
+        for(int i=0;i<flows.length();i++){
+            JSONObject flow=flows.optJSONObject(i);if(flow==null)continue;
+            if(taskId!=null&&!taskId.equals(flow.optString("task_id"))){kept.put(flow);continue;}
+            JSONArray steps=flow.optJSONArray("steps");
+            if(steps!=null)for(int j=0;j<steps.length();j++){JSONObject step=steps.optJSONObject(j);if(step!=null)ReminderPlatform.cancel(context,active,flowPlan(flow,step));}
+            if(report)queueClosedFlow(context,active,flow.optString("id"));
+        }
+        prefs(context).edit().putString("local_flows",kept.toString()).commit();
+    }
+
+    private static void acknowledgeFlows(Context context,String scope,JSONArray sent,JSONObject response){
+        Set<String> accepted=new HashSet<>();JSONArray acks=response.optJSONArray("flow_result_acks");
+        if(acks!=null)for(int i=0;i<acks.length();i++){
+            JSONObject ack=acks.optJSONObject(i);if(ack!=null&&ack.optBoolean("accepted"))accepted.add(ack.optString("flow_id")+"\n"+ack.optString("step_id"));
+        }
+        Set<String> acceptedPayloads=new HashSet<>();
+        for(int i=0;i<sent.length();i++){JSONObject item=sent.optJSONObject(i);if(item!=null&&accepted.contains(item.optString("flow_id")+"\n"+item.optString("step_id")))acceptedPayloads.add(item.toString());}
+        JSONArray outbox=flowOutbox(context,scope),remaining=new JSONArray();
+        for(int i=0;i<outbox.length();i++){JSONObject item=outbox.optJSONObject(i);if(item!=null&&!acceptedPayloads.contains(item.toString()))remaining.put(item);}
+        Set<String> closedAck=new HashSet<>();JSONArray closedAcks=response.optJSONArray("closed_flow_acks");
+        if(closedAcks!=null)for(int i=0;i<closedAcks.length();i++)closedAck.add(closedAcks.optString(i));
+        JSONArray closed=closedFlows(context,scope),closedRemaining=new JSONArray();
+        for(int i=0;i<closed.length();i++)if(!closedAck.contains(closed.optString(i)))closedRemaining.put(closed.optString(i));
+        prefs(context).edit().putString(flowKey("flow_outbox",scope),remaining.toString())
+                .putString(flowKey("flow_closed",scope),closedRemaining.toString()).commit();
+        boolean progressed=remaining.length()<outbox.length()||closedRemaining.length()<closed.length();
+        if(progressed&&(remaining.length()>0||closedRemaining.length()>0)&&scope.equals(prefs(context).getString("scope","")))enqueueSync(context);
+    }
+
+    private static void flowFeedback(Context context,String flowId,String stepId,String task,String status,String error,long at){
+        if(!LocalReminderFlow.terminal(status))return;
+        String active=prefs(context).getString("scope","");JSONObject receipts=flowReceipts(context),previous=receipts.optJSONObject(stepId);
+        if(previous!=null&&LocalReminderFlow.terminal(previous.optString("status")))return;
+        JSONObject result=new JSONObject();put(result,"flow_id",flowId);put(result,"step_id",stepId);put(result,"status",status);
+        put(result,"occurred_at",Instant.ofEpochMilli(at).toString());put(result,"error",error);
+        JSONObject receipt=object(result.toString());put(receipt,"at",at);put(receipt,"task_id",task);put(receipts,stepId,receipt);
+        JSONArray outbox=flowOutbox(context,active);outbox.put(result);
+        SharedPreferences.Editor save=prefs(context).edit().putString(flowKey("flow_receipts",active),receipts.toString())
+                .putString(flowKey("flow_outbox",active),outbox.toString());
+        if("delivered".equals(status)){
+            JSONObject deliveries=object(prefs(context).getString("delivered","{}")),actual=new JSONObject();
+            put(actual,"task_id",task);put(actual,"at",at);put(actual,"day",Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDate().toString());
+            put(deliveries,stepId,actual);save.putString("delivered",deliveries.toString());
+        }
+        if(!save.commit())throw new IllegalStateException("无法保存手机执行结果");
+    }
+
+    private static boolean finishedFlow(JSONObject flow,JSONObject receipts){
+        JSONArray steps=flow.optJSONArray("steps");if(steps==null||steps.length()==0)return true;
+        int delivered=0,terminal=0;
+        for(int i=0;i<steps.length();i++){JSONObject step=steps.optJSONObject(i);if(step==null)continue;String status=stepStatus(receipts,step);
+            if(LocalReminderFlow.terminal(status))terminal++;if("delivered".equals(status))delivered++;}
+        return terminal==steps.length()||(flow.optBoolean("stop_after_success")&&delivered>0)
+                ||delivered>=flow.optInt("remaining_reminders",6);
+    }
+
+    private static void finishConsumedFlows(Context context){
+        JSONArray flows=localFlows(context);JSONObject receipts=flowReceipts(context);String active=prefs(context).getString("scope","");
+        boolean changed=false;
+        for(int i=0;i<flows.length();i++){
+            JSONObject flow=flows.optJSONObject(i);if(flow==null||flow.optBoolean("_local_closed")||!finishedFlow(flow,receipts))continue;
+            put(flow,"_local_closed",true);changed=true;queueClosedFlow(context,active,flow.optString("id"));
+            JSONArray steps=flow.optJSONArray("steps");if(steps!=null)for(int j=0;j<steps.length();j++){
+                JSONObject step=steps.optJSONObject(j);if(step!=null)ReminderPlatform.cancel(context,active,flowPlan(flow,step),!"delivered".equals(stepStatus(receipts,step)));
+            }
+        }
+        if(changed)prefs(context).edit().putString("local_flows",flows.toString()).commit();
+    }
+
+    private static boolean validFlow(Context context,JSONObject flow){
+        if(flow==null||!prefs(context).getString("device","").equals(flow.optString("device_id")))return false;
+        if(flow.optString("generation").isEmpty()||flow.optString("cycle_key").isEmpty()||flow.optString("root_plan_id").isEmpty())return false;
+        JSONArray steps=flow.optJSONArray("steps");List<LocalReminderFlow.Step> windows=new ArrayList<>();
+        if(steps!=null)for(int i=0;i<steps.length();i++){JSONObject step=steps.optJSONObject(i);if(step==null)return false;
+            windows.add(new LocalReminderFlow.Step(step.optString("id"),step.optInt("index",-1),step.optString("channel"),
+                    ReminderPolicy.timestamp(step.optString("scheduled_at")),ReminderPolicy.timestamp(step.optString("expires_at"))));}
+        return flow.optInt("remaining_reminders")>0&&flow.optInt("remaining_reminders")<=6
+                &&LocalReminderFlow.valid(flow.optString("id"),flow.optString("task_id"),ReminderPolicy.timestamp(flow.optString("valid_until")),windows);
+    }
+
+    private static boolean reconcileFlows(Context context,JSONArray incoming,JSONArray revoked,boolean restore)throws Exception{
+        if(incoming==null)incoming=new JSONArray();
+        String active=prefs(context).getString("scope","");JSONArray old=localFlows(context),next=new JSONArray();
+        Map<String,JSONObject> oldById=new HashMap<>();Set<String> revokedIds=new HashSet<>(),closedIds=new HashSet<>(),tasks=new HashSet<>(),stepIds=new HashSet<>();
+        for(int i=0;i<old.length();i++){JSONObject flow=old.optJSONObject(i);if(flow!=null)oldById.put(flow.optString("id"),flow);}
+        if(revoked!=null)for(int i=0;i<revoked.length();i++)revokedIds.add(revoked.optString(i));
+        JSONArray closed=closedFlows(context,active);for(int i=0;i<closed.length();i++)closedIds.add(closed.optString(i));
+        boolean ready=true;
+        for(int i=0;i<incoming.length()&&i<128;i++){
+            JSONObject raw=incoming.optJSONObject(i);if(raw==null)continue;JSONObject flow=object(raw.toString());
+            String id=flow.optString("id");JSONObject previous=oldById.get(id);
+            flow.remove("_local_closed");
+            if(!validFlow(context,flow)||revokedIds.contains(id)||!tasks.add(flow.optString("task_id"))){
+                if(!id.isEmpty())queueClosedFlow(context,active,id);ready=false;continue;
+            }
+            if(closedIds.contains(id)||(previous!=null&&previous.optBoolean("_local_closed")))put(flow,"_local_closed",true);
+            Map<String,JSONObject> priorSteps=new HashMap<>();JSONArray previousSteps=previous==null?null:previous.optJSONArray("steps");
+            if(previousSteps!=null)for(int j=0;j<previousSteps.length();j++){JSONObject step=previousSteps.optJSONObject(j);if(step!=null)priorSteps.put(step.optString("id"),step);}
+            JSONArray steps=flow.optJSONArray("steps");boolean duplicate=false;
+            for(int j=0;j<steps.length();j++){
+                JSONObject step=steps.getJSONObject(j);step.remove("_local_scheduled");step.remove("_local_retry_at");
+                if(!stepIds.add(step.optString("id"))){duplicate=true;break;}
+                JSONObject prior=priorSteps.get(step.optString("id"));
+                if(prior!=null&&prior.optString("scheduled_at").equals(step.optString("scheduled_at"))&&prior.optString("channel").equals(step.optString("channel"))){
+                    put(step,"_local_scheduled",prior.optBoolean("_local_scheduled"));put(step,"_local_retry_at",prior.optLong("_local_retry_at"));
+                }
+            }
+            if(duplicate){queueClosedFlow(context,active,id);ready=false;continue;}
+            next.put(flow);oldById.remove(id);
+        }
+        JSONObject receipts=flowReceipts(context);
+        for(JSONObject flow:oldById.values()){
+            JSONArray steps=flow.optJSONArray("steps");if(steps!=null)for(int i=0;i<steps.length();i++){
+                JSONObject step=steps.optJSONObject(i);if(step!=null)ReminderPlatform.cancel(context,active,flowPlan(flow,step),!"delivered".equals(stepStatus(receipts,step)));
+            }
+            if(revokedIds.contains(flow.optString("id")))stopRinging(context,active,flow.optString("task_id"));
+            queueClosedFlow(context,active,flow.optString("id"));
+        }
+        if(!prefs(context).edit().putString("local_flows",next.toString()).commit())throw new java.io.IOException("无法保存手机提醒流程");
+        int scheduledCount=plans(context).length();long now=System.currentTimeMillis();
+        for(int i=0;i<next.length();i++){
+            JSONObject flow=next.getJSONObject(i);JSONArray steps=flow.getJSONArray("steps");
+            for(int j=0;j<steps.length();j++){
+                JSONObject step=steps.getJSONObject(j);String id=step.optString("id"),status=stepStatus(flowReceipts(context),step);
+                if(flow.optBoolean("_local_closed")||LocalReminderFlow.terminal(status))continue;
+                if("executing".equals(status)){
+                    if(LocalReminderFlow.lostPlayback(status,isCurrentAlarm(context,active,id)))flowFeedback(context,flow.optString("id"),id,flow.optString("task_id"),"failed","上次播放未确认成功",now);
+                    continue;
+                }
+                JSONObject plan=flowPlan(flow,step);long expires=ReminderPolicy.timestamp(step.optString("expires_at"));
+                if(expires<=now||ReminderPolicy.timestamp(flow.optString("valid_until"))<=now){
+                    flowFeedback(context,flow.optString("id"),id,flow.optString("task_id"),"failed","错过授权时段，本次未提醒",now);continue;
+                }
+                if(!allowed(context,plan,settings(context))){ReminderPlatform.cancel(context,active,plan);put(step,"_local_scheduled",false);ready=false;continue;}
+                if(scheduledCount>=ReminderPolicy.MAX_PLANS){ready=false;continue;}
+                scheduledCount++;
+                if(!restore&&step.optBoolean("_local_scheduled"))continue;
+                long retry=step.optLong("_local_retry_at");if(retry>ReminderPolicy.timestamp(plan.optString("scheduled_at")))put(plan,"scheduled_at",Instant.ofEpochMilli(retry).toString());
+                try{ReminderPlatform.schedule(context,active,plan);put(step,"_local_scheduled",true);}
+                catch(Exception failure){put(step,"_local_scheduled",false);ready=false;}
+                if(!prefs(context).edit().putString("local_flows",next.toString()).commit())throw new java.io.IOException("无法保存系统排程状态");
+            }
+        }
+        if(!prefs(context).edit().putString("local_flows",next.toString()).commit())throw new java.io.IOException("无法保存手机提醒状态");
+        finishConsumedFlows(context);
+        pruneFlowHistory(context);
+        return ready;
+    }
+
+    private static void pruneFlowHistory(Context context){
+        String active=prefs(context).getString("scope","");Set<String> retainedFlows=new HashSet<>(),unackedSteps=new HashSet<>();
+        JSONArray flows=localFlows(context),outbox=flowOutbox(context,active);
+        for(int i=0;i<flows.length();i++){JSONObject flow=flows.optJSONObject(i);if(flow!=null)retainedFlows.add(flow.optString("id"));}
+        for(int i=0;i<outbox.length();i++){JSONObject result=outbox.optJSONObject(i);if(result!=null)unackedSteps.add(result.optString("step_id"));}
+        JSONObject previous=flowReceipts(context),next=new JSONObject();
+        for(java.util.Iterator<String> keys=previous.keys();keys.hasNext();){String id=keys.next();JSONObject receipt=previous.optJSONObject(id);
+            if(receipt!=null&&(unackedSteps.contains(id)||retainedFlows.contains(receipt.optString("flow_id"))))put(next,id,receipt);}
+        JSONObject deliveries=object(prefs(context).getString("delivered","{}")),recent=new JSONObject();long oldest=System.currentTimeMillis()-7*86400000L;
+        for(java.util.Iterator<String> keys=deliveries.keys();keys.hasNext();){String id=keys.next();JSONObject value=deliveries.optJSONObject(id);if(value!=null&&value.optLong("at")>=oldest)put(recent,id,value);}
+        prefs(context).edit().putString(flowKey("flow_receipts",active),next.toString()).putString("delivered",recent.toString()).commit();
+    }
+
+    private static long afterQuiet(long at,String zone,String start,String end){
+        if(!ReminderPolicy.inQuiet(at,zone,start,end))return at;
+        try{java.time.ZonedDateTime local=Instant.ofEpochMilli(at).atZone(ZoneId.of(zone));
+            java.time.ZonedDateTime next=local.toLocalDate().atTime(java.time.LocalTime.parse(end)).atZone(local.getZone());
+            if(!next.isAfter(local))next=local.toLocalDate().plusDays(1).atTime(java.time.LocalTime.parse(end)).atZone(local.getZone());
+            return next.toInstant().toEpochMilli();
+        }catch(RuntimeException invalid){return Long.MAX_VALUE;}
+    }
+
+    /** Returns true for known flow identities, even when consumed or no longer allowed. */
+    private static boolean fireFlow(Context context,String active,String id){
+        JSONArray flows=localFlows(context);JSONObject flow=null,step=null;int stepIndex=-1;
+        for(int i=0;i<flows.length();i++){
+            JSONObject candidate=flows.optJSONObject(i);JSONArray steps=candidate==null?null:candidate.optJSONArray("steps");
+            if(steps!=null)for(int j=0;j<steps.length();j++){JSONObject item=steps.optJSONObject(j);if(item!=null&&id.equals(item.optString("id"))){flow=candidate;step=item;stepIndex=j;break;}}
+            if(flow!=null)break;
+        }
+        if(flow==null)return false;
+        JSONObject receipts=flowReceipts(context);String status=stepStatus(receipts,step);
+        if(flow.optBoolean("_local_closed")||LocalReminderFlow.terminal(status)||"executing".equals(status))return true;
+        long now=System.currentTimeMillis(),blockedUntil=0;String task=flow.optString("task_id");JSONArray steps=flow.optJSONArray("steps");boolean predecessors=true;
+        for(int i=0;i<stepIndex;i++){
+            JSONObject prior=steps.optJSONObject(i);String priorStatus=stepStatus(receipts,prior);
+            if(LocalReminderFlow.terminal(priorStatus))continue;
+            boolean ringing=isCurrentAlarm(context,active,prior.optString("id"));
+            if(LocalReminderFlow.lostPlayback(priorStatus,ringing)||(ReminderPolicy.timestamp(prior.optString("expires_at"))<=now&&!ringing))
+                flowFeedback(context,flow.optString("id"),prior.optString("id"),task,"failed","前一步未在授权时段内执行",now);
+            else {predecessors=false;blockedUntil=Math.max(blockedUntil,ringing
+                    ?object(prefs(context).getString("ringing","{}")).optLong("until"):ReminderPolicy.timestamp(prior.optString("expires_at")));}
+        }
+        receipts=flowReceipts(context);
+        if(finishedFlow(flow,receipts)){finishConsumedFlows(context);enqueueSync(context);return true;}
+        JSONObject plan=flowPlan(flow,step),settings=settings(context),deliveries=object(prefs(context).getString("delivered","{}"));
+        long last=0;int taskCount=0,total=0;String today=Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()).toLocalDate().toString();
+        for(java.util.Iterator<String> keys=deliveries.keys();keys.hasNext();){JSONObject item=deliveries.optJSONObject(keys.next());if(item==null)continue;
+            if(task.equals(item.optString("task_id")))last=Math.max(last,item.optLong("at"));
+            if(today.equals(item.optString("day"))){total++;if(task.equals(item.optString("task_id")))taskCount++;}}
+        // A restored server receipt carries actual delivery time, never its proposed schedule.
+        for(int i=0;i<stepIndex;i++){JSONObject prior=steps.optJSONObject(i);if("delivered".equals(stepStatus(receipts,prior))){
+            JSONObject receipt=receipts.optJSONObject(prior.optString("id"));
+            long actual=receipt==null?ReminderPolicy.timestamp(prior.optString("occurred_at")):receipt.optLong("at");
+            if(actual<=0){flowFeedback(context,flow.optString("id"),id,task,"failed","前步执行时间不完整，请联网同步",now);finishConsumedFlows(context);enqueueSync(context);return true;}last=Math.max(last,actual);}}
+        long scheduled=ReminderPolicy.timestamp(step.optString("scheduled_at")),expires=ReminderPolicy.timestamp(step.optString("expires_at")),valid=ReminderPolicy.timestamp(flow.optString("valid_until"));
+        long previousFinished=0;
+        if(stepIndex>0){
+            JSONObject previous=steps.optJSONObject(stepIndex-1),receipt=receipts.optJSONObject(previous.optString("id"));
+            if(LocalReminderFlow.terminal(stepStatus(receipts,previous))){
+                previousFinished=receipt==null?ReminderPolicy.timestamp(previous.optString("occurred_at")):receipt.optLong("at");
+                if(previousFinished<=0){flowFeedback(context,flow.optString("id"),id,task,"failed","前步执行时间不完整，请联网同步",now);finishConsumedFlows(context);enqueueSync(context);return true;}
+            }
+        }
+        long next=LocalReminderFlow.nextAttempt(now,scheduled,expires,valid,last,
+                Math.max(flow.optInt("min_interval_minutes",1),settings.optInt("min_interval_minutes",1)),predecessors,previousFinished,step.optInt("wait_minutes"));
+        if(next>=0){
+            next=Math.max(next,blockedUntil);
+            for(int i=0;i<3;i++){long before=next;
+                next=afterQuiet(next,flow.optString("timezone",TimeZone.getDefault().getID()),flow.optString("quiet_start"),flow.optString("quiet_end"));
+                next=afterQuiet(next,settings.optString("timezone",TimeZone.getDefault().getID()),settings.optString("quiet_start","22:00"),settings.optString("quiet_end","08:00"));
+                if(next==before||next>=Math.min(expires,valid))break;}
+            if(next>=Math.min(expires,valid))next=-1;
+        }
+        if(!allowed(context,plan,settings)||taskCount>=32||total>=ReminderPolicy.MAX_PLANS)next=-1;
+        if(next<0){flowFeedback(context,flow.optString("id"),id,task,"failed","已过授权时段、进入静默或达到提醒上限",now);finishConsumedFlows(context);enqueueSync(context);return true;}
+        if(next>now){
+            put(step,"_local_retry_at",next);put(step,"_local_scheduled",false);prefs(context).edit().putString("local_flows",flows.toString()).commit();
+            put(plan,"scheduled_at",Instant.ofEpochMilli(next).toString());
+            try{ReminderPlatform.schedule(context,active,plan);put(step,"_local_scheduled",true);prefs(context).edit().putString("local_flows",flows.toString()).commit();}
+            catch(Exception failure){flowFeedback(context,flow.optString("id"),id,task,"failed","系统未接受本次延后",now);finishConsumedFlows(context);enqueueSync(context);}
+            return true;
+        }
+        JSONObject consumed=new JSONObject();put(consumed,"flow_id",flow.optString("id"));put(consumed,"task_id",task);put(consumed,"status","executing");put(consumed,"at",now);put(receipts,id,consumed);
+        put(step,"_local_scheduled",false);
+        if(!prefs(context).edit().putString(flowKey("flow_receipts",active),receipts.toString()).putString("local_flows",flows.toString()).commit())return true;
+        try{
+            boolean alarm="alarm".equals(plan.optString("channel"));if(alarm)grantAlarm(context,active,plan);
+            ReminderPlatform.notify(context,active,plan);
+            if(!alarm){flowFeedback(context,flow.optString("id"),id,task,"delivered","",System.currentTimeMillis());finishConsumedFlows(context);}
+        }catch(RuntimeException failed){flowFeedback(context,flow.optString("id"),id,task,"failed","系统未能开始本次提醒",System.currentTimeMillis());alarmStopped(context,active,id);finishConsumedFlows(context);}
+        enqueueSync(context);return true;
     }
 
     private static String calendarMarker(String scope, JSONObject plan) {
@@ -420,6 +842,17 @@ public final class ReminderCoordinator {
         Context context = source.getApplicationContext();
         synchronized (LOCK) {
             if (!expectedScope.equals(prefs(context).getString("scope", "")) || !expectedScope.equals(scope(new Session(context)))) return;
+            JSONObject test=object(prefs(context).getString("alarm_test","{}"));
+            if(id.equals(test.optString("id"))){
+                long now=System.currentTimeMillis();
+                if(!test.optBoolean("fired")&&now>=ReminderPolicy.timestamp(test.optString("scheduled_at"))&&now<ReminderPolicy.timestamp(test.optString("expires_at"))&&allowed(context,test,settings(context))){
+                    put(test,"fired",true);prefs(context).edit().putString("alarm_test",test.toString()).commit();grantAlarm(context,expectedScope,test);
+                    android.util.Log.i("NiannianAlarm","test_receiver_fired at="+now);
+                    try{ReminderPlatform.notify(context,expectedScope,test);}catch(RuntimeException failure){alarmStopped(context,expectedScope,id);android.util.Log.w("NiannianAlarm","test_start_failed at="+now);}
+                }
+                return;
+            }
+            if(fireFlow(context,expectedScope,id))return;
             JSONObject delivered = object(prefs(context).getString("delivered", "{}"));
             if (delivered.has(id)) return;
             JSONArray plans = plans(context); JSONObject plan = null;
@@ -452,7 +885,7 @@ public final class ReminderCoordinator {
                     feedback(context, id, "failed", "无法保存执行记录，本次未弹出");
                     enqueueSync(context); return;
                 }
-                try { ReminderPlatform.notify(context, expectedScope, plan); feedback(context, id, "delivered", ""); }
+                try { boolean alarm="alarm".equals(plan.optString("channel"));if(alarm)grantAlarm(context,expectedScope,plan);ReminderPlatform.notify(context, expectedScope, plan);if(!alarm)feedback(context, id, "delivered", ""); }
                 catch (RuntimeException failure) { feedback(context, id, "failed", "系统通知未能展示"); }
             }
             enqueueSync(context);
@@ -469,6 +902,7 @@ public final class ReminderCoordinator {
                 ReminderPlatform.channels(context);
                 try {
                     reconcile(context, plans(context), true);
+                    reconcileFlows(context,localFlows(context),new JSONArray(),true);
                     prefs(context).edit().putString("capabilities", ReminderPlatform.capabilities(context).toString()).commit();
                 } catch (Exception ignored) { setStatus(context, "恢复提醒失败，请打开应用重试"); }
                 schedulePeriodic(context); enqueueSync(context);

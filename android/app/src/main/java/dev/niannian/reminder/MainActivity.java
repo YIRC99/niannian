@@ -1301,7 +1301,7 @@ public class MainActivity extends Activity {
         JSONObject payload;try{payload=buildTask();if(selectedFlowerIndex>=0)payload.put("flower_type",GardenFlowers.typeFor(selectedFlowerIndex));}catch(Exception e){captureTransient();rulesExpanded=true;String message=failureMessage(e);if(message.contains("时区")||message.contains("100 之间"))advancedExpanded=true;render();showError(message);if(message.contains("事情名称")){fields.get("title").setError(message);fields.get("title").requestFocus();}else if(message.contains("星期")&&weekdays!=null){weekdays[0].setError(message);weekdays[0].requestFocus();}return;}String id=draft.optString("id");boolean isEditing=editing;
         taskBusy=true;
         int flower=selectedFlowerIndex;
-        run(button,a->mutateTask(a,isEditing?"PUT":"POST",isEditing?"/api/v1/tasks/"+id:"/api/v1/tasks",payload,id),result->{taskBusy=false;boolean flowerSaved=flower<0||GardenFlowers.remember(result.optString("id"),flower);selected=result;taskData=new JSONArray();restoredForm=null;invalidateCalendar();if(!isEditing){detailBack="home";filter="待完成";search="";homeSearchExpanded=false;draft=new JSONObject();aiText="";aiWarning="";manualVisible=false;editorSetupPromptPending=false;}toast(!flowerSaved?(isEditing?"提醒已修改，花种未保存，请重试":"提醒已创建，花种未保存，可在调整规则里重选"):isEditing?"修改已保存":"已安排好，做完后再来领取水滴");screen=isEditing?"detail":"home";render();});
+        run(button,a->mutateTask(a,isEditing?"PUT":"POST",isEditing?"/api/v1/tasks/"+id:"/api/v1/tasks",payload,id),result->{taskBusy=false;boolean flowerSaved=flower<0||GardenFlowers.remember(result.optString("id"),flower);selected=result;taskData=new JSONArray();restoredForm=null;invalidateCalendar();if(!isEditing){detailBack="home";filter="待完成";search="";homeSearchExpanded=false;draft=new JSONObject();aiText="";aiWarning="";manualVisible=false;editorSetupPromptPending=false;}toast(result.optBoolean("_reminder_sync_pending")?"事项已保存，手机提醒待联网同步":!flowerSaved?(isEditing?"提醒已修改，花种未保存，请重试":"提醒已创建，花种未保存，可在调整规则里重选"):isEditing?"修改已保存":"已安排好，做完后再来领取水滴");screen=isEditing?"detail":"home";render();});
     }
     private void updateModeHelp(TextView view){String[] help={"本期完成后停止，下期重新提醒。","今天完成后，明天继续提醒。","每期只发一次，无需点击完成。"};view.setText(Arrays.asList("ongoing","minute_interval").contains(KINDS[kindPicker.getSelectedItemPosition()])?"完成后永久结束，不再重复。":help[modePicker.getSelectedItemPosition()]);}
     private JSONObject buildTask() throws Exception {
@@ -1862,6 +1862,10 @@ public class MainActivity extends Activity {
         JSONObject result=api.json(method,path,payload);String changedId=taskId.isEmpty()?result.optString("id"):taskId;
         // Cancellation uses the immutable connection snapshot and survives Activity destruction.
         ReminderCoordinator.taskChanged(getApplicationContext(),api.base,api.token,changedId);
+        boolean savedSchedule=(method.equals("POST")&&path.equals("/api/v1/tasks"))
+                ||(method.equals("PUT")&&path.equals("/api/v1/tasks/"+changedId));
+        if(savedSchedule&&!ReminderCoordinator.awaitTaskSync(getApplicationContext(),api.base,api.token))
+            result.put("_reminder_sync_pending",true);
         return result;
     }
     private interface Result<T>{void accept(T value);}

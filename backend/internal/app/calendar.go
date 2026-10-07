@@ -149,6 +149,43 @@ type calendarCycleData struct {
 	end                   time.Time
 }
 
+type calendarSingleProjection struct {
+	t     task
+	first time.Time
+	cycle schedule.Cycle
+}
+
+func calendarSingleRule(rule schedule.Rule) bool {
+	return rule.Kind == "minute_interval" || rule.Kind == "ongoing"
+}
+
+func calendarSingle(t task) (calendarSingleProjection, bool) {
+	p := calendarSingleProjection{t: t}
+	var ok bool
+	if t.Rule.Kind == "minute_interval" {
+		var err error
+		p.first, err = time.Parse(time.RFC3339Nano, t.Rule.FirstAt)
+		if err != nil {
+			return p, false
+		}
+	} else {
+		loc, err := time.LoadLocation(t.Rule.Timezone)
+		if err != nil {
+			return p, false
+		}
+		start, err := time.ParseInLocation("2006-01-02", t.Rule.StartDate, loc)
+		if err != nil {
+			return p, false
+		}
+		p.first, ok = schedule.Next(t.Rule, start.Add(-time.Nanosecond))
+		if !ok {
+			return p, false
+		}
+	}
+	p.cycle, ok = schedule.CycleAt(t.Rule, p.first)
+	return p, ok
+}
+
 type calendarPlanStream struct {
 	t      task
 	cycles map[string]schedule.Cycle
@@ -257,62 +294,6 @@ func calendarBudgetSlots(t task, cycle schedule.Cycle, data *calendarCycleData, 
 	return out
 }
 
-// Minute rules can have 44,640 slots in one month. Read their ledger first,
-// then visit only one candidate per local day. Capped future slots come from
-// the lifetime budget, even when they fall outside this month.
-func calendarMinuteCandidates(t task, from, to, now time.Time, loc *time.Location, data *calendarCycleData, budget map[string]bool) func() (schedule.Occurrence, bool) {
-	if !data.completedAt.IsZero() && !data.completedAt.After(to) {
-		to = data.completedAt.Add(-time.Nanosecond)
-	}
-	regularTo := to
-	future := []schedule.Occurrence{}
-	if limit := calendarLimit(t.Rule); limit > 0 {
-		if !regularTo.Before(now) {
-			regularTo = now.Add(-time.Nanosecond)
-		}
-		if data.sentBeforeMonth >= limit {
-			regularTo = from
-		} else if remaining := limit - data.sentBeforeMonth; len(data.sentInMonth) >= remaining {
-			cutoff := data.sentInMonth[remaining-1].Add(-time.Nanosecond)
-			if cutoff.Before(regularTo) {
-				regularTo = cutoff
-			}
-		}
-		for at := range budget {
-			instant, err := time.Parse(time.RFC3339Nano, at)
-			if err == nil && instant.After(from) && !instant.After(to) {
-				future = append(future, schedule.Occurrence{At: instant, CycleKey: "minute_interval"})
-			}
-		}
-		sort.Slice(future, func(i, j int) bool { return future[i].At.Before(future[j].At) })
-	}
-	cursor := from
-	snooze, hasSnooze := calendarSnooze(t)
-	futureIndex := 0
-	regularDone := false
-	return func() (schedule.Occurrence, bool) {
-		if !regularDone {
-			next, ok := schedule.Next(t.Rule, cursor)
-			if hasSnooze && snooze.At.After(cursor) {
-				next, ok = snooze.At, true
-			}
-			if ok && !next.After(regularTo) {
-				day := next.In(loc)
-				// Jump by local calendar dates, including 23/25-hour DST days.
-				cursor = time.Date(day.Year(), day.Month(), day.Day()+1, 0, 0, 0, 0, loc).Add(-time.Nanosecond)
-				return schedule.Occurrence{At: next, CycleKey: "minute_interval"}, true
-			}
-			regularDone = true
-		}
-		if futureIndex < len(future) {
-			slot := future[futureIndex]
-			futureIndex++
-			return slot, true
-		}
-		return schedule.Occurrence{}, false
-	}
-}
-
 func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 	q, err := parseCalendarQuery(r)
 	if err != "" {
@@ -341,20 +322,30 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		}
 		return cycles[id]
 	}
+	singleTasks := map[string]calendarSingleProjection{}
+	singlePending := map[string]calendarNotification{}
+	for _, t := range tasks {
+		if calendarSingleRule(t.Rule) {
+			if p, ok := calendarSingle(t); ok {
+				singleTasks[t.ID] = p
+				needCycle(t.ID, p.cycle.Key).end = p.cycle.End
+			}
+		}
+	}
 	truncated := false
 	// Keep records in their original rule/cycle, even if the task was edited or
 	// archived. Read both scheduled and actual execution months: an execution
 	// after midnight belongs to its actual date, while its original scheduled
 	// instant still consumes the original cycle/month's reminder budget.
-	rows, dbErr := a.db.QueryContext(r.Context(), `SELECT id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,channel,source,reason FROM (SELECT id,user_id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,'email' AS channel,'legacy' AS source,'' AS reason FROM notifications UNION ALL SELECT id,user_id,task_id,title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,channel,source,reason FROM reminder_plans) WHERE user_id=? AND status<>'cancelled' AND ((unixepoch(scheduled_at)>=? AND unixepoch(scheduled_at)<?) OR ((status IN ('sent','accepted') OR (status='delivered' AND channel<>'calendar')) AND unixepoch(sent_at)>=? AND unixepoch(sent_at)<?)) ORDER BY unixepoch(scheduled_at),id`, userID, start.Unix(), end.Unix(), start.Unix(), end.Unix())
+	rows, dbErr := a.db.QueryContext(r.Context(), `SELECT id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,channel,source,reason,expires_at FROM (SELECT id,user_id,task_id,task_title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,'email' AS channel,'legacy' AS source,'' AS reason,'' AS expires_at FROM notifications UNION ALL SELECT id,user_id,task_id,title,cycle_key,scheduled_at,sent_at,status,error,rule_snapshot,channel,source,reason,expires_at FROM reminder_plans) WHERE user_id=? AND status<>'cancelled' AND ((unixepoch(scheduled_at)>=? AND unixepoch(scheduled_at)<?) OR ((status IN ('sent','accepted') OR (status='delivered' AND channel<>'calendar')) AND unixepoch(sent_at)>=? AND unixepoch(sent_at)<?) OR (status IN ('pending','scheduled','sending') AND (expires_at='' OR unixepoch(expires_at)>?))) ORDER BY unixepoch(scheduled_at),id`, userID, start.Unix(), end.Unix(), start.Unix(), end.Unix(), now.Unix())
 	if dbErr != nil {
 		dbFailure(w)
 		return
 	}
 	for rows.Next() {
 		var n calendarNotification
-		var raw string
-		if dbErr = rows.Scan(&n.entry.ID, &n.entry.TaskID, &n.entry.TaskTitle, &n.entry.CycleKey, &n.entry.ScheduledAt, &n.entry.SentAt, &n.entry.Status, &n.entry.Error, &raw, &n.entry.Channel, &n.entry.Source, &n.entry.Reason); dbErr != nil {
+		var raw, expiresAt string
+		if dbErr = rows.Scan(&n.entry.ID, &n.entry.TaskID, &n.entry.TaskTitle, &n.entry.CycleKey, &n.entry.ScheduledAt, &n.entry.SentAt, &n.entry.Status, &n.entry.Error, &raw, &n.entry.Channel, &n.entry.Source, &n.entry.Reason, &expiresAt); dbErr != nil {
 			break
 		}
 		n.at, dbErr = time.Parse(time.RFC3339Nano, n.entry.ScheduledAt)
@@ -397,6 +388,27 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		// not prove an actual reminder was presented to the user.
 		if scheduledInMonth && (calendarDelivered(n.entry) || n.entry.Status == "delivered" || (n.entry.Status == "scheduled" && n.entry.Channel == "calendar" && !n.at.After(now))) {
 			data.sentInMonth = append(data.sentInMonth, n.at)
+		}
+		p, single := singleTasks[n.entry.TaskID]
+		waiting := n.entry.Status == "pending" || n.entry.Status == "scheduled"
+		calendarHistory := n.entry.Status == "scheduled" && n.entry.Channel == "calendar" && !n.at.After(now)
+		if waiting && !calendarHistory && (single || calendarSingleRule(n.rule)) {
+			// Resolve a single task's next pending plan globally, not separately
+			// for each queried month. Expired/stale plans are not task history.
+			valid := single && !p.t.Paused && !p.t.Archived && n.entry.CycleKey == p.cycle.Key && !n.at.Before(p.cycle.Start) && n.at.Before(p.cycle.End)
+			if expiresAt != "" {
+				expires, err := time.Parse(time.RFC3339Nano, expiresAt)
+				valid = valid && err == nil && expires.After(now)
+			} else {
+				valid = valid && p.cycle.End.After(now)
+			}
+			if valid {
+				previous, exists := singlePending[n.entry.TaskID]
+				if !exists || n.at.Before(previous.at) || (n.at.Equal(previous.at) && n.entry.ID < previous.entry.ID) {
+					singlePending[n.entry.TaskID] = n
+				}
+			}
+			continue
 		}
 		if displayAt.Before(start) || !displayAt.Before(end) {
 			continue
@@ -448,34 +460,27 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type projection struct {
-		t        task
-		slots    []schedule.Occurrence
-		cycles   map[string]schedule.Cycle
-		from, to time.Time
+		t      task
+		slots  []schedule.Occurrence
+		cycles map[string]schedule.Cycle
 	}
 	plans := []projection{}
 	for _, t := range tasks {
 		if t.Paused || t.Archived {
 			continue
 		}
+		if calendarSingleRule(t.Rule) {
+			continue
+		}
 		from := start.Add(-time.Nanosecond)
 		if effective := calendarEffective(t); effective.After(from) {
 			from = effective
 		}
-		p := projection{t: t, cycles: map[string]schedule.Cycle{}, from: from, to: end.Add(-time.Nanosecond)}
+		p := projection{t: t, cycles: map[string]schedule.Cycle{}}
 		// Daily rule overviews remain visible beyond the agent's single pending
 		// plan. They describe intended task dates, never an executed reminder.
 		snooze, hasSnooze := calendarSnooze(t)
-		if t.Rule.Kind == "minute_interval" {
-			first, _ := time.Parse(time.RFC3339Nano, t.Rule.FirstAt)
-			if c, ok := schedule.CycleAt(t.Rule, first); ok {
-				p.cycles[c.Key] = c
-				needCycle(t.ID, c.Key)
-			}
-			plans = append(plans, p)
-			continue
-		}
-		slots := schedule.Due(t.Rule, from, p.to)
+		slots := schedule.Due(t.Rule, from, end.Add(-time.Nanosecond))
 		for _, slot := range slots {
 			if hasSnooze && slot.CycleKey == snooze.CycleKey && !slot.At.After(snooze.At) {
 				continue
@@ -566,6 +571,34 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 		n.entry.State = calendarState(n.at, cycle, data, mode, now)
 		entries = append(entries, n.entry)
 	}
+	for id, p := range singleTasks {
+		data := cycles[calendarCycleID{id, p.cycle.Key}]
+		if p.t.Paused || p.t.Archived || !p.cycle.End.After(now) || stopForRule(p.t.Rule, !data.completedAt.IsZero(), data.sent) {
+			continue
+		}
+		at := p.first
+		if !at.After(now) {
+			at = now
+		}
+		entry := calendarEntry{ID: "planned:" + id + ":pending", Type: "planned", TaskID: id, TaskTitle: p.t.Title, ScheduledAt: stamp(p.first), CycleKey: p.cycle.Key, CycleEnd: calendarCycleEnd(p.cycle.End)}
+		if snooze, ok := calendarSnooze(p.t); ok && snooze.At.After(now) {
+			at, entry.ScheduledAt = snooze.At, stamp(snooze.At)
+		}
+		if pending, ok := singlePending[id]; ok {
+			entry, at = pending.entry, pending.at
+			// An overdue but still executable plan belongs to today's one task;
+			// its original scheduled_at remains available in the details.
+			if at.In(loc).Format("2006-01-02") < now.In(loc).Format("2006-01-02") {
+				at = now
+			}
+		}
+		if at.Before(start) || !at.Before(end) {
+			continue
+		}
+		entry.At = stamp(at)
+		entry.State = calendarState(at, p.cycle, data, "", now)
+		entries = append(entries, entry)
+	}
 	streams := calendarPlanHeap{}
 	for _, p := range plans {
 		budget := map[string]map[string]bool{}
@@ -582,13 +615,6 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 			slot := p.slots[index]
 			index++
 			return slot, true
-		}
-		if p.t.Rule.Kind == "minute_interval" {
-			data := cycles[calendarCycleID{p.t.ID, "minute_interval"}]
-			if data == nil {
-				continue
-			}
-			candidate = calendarMinuteCandidates(p.t, p.from, p.to, now, loc, data, budget["minute_interval"])
 		}
 		stream := &calendarPlanStream{t: p.t, cycles: p.cycles}
 		stream.next = func() (schedule.Occurrence, bool) {
@@ -627,8 +653,8 @@ func (a *App) calendar(w http.ResponseWriter, r *http.Request) {
 			heap.Push(&streams, stream)
 		}
 	}
-	// Merge daily items before limiting the response. Minute candidates already
-	// jump by local date; denser reminder rules also collapse into these groups.
+	// Merge actual history, the unique pending single task, and recurring
+	// date occurrences before applying display limits.
 	daily := map[calendarDayID]calendarEntry{}
 	addDaily := func(entry calendarEntry) {
 		at, _ := time.Parse(time.RFC3339Nano, entry.At)
