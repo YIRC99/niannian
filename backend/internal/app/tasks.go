@@ -139,7 +139,7 @@ type taskInput struct {
 
 func validTask(in *taskInput) error {
 	if in.FlowerType != "" && !validGardenFlower(in.FlowerType) {
-		return errors.New("请选择郁金香、雏菊、羽扇豆或绣球")
+		return errors.New("请选择花园里支持的花种")
 	}
 	in.Title = strings.Join(strings.Fields(in.Title), " ")
 	in.Description = strings.TrimSpace(in.Description)

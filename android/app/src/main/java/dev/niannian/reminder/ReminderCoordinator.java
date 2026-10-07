@@ -156,6 +156,42 @@ public final class ReminderCoordinator {
     public static JSONObject capabilities(Context context, Session session) { return ReminderPlatform.capabilities(context); }
     public static View channelSettings(Activity activity, Session session, Runnable onChanged) { return ReminderSettings.view(activity, session, onChanged); }
 
+    /** Empty means no setup guidance is needed; this never enables channels or requests permissions. */
+    public static String setupPrompt(Context context, Session session) {
+        synchronized (LOCK) {
+            if (session == null || !acceptsIntent(session, prefs(context).getString("scope", ""))) return "";
+            JSONObject settings = settings(context);
+            return ReminderSetupPolicy.setupPrompt(configured(context), settings.optBoolean("enabled", false),
+                    selectedChannels(settings), availableChannels(context));
+        }
+    }
+
+    /** Reports enabled, authorized choices, not which channel the AI has scheduled for a task. */
+    public static String availableChannelsSummary(Context context, Session session) {
+        synchronized (LOCK) {
+            if (session == null || !acceptsIntent(session, prefs(context).getString("scope", ""))) return "";
+            JSONObject settings = settings(context);
+            return ReminderSetupPolicy.availableChannelsSummary(configured(context), settings.optBoolean("enabled", false),
+                    selectedChannels(settings), availableChannels(context));
+        }
+    }
+
+    static String[] selectedChannels(JSONObject settings) {
+        JSONArray channels = settings.optJSONArray("channels");
+        String[] selected = new String[channels == null ? 0 : channels.length()];
+        for (int i = 0; i < selected.length; i++) selected[i] = channels.optString(i);
+        return selected;
+    }
+
+    private static String[] availableChannels(Context context) {
+        JSONObject capabilities = ReminderPlatform.capabilities(context);
+        List<String> available = new ArrayList<>();
+        for (String channel : new String[]{"notification", "calendar", "alarm"}) {
+            if (capabilities.optBoolean(channel, false)) available.add(channel);
+        }
+        return available.toArray(new String[0]);
+    }
+
     static void saveSettings(Context source, Session session, JSONObject settings, Result callback) {
         Context context = source.getApplicationContext();
         Snapshot snapshot;

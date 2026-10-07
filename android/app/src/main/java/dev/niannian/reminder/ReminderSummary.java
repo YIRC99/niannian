@@ -10,6 +10,21 @@ import java.util.TreeSet;
 final class ReminderSummary {
     private ReminderSummary() {}
 
+    static String leadTime(String kind, Map<String, String> fields) {
+        String time = values(kind, "until_done", fields, null)[0];
+        if ("once".equals(kind)) {
+            String date = field(fields, "start_date");
+            return date.isEmpty() ? "请选择提醒日期" : date + " · " + time;
+        }
+        return time;
+    }
+
+    static String followUp(String kind, String mode) {
+        if ("notify_once".equals(mode) && !"minute_interval".equals(kind) && !"ongoing".equals(kind))
+            return "once".equals(kind) ? "仅提醒一次，不再催办。" : "每期只提醒一次，不再催办。";
+        return "未完成时按规则跟进，必要时换用已授权方式；遵守静默时段与提醒上限。";
+    }
+
     static String[] labels(String kind) {
         return "minute_interval".equals(kind)
                 ? new String[]{"首次提醒", "重复间隔", "完成之后"}

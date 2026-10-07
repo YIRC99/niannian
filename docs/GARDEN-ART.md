@@ -1,5 +1,7 @@
 # 念念花园素材
 
+2.1.0 新增八张独立透明花卉 PNG：向日葵（sunflower）、玫瑰（rose）、薰衣草（lavender）、波斯菊（cosmos）、百合（lily）、三色堇（pansy）、鸢尾（iris）、木槿（hibiscus）。内置 image_gen 分别生成，文件为 `android/app/src/main/res/drawable-nodpi/garden_flower_{type}.png`，完整提示词及来源见 [flowers-expansion-2.1.txt](../UI设计/prompts/flowers-expansion-2.1.txt)。用于选花预览与真实开花阶段，种子、幼芽、枝叶继续复用。原四花素材与编号保持不变。
+
 1.8.9 我的页新增 `profile_header.png`（2048×768、不透明），使用内置 image_gen 生成并复制入项目，左侧留白承载原生标题，右侧绣球和白栅栏；完整提示词见 [profile-implementation-assets.txt](../UI设计/prompts/profile-implementation-assets.txt)。底部花草、幼芽及木牌继续复用，木牌文本所需手写字库补齐至 64 字符。图片不承载账号信息、按钮或业务状态。
 
 1.8.7 对照设计板 07、08、09 检查后，全部复用已有庭院、种子角色、四花、叶饰、木牌及日历横幅，未生成新图片。空花园的种子角色只是引导装饰；日记照片仅取真实附件。新增木牌和页尾文案所需手写字体已补齐至 60 字符，见 `docs/fonts/README.md`。

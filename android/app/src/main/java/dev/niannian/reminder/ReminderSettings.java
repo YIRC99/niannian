@@ -94,11 +94,9 @@ final class ReminderSettings {
                 updating = true;
                 JSONObject settings = ReminderCoordinator.settings(activity);
                 enabled.setChecked(!ReminderCoordinator.configured(activity) || settings.optBoolean("enabled", false));
-                JSONArray selected = settings.optJSONArray("channels");
+                String[] selected = ReminderCoordinator.selectedChannels(settings);
                 for (int i = 0; i < keys.length; i++) {
-                    boolean selectedValue = selected == null && i < 3;
-                    if (selected != null) for (int j = 0; j < selected.length(); j++) if (keys[i].equals(selected.optString(j))) selectedValue = true;
-                    channels[i].setChecked(selectedValue);
+                    channels[i].setChecked(ReminderSetupPolicy.isSelected(ReminderCoordinator.configured(activity), selected, keys[i]));
                 }
                 quietStart = settings.optString("quiet_start", "22:00"); quietEnd = settings.optString("quiet_end", "08:00"); minutes = settings.optInt("min_interval_minutes", 5);
                 if (quietStart.isEmpty() && quietEnd.isEmpty()) { quietStart = "00:00"; quietEnd = "00:00"; }
@@ -120,7 +118,7 @@ final class ReminderSettings {
             if (!ReminderPlatform.exact(activity)) compact.append("\n通知时间可能延迟；闹钟需单独授权");
             summary.setText(compact.toString());
             status.setText(ReminderCoordinator.status(activity) + (ReminderCoordinator.hasCalendarCleanup(activity) ? "\n旧日历项尚未清理：请重新授予日历权限，或在系统日历中删除“念念提醒”日历。" : ""));
-            save.setText(ReminderCoordinator.configured(activity) ? "保存渠道安排" : enabled.isChecked() ? "启用手机提醒并接管邮件" : "暂停提醒并接管邮件");
+            save.setText(ReminderCoordinator.configured(activity) ? "保存渠道安排" : enabled.isChecked() ? "启用所选提醒方式" : "暂停提醒并接管邮件");
             refreshText();
         }
 

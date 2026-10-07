@@ -59,7 +59,31 @@ public final class FlowerSelectionTest {
         FlowerSelection restored = new FlowerSelection(4, corrupt);
         same(fallback, restored.indexFor("task-one"), "invalid stored index falls back safely");
         same(Math.floorMod("task-two".hashCode(), 4), restored.indexFor("task-two"), "invalid stored type falls back safely");
+        checkExpandedCatalogKeepsLegacyIdentity(disk);
         System.out.println("FlowerSelectionTest: " + assertions + " assertions passed");
+    }
+
+    private static void checkExpandedCatalogKeepsLegacyIdentity(Map<String, Integer> legacyDisk) {
+        Map<String, Integer> expandedDisk = new HashMap<>(legacyDisk);
+        FlowerSelection expanded = new FlowerSelection(12, expandedDisk);
+        FlowerSelection original = new FlowerSelection(4, legacyDisk);
+        for (String task : new String[]{"task-one", "task-two", "polygenelubricants", "", null}) {
+            same(original.indexFor(task), expanded.indexFor(task), "expansion preserves saved and fallback identities");
+        }
+        for (int i = 0; i < 100; i++) {
+            String task = "legacy-task-" + i;
+            same(Math.floorMod(task.hashCode(), 4), expanded.indexFor(task), "new catalog does not remap legacy hashes");
+        }
+        for (int index = 4; index < 12; index++) {
+            String task = "new-flower-" + index;
+            check(expanded.remember(task, index, values -> { expandedDisk.clear(); expandedDisk.putAll(values); return true; }), "new flowers can be selected");
+            same(index, new FlowerSelection(12, expandedDisk).indexFor(task), "new flowers survive reload");
+            same(Math.floorMod(task.hashCode(), 4), new FlowerSelection(12, new HashMap<>()).indexFor(task), "new selections do not leak to another scope");
+        }
+        check(!expanded.remember("task-one", 12, values -> { throw new AssertionError("out-of-range flower reached storage"); }), "index after final flower is rejected");
+        same(original.indexFor("task-one"), expanded.indexFor("task-one"), "rejected selection preserves old flower");
+        check(!expanded.remember("new-flower-4", 11, values -> false), "new flower failed write is reported");
+        same(4, new FlowerSelection(12, expandedDisk).indexFor("new-flower-4"), "new flower failed write preserves confirmed identity");
     }
 
     private static void same(int expected, int actual, String label) { check(expected == actual, label); }

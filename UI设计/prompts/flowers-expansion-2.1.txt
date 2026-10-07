@@ -1,0 +1,126 @@
+念念 2.1 花种扩展图片素材
+生成日期：2026-10-07
+生成方式：内置 image_gen；8 张图片分别独立请求，transparent_background=true。
+参考：已实际打开 android/app/src/main/res/drawable-nodpi/garden_flower_tulip.png、garden_flower_hydrangea.png、UI设计/images/09-garden.png。参考其风格，生成时不作为编辑目标。
+说明：直接复制生成的透明 PNG；未用代码绘画、拼图、换色或裁切替代生成。原图保留于生成目录。
+检查：8 张生成结果均已逐张查看；均为 1254×1254 PNG，包含实际 alpha 透明像素，四边无可见像素贴边。用 .NET 只读检查透明通道和边界，未修改图片。主体均包含完整花朵、茎叶和土脚，无花盆、文字或背景。
+
+sunflower / 向日葵
+来源：C:\Users\admin\.codex\generated_images\01a114ad-b6ca-7871-aab6-131b87244acb\exec-88c4f947-6495-426d-950a-1d06e18390f2.png
+项目路径：D:\code_file\niannian\android\app\src\main\res\drawable-nodpi\garden_flower_sunflower.png
+完整提示词：
+Use case: stylized-concept.
+Asset type: a production transparent PNG plant sprite for a gentle anime garden in the Android app 念念.
+Primary request: Generate exactly one independently rooted flowering plant as specified below. This is one complete game sprite, not a sheet.
+Style/medium: crisp hand-painted Japanese anime garden game illustration, softly rounded botanical shapes, delicate fine colored outline, simple readable cel-shaded color layers and a few gentle highlights, consistent with a warm bright green courtyard. Neither photorealistic nor 3D nor watercolor paper.
+Composition/framing: square canvas, complete plant centered, front view from a slightly elevated viewpoint, flowers in the upper half and the plant's root at bottom center; all flowers, stems and leaves connected into one coherent planted plant. Occupy about 78 to 84 percent of image height; leave generous clean 8 percent or more safety padding on every edge. The silhouette must read clearly at a tiny mobile UI scale.
+Scene/backdrop: genuinely transparent RGBA background everywhere outside the isolated sprite, including all gaps between leaves. At the base only a small low oval mound of warm brown soil, substantially narrower than the foliage.
+Lighting/mood: soft warm daylight from upper left, cheerful and calm.
+Color palette: natural muted olive and sage greens for stems/leaves, warm brown soil; flower colors specified below.
+Constraints: exactly one plant; botanically recognizable but simplified; complete planted stems and foliage; clean anti-aliased alpha edges. No flowerpot, no vase, no border, no ground plane, no background color or gradient, no checkerboard painted into the image, no text, no labels, no watermark, no face, no insects, no sparkles. No white outline or drop shadow.
+Subject: One compact sunflower plant with two large golden yellow flower heads at different heights and one small side bud; broad rounded petals around clearly visible chocolate brown seed centers, a sturdy green branching stem and a few broad heart-shaped olive-green leaves. Keep the golden flowers bold and friendly.
+
+rose / 玫瑰
+来源：C:\Users\admin\.codex\generated_images\01a114ad-b6ca-7871-aab6-131b87244acb\exec-30b904aa-d9f3-47b4-8651-a0d638416a25.png
+项目路径：D:\code_file\niannian\android\app\src\main\res\drawable-nodpi\garden_flower_rose.png
+完整提示词：
+Use case: stylized-concept.
+Asset type: a production transparent PNG plant sprite for a gentle anime garden in the Android app 念念.
+Primary request: Generate exactly one independently rooted flowering plant as specified below. This is one complete game sprite, not a sheet.
+Style/medium: crisp hand-painted Japanese anime garden game illustration, softly rounded botanical shapes, delicate fine colored outline, simple readable cel-shaded color layers and a few gentle highlights, consistent with a warm bright green courtyard. Neither photorealistic nor 3D nor watercolor paper.
+Composition/framing: square canvas, complete plant centered, front view from a slightly elevated viewpoint, flowers in the upper half and the plant's root at bottom center; all flowers, stems and leaves connected into one coherent planted plant. Occupy about 78 to 84 percent of image height; leave generous clean 8 percent or more safety padding on every edge. The silhouette must read clearly at a tiny mobile UI scale.
+Scene/backdrop: genuinely transparent RGBA background everywhere outside the isolated sprite, including all gaps between leaves. At the base only a small low oval mound of warm brown soil, substantially narrower than the foliage.
+Lighting/mood: soft warm daylight from upper left, cheerful and calm.
+Color palette: natural muted olive and sage greens for stems/leaves, warm brown soil; flower colors specified below.
+Constraints: exactly one plant; botanically recognizable but simplified; complete planted stems and foliage; clean anti-aliased alpha edges. No flowerpot, no vase, no border, no ground plane, no background color or gradient, no checkerboard painted into the image, no text, no labels, no watermark, no face, no insects, no sparkles. No white outline or drop shadow.
+Subject: One small rose bush with three open coral-pink roses at different heights, each showing a recognizable rounded spiral of layered petals, one small rose bud, and compact branching stems with a few rounded serrated olive-green leaf clusters. No exposed sharp thorns.
+
+lavender / 薰衣草
+来源：C:\Users\admin\.codex\generated_images\01a114ad-b6ca-7871-aab6-131b87244acb\exec-a5c06121-142c-41ed-a2ed-25f0cd33542b.png
+项目路径：D:\code_file\niannian\android\app\src\main\res\drawable-nodpi\garden_flower_lavender.png
+完整提示词：
+Use case: stylized-concept.
+Asset type: a production transparent PNG plant sprite for a gentle anime garden in the Android app 念念.
+Primary request: Generate exactly one independently rooted flowering plant as specified below. This is one complete game sprite, not a sheet.
+Style/medium: crisp hand-painted Japanese anime garden game illustration, softly rounded botanical shapes, delicate fine colored outline, simple readable cel-shaded color layers and a few gentle highlights, consistent with a warm bright green courtyard. Neither photorealistic nor 3D nor watercolor paper.
+Composition/framing: square canvas, complete plant centered, front view from a slightly elevated viewpoint, flowers in the upper half and the plant's root at bottom center; all flowers, stems and leaves connected into one coherent planted plant. Occupy about 78 to 84 percent of image height; leave generous clean 8 percent or more safety padding on every edge. The silhouette must read clearly at a tiny mobile UI scale.
+Scene/backdrop: genuinely transparent RGBA background everywhere outside the isolated sprite, including all gaps between leaves. At the base only a small low oval mound of warm brown soil, substantially narrower than the foliage.
+Lighting/mood: soft warm daylight from upper left, cheerful and calm.
+Color palette: natural muted olive and sage greens for stems/leaves, warm brown soil; flower colors specified below.
+Constraints: exactly one plant; botanically recognizable but simplified; complete planted stems and foliage; clean anti-aliased alpha edges. No flowerpot, no vase, no border, no ground plane, no background color or gradient, no checkerboard painted into the image, no text, no labels, no watermark, no face, no insects, no sparkles. No white outline or drop shadow.
+Subject: One compact lavender plant with five upright lavender-purple flowering spikes at varied heights, the tiny rounded blossoms grouped into clearly readable dense tapered spikes, slender branching stems and narrow sage-green leaves clustered toward the base. A clean soft purple and sage silhouette.
+
+cosmos / 波斯菊
+来源：C:\Users\admin\.codex\generated_images\01a114ad-b6ca-7871-aab6-131b87244acb\exec-1afdf093-5478-47c5-97a2-4395c93400a6.png
+项目路径：D:\code_file\niannian\android\app\src\main\res\drawable-nodpi\garden_flower_cosmos.png
+完整提示词：
+Use case: stylized-concept.
+Asset type: a production transparent PNG plant sprite for a gentle anime garden in the Android app 念念.
+Primary request: Generate exactly one independently rooted flowering plant as specified below. This is one complete game sprite, not a sheet.
+Style/medium: crisp hand-painted Japanese anime garden game illustration, softly rounded botanical shapes, delicate fine colored outline, simple readable cel-shaded color layers and a few gentle highlights, consistent with a warm bright green courtyard. Neither photorealistic nor 3D nor watercolor paper.
+Composition/framing: square canvas, complete plant centered, front view from a slightly elevated viewpoint, flowers in the upper half and the plant's root at bottom center; all flowers, stems and leaves connected into one coherent planted plant. Occupy about 78 to 84 percent of image height; leave generous clean 8 percent or more safety padding on every edge. The silhouette must read clearly at a tiny mobile UI scale.
+Scene/backdrop: genuinely transparent RGBA background everywhere outside the isolated sprite, including all gaps between leaves. At the base only a small low oval mound of warm brown soil, substantially narrower than the foliage.
+Lighting/mood: soft warm daylight from upper left, cheerful and calm.
+Color palette: natural muted olive and sage greens for stems/leaves, warm brown soil; flower colors specified below.
+Constraints: exactly one plant; botanically recognizable but simplified; complete planted stems and foliage; clean anti-aliased alpha edges. No flowerpot, no vase, no border, no ground plane, no background color or gradient, no checkerboard painted into the image, no text, no labels, no watermark, no face, no insects, no sparkles. No white outline or drop shadow.
+Subject: One compact cosmos plant with three open flowers of soft rose-pink and blush-pink, eight broad rounded lightly notched petals around warm yellow centers, a small side bud, slender gently curved stems and sparse feathery green leaves. Give each flower a clear distinct silhouette.
+
+lily / 百合
+来源：C:\Users\admin\.codex\generated_images\01a114ad-b6ca-7871-aab6-131b87244acb\exec-787672fe-439f-4edc-b3a3-9126ad382603.png
+项目路径：D:\code_file\niannian\android\app\src\main\res\drawable-nodpi\garden_flower_lily.png
+完整提示词：
+Use case: stylized-concept.
+Asset type: a production transparent PNG plant sprite for a gentle anime garden in the Android app 念念.
+Primary request: Generate exactly one independently rooted flowering plant as specified below. This is one complete game sprite, not a sheet.
+Style/medium: crisp hand-painted Japanese anime garden game illustration, softly rounded botanical shapes, delicate fine colored outline, simple readable cel-shaded color layers and a few gentle highlights, consistent with a warm bright green courtyard. Neither photorealistic nor 3D nor watercolor paper.
+Composition/framing: square canvas, complete plant centered, front view from a slightly elevated viewpoint, flowers in the upper half and the plant's root at bottom center; all flowers, stems and leaves connected into one coherent planted plant. Occupy about 78 to 84 percent of image height; leave generous clean 8 percent or more safety padding on every edge. The silhouette must read clearly at a tiny mobile UI scale.
+Scene/backdrop: genuinely transparent RGBA background everywhere outside the isolated sprite, including all gaps between leaves. At the base only a small low oval mound of warm brown soil, substantially narrower than the foliage.
+Lighting/mood: soft warm daylight from upper left, cheerful and calm.
+Color palette: natural muted olive and sage greens for stems/leaves, warm brown soil; flower colors specified below.
+Constraints: exactly one plant; botanically recognizable but simplified; complete planted stems and foliage; clean anti-aliased alpha edges. No flowerpot, no vase, no border, no ground plane, no background color or gradient, no checkerboard painted into the image, no text, no labels, no watermark, no face, no insects, no sparkles. No white outline or drop shadow.
+Subject: One compact lily plant with two open creamy white lily blossoms and one closed pale bud; six broad gently recurved petals per flower, soft pale yellow at the throats and a few simple ochre stamens, upright green stems with a small number of elegant lance-shaped olive-green leaves. Use subtle colored outlines so cream petals remain readable.
+
+pansy / 三色堇
+来源：C:\Users\admin\.codex\generated_images\01a114ad-b6ca-7871-aab6-131b87244acb\exec-ee894d0b-2750-49e5-b12e-afb0118896fd.png
+项目路径：D:\code_file\niannian\android\app\src\main\res\drawable-nodpi\garden_flower_pansy.png
+完整提示词：
+Use case: stylized-concept.
+Asset type: a production transparent PNG plant sprite for a gentle anime garden in the Android app 念念.
+Primary request: Generate exactly one independently rooted flowering plant as specified below. This is one complete game sprite, not a sheet.
+Style/medium: crisp hand-painted Japanese anime garden game illustration, softly rounded botanical shapes, delicate fine colored outline, simple readable cel-shaded color layers and a few gentle highlights, consistent with a warm bright green courtyard. Neither photorealistic nor 3D nor watercolor paper.
+Composition/framing: square canvas, complete plant centered, front view from a slightly elevated viewpoint, flowers in the upper half and the plant's root at bottom center; all flowers, stems and leaves connected into one coherent planted plant. Occupy about 78 to 84 percent of image height; leave generous clean 8 percent or more safety padding on every edge. The silhouette must read clearly at a tiny mobile UI scale.
+Scene/backdrop: genuinely transparent RGBA background everywhere outside the isolated sprite, including all gaps between leaves. At the base only a small low oval mound of warm brown soil, substantially narrower than the foliage.
+Lighting/mood: soft warm daylight from upper left, cheerful and calm.
+Color palette: natural muted olive and sage greens for stems/leaves, warm brown soil; flower colors specified below.
+Constraints: exactly one plant; botanically recognizable but simplified; complete planted stems and foliage; clean anti-aliased alpha edges. No flowerpot, no vase, no border, no ground plane, no background color or gradient, no checkerboard painted into the image, no text, no labels, no watermark, no face, no insects, no sparkles. No white outline or drop shadow.
+Subject: One compact pansy plant with three large pansy flowers, velvety rounded petals in soft violet and warm pale yellow with a recognizable dark violet central face marking, short green stems and a low rosette of rounded scalloped sage-green leaves. The flower faces are botanical markings only, not character faces.
+
+iris / 鸢尾
+来源：C:\Users\admin\.codex\generated_images\01a114ad-b6ca-7871-aab6-131b87244acb\exec-95ff2440-eadd-4ad7-bf2e-2e7090ae35a7.png
+项目路径：D:\code_file\niannian\android\app\src\main\res\drawable-nodpi\garden_flower_iris.png
+完整提示词：
+Use case: stylized-concept.
+Asset type: a production transparent PNG plant sprite for a gentle anime garden in the Android app 念念.
+Primary request: Generate exactly one independently rooted flowering plant as specified below. This is one complete game sprite, not a sheet.
+Style/medium: crisp hand-painted Japanese anime garden game illustration, softly rounded botanical shapes, delicate fine colored outline, simple readable cel-shaded color layers and a few gentle highlights, consistent with a warm bright green courtyard. Neither photorealistic nor 3D nor watercolor paper.
+Composition/framing: square canvas, complete plant centered, front view from a slightly elevated viewpoint, flowers in the upper half and the plant's root at bottom center; all flowers, stems and leaves connected into one coherent planted plant. Occupy about 78 to 84 percent of image height; leave generous clean 8 percent or more safety padding on every edge. The silhouette must read clearly at a tiny mobile UI scale.
+Scene/backdrop: genuinely transparent RGBA background everywhere outside the isolated sprite, including all gaps between leaves. At the base only a small low oval mound of warm brown soil, substantially narrower than the foliage.
+Lighting/mood: soft warm daylight from upper left, cheerful and calm.
+Color palette: natural muted olive and sage greens for stems/leaves, warm brown soil; flower colors specified below.
+Constraints: exactly one plant; botanically recognizable but simplified; complete planted stems and foliage; clean anti-aliased alpha edges. No flowerpot, no vase, no border, no ground plane, no background color or gradient, no checkerboard painted into the image, no text, no labels, no watermark, no face, no insects, no sparkles. No white outline or drop shadow.
+Subject: One compact iris plant with two blue-violet iris blossoms and a small closed bud, each flower has three upright soft violet petals and three elegantly falling blue-violet petals with a tiny golden yellow throat stripe, with a few upright sword-shaped olive-green leaves. Simplify the layered iris silhouette so it stays readable at small size.
+
+hibiscus / 木槿
+来源：C:\Users\admin\.codex\generated_images\01a114ad-b6ca-7871-aab6-131b87244acb\exec-9acb7dce-e7bc-45e5-91ef-82b6922056e5.png
+项目路径：D:\code_file\niannian\android\app\src\main\res\drawable-nodpi\garden_flower_hibiscus.png
+完整提示词：
+Use case: stylized-concept.
+Asset type: a production transparent PNG plant sprite for a gentle anime garden in the Android app 念念.
+Primary request: Generate exactly one independently rooted flowering plant as specified below. This is one complete game sprite, not a sheet.
+Style/medium: crisp hand-painted Japanese anime garden game illustration, softly rounded botanical shapes, delicate fine colored outline, simple readable cel-shaded color layers and a few gentle highlights, consistent with a warm bright green courtyard. Neither photorealistic nor 3D nor watercolor paper.
+Composition/framing: square canvas, complete plant centered, front view from a slightly elevated viewpoint, flowers in the upper half and the plant's root at bottom center; all flowers, stems and leaves connected into one coherent planted plant. Occupy about 78 to 84 percent of image height; leave generous clean 8 percent or more safety padding on every edge. The silhouette must read clearly at a tiny mobile UI scale.
+Scene/backdrop: genuinely transparent RGBA background everywhere outside the isolated sprite, including all gaps between leaves. At the base only a small low oval mound of warm brown soil, substantially narrower than the foliage.
+Lighting/mood: soft warm daylight from upper left, cheerful and calm.
+Color palette: natural muted olive and sage greens for stems/leaves, warm brown soil; flower colors specified below.
+Constraints: exactly one plant; botanically recognizable but simplified; complete planted stems and foliage; clean anti-aliased alpha edges. No flowerpot, no vase, no border, no ground plane, no background color or gradient, no checkerboard painted into the image, no text, no labels, no watermark, no face, no insects, no sparkles. No white outline or drop shadow.
+Subject: One compact rose-of-Sharon hibiscus shrub with three soft pink open hibiscus flowers, each with five broad rounded overlapping petals, a muted rose-red throat and one short pale yellow projecting stamen column, a small side bud, gently branching stems and a few broad toothed sage-green leaves. Charming compact garden shrub, not tropical scenery.

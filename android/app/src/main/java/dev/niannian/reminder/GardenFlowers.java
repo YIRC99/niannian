@@ -14,10 +14,18 @@ public final class GardenFlowers {
             R.drawable.garden_flower_tulip,
             R.drawable.garden_flower_daisy,
             R.drawable.garden_flower_lupine,
-            R.drawable.garden_flower_hydrangea
+            R.drawable.garden_flower_hydrangea,
+            R.drawable.garden_flower_sunflower,
+            R.drawable.garden_flower_rose,
+            R.drawable.garden_flower_lavender,
+            R.drawable.garden_flower_cosmos,
+            R.drawable.garden_flower_lily,
+            R.drawable.garden_flower_pansy,
+            R.drawable.garden_flower_iris,
+            R.drawable.garden_flower_hibiscus
     };
-    private static final String[] NAMES = {"郁金香", "雏菊", "羽扇豆", "绣球"};
-    private static final String[] TYPES = {"tulip", "daisy", "lupine", "hydrangea"};
+    private static final String[] NAMES = {"郁金香", "雏菊", "羽扇豆", "绣球", "向日葵", "玫瑰", "薰衣草", "波斯菊", "百合", "三色堇", "鸢尾", "木槿"};
+    private static final String[] TYPES = {"tulip", "daisy", "lupine", "hydrangea", "sunflower", "rose", "lavender", "cosmos", "lily", "pansy", "iris", "hibiscus"};
     // Keep confirmed values across account switches: a failed preferences commit may still alter
     // Android's in-memory preferences, and must not become an accepted choice after switching back.
     private static final Map<String, Scope> SCOPES = new HashMap<>();
@@ -94,6 +102,6 @@ public final class GardenFlowers {
 
     public static synchronized int indexFor(String taskId) {
         return current != null ? current.selection.indexFor(taskId)
-                : taskId == null ? 0 : Math.floorMod(taskId.hashCode(), RESOURCES.length);
+                : taskId == null ? 0 : Math.floorMod(taskId.hashCode(), FlowerSelection.LEGACY_FLOWER_COUNT);
     }
 }

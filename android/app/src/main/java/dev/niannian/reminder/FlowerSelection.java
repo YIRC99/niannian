@@ -11,6 +11,8 @@ import java.util.Map;
 
 /** Local flower choices; no Android dependency so isolation and failed writes can be checked. */
 final class FlowerSelection {
+    // Unselected tasks must retain the four-flower hash used before catalog expansion.
+    static final int LEGACY_FLOWER_COUNT = 4;
     interface Writer { boolean save(Map<String, Integer> values); }
 
     private final int flowerCount;
@@ -44,7 +46,8 @@ final class FlowerSelection {
 
     int indexFor(String taskId) {
         Integer chosen = confirmed.get(taskKey(taskId));
-        return chosen != null ? chosen : taskId == null ? 0 : Math.floorMod(taskId.hashCode(), flowerCount);
+        return chosen != null ? chosen : taskId == null ? 0
+                : Math.floorMod(taskId.hashCode(), Math.min(flowerCount, LEGACY_FLOWER_COUNT));
     }
 
     boolean remember(String taskId, int index, Writer writer) {

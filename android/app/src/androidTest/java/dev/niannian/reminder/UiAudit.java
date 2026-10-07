@@ -39,6 +39,7 @@ public final class UiAudit extends Instrumentation {
             authenticated();
             if(group.equals("all")||group.equals("detail"))detailPages();
             if(group.equals("all")||group.equals("editor"))editorPages();
+            if(group.equals("arrangement"))arrangementPages();
             if(group.equals("all")||group.equals("main"))mainPages();
             if(group.equals("all")||group.equals("records"))recordPages();
             if(group.equals("all"))for(int page=1;page<=72;page++){if((page==48||page==58)&&!arguments.getString("system","false").equals("true"))continue;String id=String.format(java.util.Locale.ROOT,"%02d",page);if(!capturedIds.contains(id))throw new AssertionError("Missing planned screenshot: "+id);}
@@ -78,8 +79,64 @@ public final class UiAudit extends Instrumentation {
         main(()->((Spinner)get("kindPicker")).performClick());capture("45");systemBack();
         main(()->((Spinner)get("modePicker")).performClick());capture("46");systemBack();click("20:30");capture("47");systemBack();
         main(()->{JSONObject suggested=UiFixtures.task("weekly","pending").put("title","散步");suggested.getJSONObject("rule").put("weekdays",new JSONArray().put(6)).put("times",new JSONArray().put("09:00"));set("draft",suggested);set("aiText","空气好的时候提醒我散步");set("editing",false);set("manualVisible",true);set("rulesExpanded",false);set("restoredForm",null);set("aiWarning","暂不支持自动判断空气质量。我先安排在每周六上午，出发前请你确认天气。保存前可以继续调整。");show("editor");});capture("52");
-        main(()->{set("rulesExpanded",true);set("aiWarning","");call("render",new Class[]{});for(CheckBox day:(CheckBox[])get("weekdays"))day.setChecked(false);});click("播下种子，开始提醒");capture("53");assertText("请选择至少一个星期");
+        main(()->{set("rulesExpanded",true);set("aiWarning","");call("render",new Class[]{});for(CheckBox day:(CheckBox[])get("weekdays"))day.setChecked(false);});click("确认安排，播下种子");capture("53");assertText("请选择至少一个星期");
         fixtures.aiFailure=true;main(()->{call("openEditor",new Class[]{JSONObject.class},(Object)null);field("ai").setText("等会儿提醒我搞卫生");});click("帮我安排");SystemClock.sleep(600);syncUi();capture("54");assertText("重新安排");fixtures.aiFailure=false;
+    }
+    private void arrangementPages()throws Exception{
+        final String request="15 分钟后提醒我收衣服，没完成就每 5 分钟提醒";
+        final String firstNote="我先安排在 15 分钟后提醒。",secondNote="还没完成时，会按你选择的间隔继续提醒。",thirdNote="完成后永久停止这件事的提醒。";
+        final String allNotes=firstNote+"\n"+secondNote+"\n"+thirdNote;
+        fixtures.parsed=UiFixtures.task("minute_interval","pending").put("warnings",new JSONArray().put(firstNote).put(secondNote).put(thirdNote));
+        main(()->{
+            Session session=(Session)get("session");session.login("ui-test-token","ui@example.test","ui-test-password");
+            activity.getSharedPreferences("reminder_execution_v1",Context.MODE_PRIVATE).edit().clear()
+                    .putString("scope",ReminderCoordinator.scope(session)).putString("settings",fixtures.reminderSettings.toString())
+                    .putBoolean("configured",false).putString("plans","[]").commit();
+            call("openEditor",new Class[]{JSONObject.class},(Object)null);
+        });
+        awaitCondition("initial setup prompt",()->get("profileDialog")!=null);capture("arrangement-01-setup");
+        clickDialog("先安排，稍后设置");assertScreen("editor");assertNoDialog();assertWrites(0,0,0);
+        main(()->call("openEditor",new Class[]{JSONObject.class},(Object)null));awaitCondition("setup prompt on a new entry",()->get("profileDialog")!=null);
+        clickDialog("去设置提醒方式");awaitScreen("reminders");
+        main(()->{if(!"editor".equals(get("reminderSettingsBack")))throw new AssertionError("Settings lost the editor return destination");});capture("arrangement-02-settings");
+        click("返回，继续安排");awaitScreen("editor");assertNoDialog();
+        main(()->field("ai").setText(request));click("帮我安排");
+        awaitCondition("AI arrangement summary",()->!(Boolean)get("taskBusy")&&(Boolean)get("manualVisible")&&allNotes.equals(get("aiWarning")));
+        assertText("本次安排");assertText("确认后生效");assertText("查看安排依据与注意事项");assertText(firstNote);assertAbsent(allNotes);assertAbsent("念念可用的提醒方式  ›");
+        main(()->{if((Boolean)get("rulesExpanded"))throw new AssertionError("AI rules should start collapsed");});capture("arrangement-03-summary");
+        click("查看安排依据与注意事项");assertText(allNotes);assertAbsent(firstNote);click("收起说明");assertText(firstNote);assertAbsent(allNotes);
+        main(()->field("title").setText("收好阳台的衣服"));click("调整规则");main(()->field("repeat_minutes").setText("7"));click("收起规则");
+        click("设置");awaitScreen("reminders");click("念念可用的提醒方式  ›");
+        main(()->{
+            for(String channel:new String[]{"手机通知","手机日历","闹钟提醒","邮件（可选）"}){
+                View found=findText(activity.getWindow().getDecorView(),channel);
+                if(!(found instanceof Switch)||((Switch)found).isChecked())throw new AssertionError("Unconfigured channel was preselected: "+channel);
+            }
+        });
+        click("邮件（可选）");click("启用所选提醒方式");
+        awaitCondition("explicit mail-only settings saved",()->ReminderCoordinator.configured(activity)&&findText(activity.getWindow().getDecorView(),"提醒设置已保存")!=null);
+        if(!fixtures.reminderSettings.optBoolean("configured")||!"[\"email\"]".equals(fixtures.reminderSettings.optJSONArray("channels").toString()))throw new AssertionError("Fixture did not receive explicit email-only settings");
+        click("返回，继续安排");awaitScreen("editor");assertNoDialog();
+        main(()->{
+            if(!request.equals(get("aiText"))||!request.equals(field("ai").getText().toString()))throw new AssertionError("Settings return lost the original request");
+            if(!"收好阳台的衣服".equals(field("title").getText().toString()))throw new AssertionError("Settings return lost the edited title");
+            JSONObject built=(JSONObject)call("buildTask",new Class[]{});if(built.getJSONObject("rule").getInt("repeat_minutes")!=7)throw new AssertionError("Settings return lost the edited interval");
+        });
+        assertText("当前可用：邮件");click("选花");
+        revealDescription("向日葵，未选中");clickDescription("向日葵，未选中");
+        main(()->{if(!Integer.valueOf(4).equals(get("selectedFlowerIndex")))throw new AssertionError("New sunflower choice was not selected");});assertText("向日葵 · 这次就种它");capture("arrangement-04-flower");
+        // An accidental back press must neither create nor complete a task.
+        main(()->activity.onBackPressed());awaitCondition("leave-editor confirmation",()->get("profileDialog")!=null);clickDialog("继续编辑");assertScreen("editor");assertWrites(0,0,0);
+        fixtures.taskDelay=450;
+        main(()->{View save=findText(activity.getWindow().getDecorView(),"确认安排，播下种子");if(save==null)throw new AssertionError("New confirmation button absent");save.performClick();save.performClick();});
+        awaitScreen("home");fixtures.taskDelay=0;settle();assertWrites(1,0,0);
+        if(fixtures.lastCreateBody==null||!"sunflower".equals(fixtures.lastCreateBody.optString("flower_type"))||fixtures.lastCreateBody.getJSONObject("rule").getInt("repeat_minutes")!=7)throw new AssertionError("Saved request lost the selected flower or edited interval");
+        assertAbsent("这件事已完成");capture("arrangement-05-created-home");
+        main(()->call("openEditor",new Class[]{JSONObject.class},(Object)null));assertNoDialog();
+        main(()->activity.onBackPressed());awaitCondition("new editor back confirmation",()->get("profileDialog")!=null);clickDialog("离开");awaitScreen("home");assertWrites(1,0,0);
+        main(()->{set("selected",fixtures.detail);call("openEditor",new Class[]{JSONObject.class},fixtures.detail);});assertNoDialog();main(()->field("title").setText("衣服安排已调整"));click("保存修改");awaitScreen("detail");assertWrites(1,1,0);
+        main(()->activity.onBackPressed());awaitScreen("home");assertWrites(1,1,0);
+        Bundle checked=new Bundle();checked.putString("stream","ARRANGEMENT_REQUESTS create="+fixtures.createRequests.get()+", update="+fixtures.updateRequests.get()+", complete="+fixtures.completeRequests.get()+"\n");sendStatus(0,checked);
     }
     private void mainPages()throws Exception{
         fixtures.tasks=new JSONArray().put(UiFixtures.task("daily","pending"));main(()->{set("search","");set("filter","待完成");show("home");});settle();capture("22");
@@ -108,6 +165,14 @@ public final class UiAudit extends Instrumentation {
     // The garden has a perpetual breeze; a queue-idle wait can never finish under software rendering.
     private void syncUi(){java.util.concurrent.CountDownLatch ready=new java.util.concurrent.CountDownLatch(1);new Handler(Looper.getMainLooper()).post(ready::countDown);try{if(!ready.await(8,java.util.concurrent.TimeUnit.SECONDS))throw new AssertionError("UI thread did not respond");}catch(InterruptedException e){Thread.currentThread().interrupt();throw new AssertionError(e);}}
     private void settle(){SystemClock.sleep(650);syncUi();}
+    private interface Probe{boolean ready()throws Exception;}
+    private void awaitCondition(String label,Probe probe)throws Exception{for(int i=0;i<40;i++){final boolean[] ready={false};main(()->ready[0]=probe.ready());if(ready[0])return;SystemClock.sleep(200);}throw new AssertionError("Timed out: "+label);}
+    private void assertScreen(String expected)throws Exception{main(()->{if(!expected.equals(get("screen")))throw new AssertionError("Expected "+expected+", got "+get("screen"));});}
+    private void assertNoDialog()throws Exception{main(()->{if(get("profileDialog")!=null)throw new AssertionError("Unexpected setup prompt or dialog");});}
+    private void assertWrites(int creates,int updates,int completes){if(fixtures.createRequests.get()!=creates||fixtures.updateRequests.get()!=updates||fixtures.completeRequests.get()!=completes)throw new AssertionError("Unexpected requests: create="+fixtures.createRequests.get()+", update="+fixtures.updateRequests.get()+", complete="+fixtures.completeRequests.get());}
+    private void clickDialog(String label)throws Exception{main(()->{AlertDialog dialog=(AlertDialog)get("profileDialog");if(dialog==null)throw new AssertionError("Missing dialog for "+label);View found=findText(dialog.getWindow().getDecorView(),label);if(found==null)throw new AssertionError("Missing dialog action: "+label);found.performClick();});}
+    private void revealDescription(String label)throws Exception{main(()->{View found=findDescription(activity.getWindow().getDecorView(),label);if(found==null)throw new AssertionError("Missing choice: "+label);found.requestRectangleOnScreen(new android.graphics.Rect(0,0,found.getWidth(),found.getHeight()),true);});SystemClock.sleep(250);}
+    private void assertAbsent(String text)throws Exception{main(()->{if(findText(activity.getWindow().getDecorView(),text)!=null)throw new AssertionError("Unexpected visible text: "+text);});}
     private void awaitScreen(String expected)throws Exception{for(int i=0;i<25;i++){final boolean[] match={false};main(()->match[0]=expected.equals(get("screen")));if(match[0])return;SystemClock.sleep(200);}throw new AssertionError("Did not reach "+expected);}
     private void click(String label)throws Exception{main(()->{View found=findText(activity.getWindow().getDecorView(),label);if(found==null)throw new AssertionError("Missing action: "+label);while(!found.isClickable()&&found.getParent() instanceof View)found=(View)found.getParent();found.performClick();});}
     private void clickDescription(String label)throws Exception{main(()->{View found=findDescription(activity.getWindow().getDecorView(),label);if(found==null)throw new AssertionError("Missing action: "+label);found.performClick();});}
@@ -147,7 +212,7 @@ public final class UiAudit extends Instrumentation {
         syncUi();SystemClock.sleep(350);screenshot(id);captures++;
         StringBuilder hierarchy=new StringBuilder();main(()->describe(activity.getWindow().getDecorView(),hierarchy,0));try(Writer writer=new OutputStreamWriter(new FileOutputStream(new File(output,id+".txt")),java.nio.charset.StandardCharsets.UTF_8)){writer.write(hierarchy.toString());}
         final ScrollView[] scroll={null};final int[] start={0};main(()->{View body=(View)get("body");if(body.getParent() instanceof ScrollView){ScrollView candidate=(ScrollView)body.getParent();if(candidate.canScrollVertically(1)&&(AlertDialog)get("profileDialog")==null){scroll[0]=candidate;start[0]=candidate.getScrollY();}}});
-        if(scroll[0]!=null){main(()->scroll[0].fullScroll(View.FOCUS_DOWN));SystemClock.sleep(200);screenshot(id+"-bottom");main(()->scroll[0].scrollTo(0,start[0]));}
+        if(scroll[0]!=null&&!"arrangement".equals(arguments.getString("group"))){main(()->scroll[0].fullScroll(View.FOCUS_DOWN));SystemClock.sleep(200);screenshot(id+"-bottom");main(()->scroll[0].scrollTo(0,start[0]));}
         Bundle progress=new Bundle();progress.putString("stream","Captured "+id+"\n");sendStatus(0,progress);
     }
     private void screenshot(String name)throws IOException{Bitmap bitmap=getUiAutomation().takeScreenshot();if(bitmap==null)throw new AssertionError("Screenshot unavailable: "+name);try(OutputStream out=new FileOutputStream(new File(output,name+".png"))){bitmap.compress(Bitmap.CompressFormat.PNG,100,out);}finally{bitmap.recycle();}}

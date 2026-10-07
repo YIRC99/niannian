@@ -30,7 +30,13 @@ type completionReward struct {
 }
 
 func validGardenFlower(flower string) bool {
-	return flower == "tulip" || flower == "daisy" || flower == "lupine" || flower == "hydrangea"
+	switch flower {
+	case "tulip", "daisy", "lupine", "hydrangea", "sunflower", "rose",
+		"lavender", "cosmos", "lily", "pansy", "iris", "hibiscus":
+		return true
+	default:
+		return false
+	}
 }
 
 func validGardenRequestID(id string) bool {
@@ -98,7 +104,7 @@ func (a *App) createGardenPlant(w http.ResponseWriter, r *http.Request) {
 	}
 	in.Title = strings.Join(strings.Fields(in.Title), " ")
 	if !validGardenFlower(in.FlowerType) || !validGardenRequestID(in.RequestID) || utf8.RuneCountInString(in.Title) < 1 || utf8.RuneCountInString(in.Title) > 100 {
-		writeError(w, 400, "请提供花名、四种花中的一种和有效的 request_id")
+		writeError(w, 400, "请提供花名、支持的花种和有效的 request_id")
 		return
 	}
 	a.mu.Lock()
@@ -252,7 +258,7 @@ func (a *App) setGardenFlower(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !validGardenFlower(in.FlowerType) {
-		writeError(w, 400, "请选择郁金香、雏菊、羽扇豆或绣球")
+		writeError(w, 400, "请选择花园里支持的花种")
 		return
 	}
 	a.mu.Lock()

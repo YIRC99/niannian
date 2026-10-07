@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('all','account','detail','editor','main','records')][string]$Group = 'all',
+    [ValidateSet('all','account','detail','editor','main','records','arrangement')][string]$Group = 'all',
     [string]$Serial,
     [switch]$SkipBuild,
     [switch]$SkipInstall,
