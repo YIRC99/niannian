@@ -6,6 +6,18 @@
   "reference": "参考/晴日小庭院-已确认原稿.png",
   "scope": "当前 Android App 全部12个页面分支，含主要展开层、弹窗、8种规则、关键状态与系统界面衔接。共24张整板、72个页面和状态；不是72个独立路由。",
   "notice": "示例邮箱、地址、任务、日期与数量仅用于设计。系统相机、选图、日期时间和分享界面为衔接示意，实际随手机系统变化。客户端1.9.0已完成72状态的实现、模拟器及真机截图核对，实际验证范围见完成进度.md；图片自身不构成验收证据。",
+  "prototypes": [
+    {
+      "id": "sowing-2026-10-08",
+      "title": "播种页：种子面对面、轻对话、一句话确认",
+      "entry": "prototypes/sowing-2026-10-08/index.html",
+      "related_pages": ["10", "11", "12"],
+      "source_entry": "MainActivity.renderEditor",
+      "status": "交互探索，未移植正式客户端",
+      "asset": "prototypes/sowing-2026-10-08/assets/niannian-expressions.png",
+      "prompt": "prototypes/sowing-2026-10-08/assets/ip-prompt.txt"
+    }
+  ],
   "boards": [
     {
       "id": "01-account",

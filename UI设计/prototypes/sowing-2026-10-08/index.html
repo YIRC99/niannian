@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1"><title>念念 · 播种页三种新提案</title><link rel="stylesheet" href="gallery.css"></head><body>
+<header class="gallery-header"><a class="wordmark" href="../../index.html">念念 <span>设计实验室</span></a><span class="edition">播种体验 / 2026.10.08</span></header>
+<main><section class="intro"><p class="kicker">把一张表，变成一个约定。</p><h1>一两句话，<br class="mobile-break">就把小事说定。</h1><p class="lead">同一件事，三种相处方式。直接点手机里的时间、修改和确认，感受哪种最顺手。</p></section>
+<nav class="scenario" aria-label="切换演示场景"><span>试试不同情况</span><button data-scene="reset" aria-pressed="true">待会儿点外卖</button><button data-scene="complex" aria-pressed="false">每个工作日</button><button data-scene="permission" aria-pressed="false">还没开启通知</button><button id="motion" aria-pressed="false">暂停动画</button></nav>
+<section class="comparison" aria-label="三种可交互设计方案">
+<article><div class="variant-heading"><span class="variant-id">A</span><div><h2>和念念说定 <small>推荐</small></h2><p>角色先接住你，再用两句话说清楚。</p></div></div><div class="phone"><iframe src="a-companion.html" title="方案 A 种子面对面" loading="eager"></iframe></div><div class="variant-footer"><p>更有陪伴感，也最适合建立种子 IP。<br>表情随回应切换，修改藏在句子里。</p><a href="a-companion.html">单独体验 A <span>↗</span></a></div></article>
+<article><div class="variant-heading"><span class="variant-id">B</span><div><h2>聊两句就好</h2><p>像发消息一样，顺手补一句就能改。</p></div></div><div class="phone"><iframe src="b-conversation.html" title="方案 B 轻对话" loading="eager"></iframe></div><div class="variant-footer"><p>适合会反复补充、修改安排的人。<br>保留原话，常用修改一句就够。</p><a href="b-conversation.html">单独体验 B <span>↗</span></a></div></article>
+<article><div class="variant-heading"><span class="variant-id">C</span><div><h2>一句话的约定</h2><p>把文字放到最前面，留一点安静。</p></div></div><div class="phone"><iframe src="c-sentence.html" title="方案 C 一句话确认" loading="eager"></iframe></div><div class="variant-footer"><p>最简洁，最快看清楚和确认。<br>念念像落款一样陪在旁边。</p><a href="c-sentence.html">单独体验 C <span>↗</span></a></div></article>
+</section>
+<section class="character"><div class="character-copy"><p class="kicker">一个会回应的念念</p><h2>不是多放一张插画，<br>是让它开始有性格。</h2><p>听你说时安静，想一想时歪头，说定时开心。<br>角色只在有意义的时候回应，文字一次出现，不用等打字动画。</p><p class="small">本次使用透明表情图 + 网页动画；可随交互切换，比单个循环 GIF 更适合这个页面。</p></div><div class="expressions"><figure><div class="sprite idle"></div><figcaption>听你说</figcaption></figure><figure><div class="sprite think"></div><figcaption>想一想</figcaption></figure><figure><div class="sprite speak"></div><figcaption>跟你说</figcaption></figure><figure><div class="sprite happy"></div><figcaption>说定啦</figcaption></figure></div></section>
+<footer class="gallery-footer"><span>三份独立 HTML · 离线可打开 · 手机可体验</span><span>均为交互样稿，未连接 AI，也不会创建真实提醒。</span></footer></main>
+<script>
+const frames=[...document.querySelectorAll('iframe')];
+function send(action,extra={}){frames.forEach(frame=>frame.contentWindow.postMessage({type:'niannian-prototype',action,...extra},'*'));}
+document.querySelectorAll('[data-scene]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-scene]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));send(button.dataset.scene);}));
+let playing=true;document.querySelector('#motion').addEventListener('click',event=>{playing=!playing;event.target.textContent=playing?'暂停动画':'播放动画';event.target.setAttribute('aria-pressed',String(!playing));send('motion',{enabled:playing});});
+</script></body></html>
