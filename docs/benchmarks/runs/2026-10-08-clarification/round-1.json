@@ -1,0 +1,1163 @@
+{
+  "cases": [
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-09T00:08:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:13:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:18:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:23:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:28:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:33:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:38:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:43:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:48:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:53:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:58:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T01:03:47+08:00",
+          "CycleKey": "minute_interval"
+        }
+      ],
+      "elapsed_ms": 1694,
+      "http_status": 200,
+      "id": "RC-01",
+      "input": "十分钟后叫我收下衣服。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-09T00:08:47+08:00",
+      "now": "2026-10-08T23:58:47+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"收衣服\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"first_at\":\"2026-10-09T00:08:47+08:00\",\"repeat_minutes\":5},\"explanation\":{\"assumptions\":[\"repeat_interval\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 222,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 80,
+            "prompt_cache_hit_tokens": 1408,
+            "prompt_cache_miss_tokens": 776,
+            "prompt_tokens": 2184,
+            "prompt_tokens_details": {
+              "cached_tokens": 1408
+            },
+            "total_tokens": 2264
+          }
+        },
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"收衣服\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"first_at\":\"2026-10-09T00:08:47+08:00\",\"repeat_minutes\":5},\"explanation\":{\"assumptions\":[\"repeat_interval\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 82,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 80,
+            "prompt_cache_hit_tokens": 2176,
+            "prompt_cache_miss_tokens": 847,
+            "prompt_tokens": 3023,
+            "prompt_tokens_details": {
+              "cached_tokens": 2176
+            },
+            "total_tokens": 3103
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"收衣服\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":null,\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-09T00:08:47+08:00\",\"repeat_minutes\":5},\"summary\":\"2026-10-09 00:08:47 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒\",\"warnings\":[\"2026-10-09 00:08:47 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-09 00:08:47（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定重复间隔，以上为暂定建议，可在草稿中调整。\"],\"answered_at\":\"2026-10-08T23:58:47+08:00\"}\n",
+      "request_started_at": "2026-10-08T18:09:38.6391339+08:00",
+      "response": {
+        "answered_at": "2026-10-08T23:58:47+08:00",
+        "description": "",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "first_at": "2026-10-09T00:08:47+08:00",
+          "kind": "minute_interval",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "repeat_minutes": 5,
+          "start_date": "",
+          "times": [],
+          "timezone": "Asia/Shanghai",
+          "weekdays": null
+        },
+        "summary": "2026-10-09 00:08:47 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒",
+        "title": "收衣服",
+        "warnings": [
+          "2026-10-09 00:08:47 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-09 00:08:47（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定重复间隔，以上为暂定建议，可在草稿中调整。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-08T15:07:20+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T15:37:20+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T16:07:20+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T16:37:20+08:00",
+          "CycleKey": "minute_interval"
+        }
+      ],
+      "elapsed_ms": 2375,
+      "http_status": 200,
+      "id": "RC-02",
+      "input": "材料五点就截止了，别让我忘了交。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-08T15:07:20+08:00",
+      "now": "2026-10-08T14:37:20+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"提交材料\",\"description\":\"材料五点截止\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"first_at\":\"2026-10-08T14:37:20+08:00\",\"repeat_minutes\":30,\"end_at\":\"2026-10-08T17:00:00+08:00\"},\"explanation\":{\"assumptions\":[\"repeat_interval\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 478,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 103,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 140,
+            "prompt_tokens": 2188,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2291
+          }
+        },
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"提交材料\",\"description\":\"材料五点截止\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"first_at\":\"2026-10-08T14:37:20+08:00\",\"repeat_minutes\":30,\"end_at\":\"2026-10-08T17:00:00+08:00\"},\"explanation\":{\"assumptions\":[\"repeat_interval\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 414,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 103,
+            "prompt_cache_hit_tokens": 2941,
+            "prompt_cache_miss_tokens": 134,
+            "prompt_tokens": 3075,
+            "prompt_tokens_details": {
+              "cached_tokens": 2941
+            },
+            "total_tokens": 3178
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"提交材料\",\"description\":\"材料五点截止\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":null,\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-08T14:37:20+08:00\",\"end_at\":\"2026-10-08T17:00:00+08:00\",\"repeat_minutes\":30},\"summary\":\"2026-10-08 14:37:20 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）\",\"warnings\":[\"窗口已经开始，只安排余下时段，保留原起点的节奏，不补发全部历史提醒。2026-10-08 14:37:20 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 15:07:20（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定重复间隔，以上为暂定建议，可在草稿中调整。\"],\"answered_at\":\"2026-10-08T14:37:20+08:00\"}\n",
+      "request_started_at": "2026-10-08T18:09:40.3903911+08:00",
+      "response": {
+        "answered_at": "2026-10-08T14:37:20+08:00",
+        "description": "材料五点截止",
+        "rule": {
+          "end_at": "2026-10-08T17:00:00+08:00",
+          "end_date": "",
+          "every_days": 0,
+          "first_at": "2026-10-08T14:37:20+08:00",
+          "kind": "minute_interval",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "repeat_minutes": 30,
+          "start_date": "",
+          "times": [],
+          "timezone": "Asia/Shanghai",
+          "weekdays": null
+        },
+        "summary": "2026-10-08 14:37:20 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）",
+        "title": "提交材料",
+        "warnings": [
+          "窗口已经开始，只安排余下时段，保留原起点的节奏，不补发全部历史提醒。2026-10-08 14:37:20 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 15:07:20（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定重复间隔，以上为暂定建议，可在草稿中调整。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-10T14:00:00+08:00",
+          "CycleKey": "once:2026-10-10"
+        }
+      ],
+      "elapsed_ms": 1309,
+      "http_status": 200,
+      "id": "RC-03",
+      "input": "明早叫我拿快递，算了后天下午吧。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-10T14:00:00+08:00",
+      "now": "2026-10-08T18:12:09+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"拿快递\",\"description\":\"\",\"rule\":{\"kind\":\"once\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"14:00\"],\"start_date\":\"2026-10-10\"},\"explanation\":{\"assumptions\":[\"first_time\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 101,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 64,
+            "prompt_cache_hit_tokens": 1920,
+            "prompt_cache_miss_tokens": 268,
+            "prompt_tokens": 2188,
+            "prompt_tokens_details": {
+              "cached_tokens": 1920
+            },
+            "total_tokens": 2252
+          }
+        },
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"拿快递\",\"description\":\"\",\"rule\":{\"kind\":\"once\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"14:00\"],\"start_date\":\"2026-10-10\"},\"explanation\":{\"assumptions\":[\"first_time\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 100,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 64,
+            "prompt_cache_hit_tokens": 2176,
+            "prompt_cache_miss_tokens": 822,
+            "prompt_tokens": 2998,
+            "prompt_tokens_details": {
+              "cached_tokens": 2176
+            },
+            "total_tokens": 3062
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"拿快递\",\"description\":\"\",\"rule\":{\"kind\":\"once\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"14:00\"],\"start_date\":\"2026-10-10\",\"end_date\":\"\",\"weekdays\":null,\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"2026-10-10 14:00，完成后停止本次提醒\",\"warnings\":[\"2026-10-10 14:00，完成后停止本次提醒。按当前时间计算，下一个规则时间点是 2026-10-10 14:00:00（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。\"],\"answered_at\":\"2026-10-08T18:12:09+08:00\"}\n",
+      "request_started_at": "2026-10-08T18:09:42.8003105+08:00",
+      "response": {
+        "answered_at": "2026-10-08T18:12:09+08:00",
+        "description": "",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "kind": "once",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "start_date": "2026-10-10",
+          "times": [
+            "14:00"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": null
+        },
+        "summary": "2026-10-10 14:00，完成后停止本次提醒",
+        "title": "拿快递",
+        "warnings": [
+          "2026-10-10 14:00，完成后停止本次提醒。按当前时间计算，下一个规则时间点是 2026-10-10 14:00:00（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2027-02-28T09:00:00+08:00",
+          "CycleKey": "2027-02"
+        },
+        {
+          "At": "2027-03-28T09:00:00+08:00",
+          "CycleKey": "2027-03"
+        },
+        {
+          "At": "2027-03-29T09:00:00+08:00",
+          "CycleKey": "2027-03"
+        },
+        {
+          "At": "2027-03-30T09:00:00+08:00",
+          "CycleKey": "2027-03"
+        },
+        {
+          "At": "2027-03-31T09:00:00+08:00",
+          "CycleKey": "2027-03"
+        }
+      ],
+      "elapsed_ms": 1722,
+      "http_status": 200,
+      "id": "RC-04",
+      "input": "每个月月底记得催我交报表。",
+      "mail_count": 0,
+      "next_candidate": "2027-02-28T09:00:00+08:00",
+      "now": "2027-02-27T08:00:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"交报表\",\"description\":\"\",\"rule\":{\"kind\":\"monthly_window\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"month_start\":28,\"month_end\":31},\"explanation\":{\"assumptions\":[\"first_time\",\"date_range\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 101,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 69,
+            "prompt_cache_hit_tokens": 1920,
+            "prompt_cache_miss_tokens": 265,
+            "prompt_tokens": 2185,
+            "prompt_tokens_details": {
+              "cached_tokens": 1920
+            },
+            "total_tokens": 2254
+          }
+        },
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"交报表\",\"description\":\"\",\"rule\":{\"kind\":\"monthly_window\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"month_start\":28,\"month_end\":31},\"explanation\":{\"assumptions\":[\"first_time\",\"date_range\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 297,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 69,
+            "prompt_cache_hit_tokens": 2176,
+            "prompt_cache_miss_tokens": 827,
+            "prompt_tokens": 3003,
+            "prompt_tokens_details": {
+              "cached_tokens": 2176
+            },
+            "total_tokens": 3072
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"交报表\",\"description\":\"\",\"rule\":{\"kind\":\"monthly_window\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":null,\"month_start\":28,\"month_end\":31,\"every_days\":0,\"max_reminders\":0},\"summary\":\"每月 28—31 日，每天 09:00，完成后停止本月提醒\",\"warnings\":[\"每月 28—31 日，每天 09:00，完成后停止本月提醒。按当前时间计算，下一个规则时间点是 2027-02-28 09:00:00（Asia/Shanghai）；确认后才会创建。\",\"短月按当月最后一天截断，不会顺延到下个月。\",\"月底范围先按每月 28 号至 31 号（短月截至月末），日期范围可以改。\",\"你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。\"],\"answered_at\":\"2027-02-27T08:00:00+08:00\"}\n",
+      "request_started_at": "2026-10-08T18:09:44.1327567+08:00",
+      "response": {
+        "answered_at": "2027-02-27T08:00:00+08:00",
+        "description": "",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "kind": "monthly_window",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 31,
+          "month_start": 28,
+          "start_date": "",
+          "times": [
+            "09:00"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": null
+        },
+        "summary": "每月 28—31 日，每天 09:00，完成后停止本月提醒",
+        "title": "交报表",
+        "warnings": [
+          "每月 28—31 日，每天 09:00，完成后停止本月提醒。按当前时间计算，下一个规则时间点是 2027-02-28 09:00:00（Asia/Shanghai）；确认后才会创建。",
+          "短月按当月最后一天截断，不会顺延到下个月。",
+          "月底范围先按每月 28 号至 31 号（短月截至月末），日期范围可以改。",
+          "你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-12-31T09:00:00+08:00",
+          "CycleKey": "2026-12-31"
+        },
+        {
+          "At": "2027-01-01T09:00:00+08:00",
+          "CycleKey": "2027-01-01"
+        },
+        {
+          "At": "2027-01-02T09:00:00+08:00",
+          "CycleKey": "2027-01-02"
+        }
+      ],
+      "elapsed_ms": 1565,
+      "http_status": 200,
+      "id": "RC-05",
+      "input": "跨年那几天，每天提醒我量一下阳台温度。",
+      "mail_count": 0,
+      "next_candidate": "2026-12-31T09:00:00+08:00",
+      "now": "2026-12-30T22:00:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"量阳台温度\",\"description\":\"\",\"rule\":{\"kind\":\"date_range\",\"mode\":\"every_day\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"start_date\":\"2026-12-31\",\"end_date\":\"2027-01-02\"},\"explanation\":{\"assumptions\":[\"date_range\",\"first_time\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 115,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 78,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 142,
+            "prompt_tokens": 2190,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2268
+          }
+        },
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"量阳台温度\",\"description\":\"\",\"rule\":{\"kind\":\"date_range\",\"mode\":\"every_day\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"start_date\":\"2026-12-31\",\"end_date\":\"2027-01-02\"},\"explanation\":{\"assumptions\":[\"date_range\",\"first_time\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 87,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 78,
+            "prompt_cache_hit_tokens": 2816,
+            "prompt_cache_miss_tokens": 215,
+            "prompt_tokens": 3031,
+            "prompt_tokens_details": {
+              "cached_tokens": 2816
+            },
+            "total_tokens": 3109
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"量阳台温度\",\"description\":\"\",\"rule\":{\"kind\":\"date_range\",\"mode\":\"every_day\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"start_date\":\"2026-12-31\",\"end_date\":\"2027-01-02\",\"weekdays\":null,\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"2026-12-31 至 2027-01-02，每天 09:00，完成后停止当天提醒，下一提醒日重新开始\",\"warnings\":[\"2026-12-31 至 2027-01-02，每天 09:00，完成后停止当天提醒，下一提醒日重新开始。按当前时间计算，下一个规则时间点是 2026-12-31 09:00:00（Asia/Shanghai）；确认后才会创建。\",\"日期范围先按 2026-12-31 至 2027-01-02，起止日期可以改。\",\"你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。\"],\"answered_at\":\"2026-12-30T22:00:00+08:00\"}\n",
+      "request_started_at": "2026-10-08T18:09:45.9146667+08:00",
+      "response": {
+        "answered_at": "2026-12-30T22:00:00+08:00",
+        "description": "",
+        "rule": {
+          "end_date": "2027-01-02",
+          "every_days": 0,
+          "kind": "date_range",
+          "max_reminders": 0,
+          "mode": "every_day",
+          "month_end": 0,
+          "month_start": 0,
+          "start_date": "2026-12-31",
+          "times": [
+            "09:00"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": null
+        },
+        "summary": "2026-12-31 至 2027-01-02，每天 09:00，完成后停止当天提醒，下一提醒日重新开始",
+        "title": "量阳台温度",
+        "warnings": [
+          "2026-12-31 至 2027-01-02，每天 09:00，完成后停止当天提醒，下一提醒日重新开始。按当前时间计算，下一个规则时间点是 2026-12-31 09:00:00（Asia/Shanghai）；确认后才会创建。",
+          "日期范围先按 2026-12-31 至 2027-01-02，起止日期可以改。",
+          "你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-08T12:00:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        },
+        {
+          "At": "2026-10-09T12:00:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        },
+        {
+          "At": "2026-10-10T12:00:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        },
+        {
+          "At": "2026-10-11T12:00:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        }
+      ],
+      "elapsed_ms": 1819,
+      "http_status": 200,
+      "id": "RC-06",
+      "input": "后面每天中午记得提醒我还相机。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-08T12:00:00+08:00",
+      "now": "2026-10-08T11:20:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"还相机\",\"description\":\"\",\"rule\":{\"kind\":\"ongoing\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"12:00\"],\"start_date\":\"2026-10-08\"},\"explanation\":{\"assumptions\":[\"first_time\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 91,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 65,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 137,
+            "prompt_tokens": 2185,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2250
+          }
+        },
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"还相机\",\"description\":\"\",\"rule\":{\"kind\":\"ongoing\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"12:00\"],\"start_date\":\"2026-10-08\"},\"explanation\":{\"assumptions\":[\"first_time\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 150,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 65,
+            "prompt_cache_hit_tokens": 2816,
+            "prompt_cache_miss_tokens": 185,
+            "prompt_tokens": 3001,
+            "prompt_tokens_details": {
+              "cached_tokens": 2816
+            },
+            "total_tokens": 3066
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"还相机\",\"description\":\"\",\"rule\":{\"kind\":\"ongoing\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"12:00\"],\"start_date\":\"2026-10-08\",\"end_date\":\"\",\"weekdays\":null,\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"从 2026-10-08 起，每天 12:00，完成后不再提醒\",\"warnings\":[\"从 2026-10-08 起，每天 12:00，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 12:00:00（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。\"],\"answered_at\":\"2026-10-08T11:20:00+08:00\"}\n",
+      "request_started_at": "2026-10-08T18:09:47.5030233+08:00",
+      "response": {
+        "answered_at": "2026-10-08T11:20:00+08:00",
+        "description": "",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "kind": "ongoing",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "start_date": "2026-10-08",
+          "times": [
+            "12:00"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": null
+        },
+        "summary": "从 2026-10-08 起，每天 12:00，完成后不再提醒",
+        "title": "还相机",
+        "warnings": [
+          "从 2026-10-08 起，每天 12:00，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 12:00:00（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-08T23:52:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T23:57:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:02:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:07:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:12:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:17:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:22:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:27:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:32:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:37:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:42:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:47:18+08:00",
+          "CycleKey": "minute_interval"
+        }
+      ],
+      "elapsed_ms": 1485,
+      "http_status": 200,
+      "id": "RC-07",
+      "input": "衣服洗好了，等会儿叫我晾一下。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-08T23:52:18+08:00",
+      "now": "2026-10-08T23:42:18+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"晾衣服\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"first_at\":\"2026-10-08T23:52:18+08:00\",\"repeat_minutes\":5},\"explanation\":{\"assumptions\":[\"repeat_interval\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 82,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 80,
+            "prompt_cache_hit_tokens": 1920,
+            "prompt_cache_miss_tokens": 267,
+            "prompt_tokens": 2187,
+            "prompt_tokens_details": {
+              "cached_tokens": 1920
+            },
+            "total_tokens": 2267
+          }
+        },
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"晾衣服\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"first_at\":\"2026-10-08T23:52:18+08:00\",\"repeat_minutes\":5},\"explanation\":{\"assumptions\":[\"repeat_interval\"],\"limitations\":[]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 109,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 80,
+            "prompt_cache_hit_tokens": 2176,
+            "prompt_cache_miss_tokens": 850,
+            "prompt_tokens": 3026,
+            "prompt_tokens_details": {
+              "cached_tokens": 2176
+            },
+            "total_tokens": 3106
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"晾衣服\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":null,\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-08T23:52:18+08:00\",\"repeat_minutes\":5},\"summary\":\"2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒\",\"warnings\":[\"2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 23:52:18（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定重复间隔，以上为暂定建议，可在草稿中调整。\"],\"answered_at\":\"2026-10-08T23:42:18+08:00\"}\n",
+      "request_started_at": "2026-10-08T18:09:49.3796114+08:00",
+      "response": {
+        "answered_at": "2026-10-08T23:42:18+08:00",
+        "description": "",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "first_at": "2026-10-08T23:52:18+08:00",
+          "kind": "minute_interval",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "repeat_minutes": 5,
+          "start_date": "",
+          "times": [],
+          "timezone": "Asia/Shanghai",
+          "weekdays": null
+        },
+        "summary": "2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒",
+        "title": "晾衣服",
+        "warnings": [
+          "2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 23:52:18（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定重复间隔，以上为暂定建议，可在草稿中调整。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "elapsed_ms": 410,
+      "http_status": 200,
+      "id": "RC-08",
+      "input": "纽约那个面试，提前半小时叫我。",
+      "mail_count": 0,
+      "now": "2026-10-08T20:00:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"clarification\":{\"question\":\"纽约面试的日期和当地时间几点开始？\",\"options\":[],\"input_hint\":\"例如：10月15日 14:00（纽约时间）\"}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 92,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 40,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 137,
+            "prompt_tokens": 2185,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2225
+          }
+        }
+      ],
+      "raw_response": "{\"answered_at\":\"2026-10-08T20:00:00+08:00\",\"clarification\":{\"question\":\"纽约面试的日期和当地时间几点开始？\",\"options\":[],\"input_hint\":\"例如：10月15日 14:00（纽约时间）\"},\"reference_time\":\"2026-10-08T20:00:00+08:00\",\"status\":\"needs_clarification\"}\n",
+      "request_started_at": "2026-10-08T18:09:50.8866141+08:00",
+      "response": {
+        "answered_at": "2026-10-08T20:00:00+08:00",
+        "clarification": {
+          "input_hint": "例如：10月15日 14:00（纽约时间）",
+          "options": [],
+          "question": "纽约面试的日期和当地时间几点开始？"
+        },
+        "reference_time": "2026-10-08T20:00:00+08:00",
+        "status": "needs_clarification"
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-08T14:00:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T14:30:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T15:00:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T15:30:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T16:00:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T16:30:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T17:00:00+08:00",
+          "CycleKey": "minute_interval"
+        }
+      ],
+      "elapsed_ms": 1507,
+      "http_status": 200,
+      "id": "RC-09",
+      "input": "上班的下午隔会儿叫我起来走走。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-08T14:00:00+08:00",
+      "now": "2026-10-08T13:10:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"下午起身走动\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"first_at\":\"2026-10-08T14:00:00+08:00\",\"repeat_minutes\":30,\"end_at\":\"2026-10-08T17:00:00+08:00\"},\"explanation\":{\"assumptions\":[\"time_window\",\"first_time\"],\"limitations\":[\"recurrence\"]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 156,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 107,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 138,
+            "prompt_tokens": 2186,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2293
+          }
+        },
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"下午起身走动\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"first_at\":\"2026-10-08T14:00:00+08:00\",\"repeat_minutes\":30,\"end_at\":\"2026-10-08T17:00:00+08:00\"},\"explanation\":{\"assumptions\":[\"time_window\",\"first_time\"],\"limitations\":[\"recurrence\"]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 96,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 107,
+            "prompt_cache_hit_tokens": 2176,
+            "prompt_cache_miss_tokens": 903,
+            "prompt_tokens": 3079,
+            "prompt_tokens_details": {
+              "cached_tokens": 2176
+            },
+            "total_tokens": 3186
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"下午起身走动\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":null,\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-08T14:00:00+08:00\",\"end_at\":\"2026-10-08T17:00:00+08:00\",\"repeat_minutes\":30},\"summary\":\"2026-10-08 14:00:00 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）\",\"warnings\":[\"窗口尚未开始。2026-10-08 14:00:00 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 14:00:00（Asia/Shanghai）；确认后才会创建。\",\"这次时段先按 2026-10-08 14:00 至 2026-10-08 17:00，起止时间可以改。\",\"你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。\",\"原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。\"],\"answered_at\":\"2026-10-08T13:10:00+08:00\"}\n",
+      "request_started_at": "2026-10-08T18:09:51.3537049+08:00",
+      "response": {
+        "answered_at": "2026-10-08T13:10:00+08:00",
+        "description": "",
+        "rule": {
+          "end_at": "2026-10-08T17:00:00+08:00",
+          "end_date": "",
+          "every_days": 0,
+          "first_at": "2026-10-08T14:00:00+08:00",
+          "kind": "minute_interval",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "repeat_minutes": 30,
+          "start_date": "",
+          "times": [],
+          "timezone": "Asia/Shanghai",
+          "weekdays": null
+        },
+        "summary": "2026-10-08 14:00:00 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）",
+        "title": "下午起身走动",
+        "warnings": [
+          "窗口尚未开始。2026-10-08 14:00:00 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 14:00:00（Asia/Shanghai）；确认后才会创建。",
+          "这次时段先按 2026-10-08 14:00 至 2026-10-08 17:00，起止时间可以改。",
+          "你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。",
+          "原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-28T10:00:00+08:00",
+          "CycleKey": "range:2026-10-28:2026-11-03"
+        }
+      ],
+      "elapsed_ms": 1315,
+      "http_status": 200,
+      "id": "RC-10",
+      "input": "月底到下月初催我对下账，放假就别催了。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-28T10:00:00+08:00",
+      "now": "2026-10-24T10:00:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"对下账\",\"description\":\"\",\"rule\":{\"kind\":\"date_range\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"10:00\"],\"start_date\":\"2026-10-28\",\"end_date\":\"2026-11-03\"},\"explanation\":{\"assumptions\":[\"first_time\",\"date_range\"],\"limitations\":[\"recurrence\",\"holiday_calendar\"]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 100,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 89,
+            "prompt_cache_hit_tokens": 1920,
+            "prompt_cache_miss_tokens": 270,
+            "prompt_tokens": 2190,
+            "prompt_tokens_details": {
+              "cached_tokens": 1920
+            },
+            "total_tokens": 2279
+          }
+        },
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"对下账\",\"description\":\"\",\"rule\":{\"kind\":\"date_range\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"10:00\"],\"start_date\":\"2026-10-28\",\"end_date\":\"2026-11-03\"},\"explanation\":{\"assumptions\":[\"first_time\",\"date_range\"],\"limitations\":[\"recurrence\",\"holiday_calendar\"]}}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 121,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 89,
+            "prompt_cache_hit_tokens": 2176,
+            "prompt_cache_miss_tokens": 860,
+            "prompt_tokens": 3036,
+            "prompt_tokens_details": {
+              "cached_tokens": 2176
+            },
+            "total_tokens": 3125
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"对下账\",\"description\":\"\",\"rule\":{\"kind\":\"date_range\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"10:00\"],\"start_date\":\"2026-10-28\",\"end_date\":\"2026-11-03\",\"weekdays\":null,\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"2026-10-28 至 2026-11-03，每天 10:00，完成后停止本轮提醒\",\"warnings\":[\"2026-10-28 至 2026-11-03，每天 10:00，完成后停止本轮提醒。按当前时间计算，下一个规则时间点是 2026-10-28 10:00:00（Asia/Shanghai）；确认后才会创建。\",\"日期范围先按 2026-10-28 至 2026-11-03，起止日期可以改。\",\"你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。\",\"原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮；本次按上述规则的日期执行，不能自动跳过法定节假日或识别调休。请核对这些替代条件后再确认。\"],\"answered_at\":\"2026-10-24T10:00:00+08:00\"}\n",
+      "request_started_at": "2026-10-08T18:09:52.9191674+08:00",
+      "response": {
+        "answered_at": "2026-10-24T10:00:00+08:00",
+        "description": "",
+        "rule": {
+          "end_date": "2026-11-03",
+          "every_days": 0,
+          "kind": "date_range",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "start_date": "2026-10-28",
+          "times": [
+            "10:00"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": null
+        },
+        "summary": "2026-10-28 至 2026-11-03，每天 10:00，完成后停止本轮提醒",
+        "title": "对下账",
+        "warnings": [
+          "2026-10-28 至 2026-11-03，每天 10:00，完成后停止本轮提醒。按当前时间计算，下一个规则时间点是 2026-10-28 10:00:00（Asia/Shanghai）；确认后才会创建。",
+          "日期范围先按 2026-10-28 至 2026-11-03，起止日期可以改。",
+          "你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。",
+          "原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮；本次按上述规则的日期执行，不能自动跳过法定节假日或识别调休。请核对这些替代条件后再确认。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    }
+  ],
+  "finished_at": "2026-10-08T18:09:54.2757417+08:00",
+  "lane": "fixed_clock_backend_handler",
+  "method": "Real app HTTP handler and real provider; temporary DB and fake mailer; exact fixture clock; no task creation or scheduler started.",
+  "model_configured": "deepseek-flash",
+  "source_commit": "987b50a91f84185e985ce1e83f93f61e1eeee9ab",
+  "started_at": "2026-10-08T18:09:38.6096997+08:00",
+  "suite_file": "reminder-creation-colloquial-v2.json",
+  "suite_sha256": "0dd88030f56d2b4f76894eb780990d2662ed259fbd9273a52f9bd658b3540a5b"
+}

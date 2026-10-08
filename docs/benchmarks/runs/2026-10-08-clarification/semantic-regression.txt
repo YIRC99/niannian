@@ -1,0 +1,75 @@
+=== RUN   TestLiveColloquialPromptQuality
+=== RUN   TestLiveColloquialPromptQuality/hard_deadline
+=== RUN   TestLiveColloquialPromptQuality/single_return_obligation
+=== RUN   TestLiveColloquialPromptQuality/afternoon_window
+    colloquial_prompt_live_test.go:49: 2026-10-08 14:00:00 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻） |  | [窗口尚未开始。2026-10-08 14:00:00 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 14:00:00（Asia/Shanghai）；确认后才会创建。 这次时段先按 2026-10-08 14:00 至 2026-10-08 17:00，起止时间可以改。 你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。 原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。]
+=== RUN   TestLiveColloquialPromptQuality/range_assumption
+    colloquial_prompt_live_test.go:60: 2026-12-31 至 2027-01-02，每天 09:00，完成后停止当天提醒，下一提醒日重新开始 |  | [2026-12-31 至 2027-01-02，每天 09:00，完成后停止当天提醒，下一提醒日重新开始。按当前时间计算，下一个规则时间点是 2026-12-31 09:00:00（Asia/Shanghai）；确认后才会创建。 日期范围先按 2026-12-31 至 2027-01-02，起止日期可以改。 你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。]
+=== RUN   TestLiveColloquialPromptQuality/pickup_obligation
+    colloquial_prompt_live_test.go:71: 2026-10-10 14:00，完成后停止本次提醒 |  | [2026-10-10 14:00，完成后停止本次提醒。按当前时间计算，下一个规则时间点是 2026-10-10 14:00:00（Asia/Shanghai）；确认后才会创建。 你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。]
+=== RUN   TestLiveColloquialPromptQuality/missing_interview_anchor
+    colloquial_prompt_live_test.go:84: clarification: {Question:纽约面试的日期和当地时间几点开始？ Options:[] InputHint:例如：10月10日 14:00（纽约时间）}
+=== RUN   TestLiveColloquialPromptQuality/holdout_missing_flight_anchor
+    colloquial_prompt_live_test.go:84: clarification: {Question:请问航班是哪一天、当地几点起飞？ Options:[] InputHint:例如：10月10日 14:30 起飞（或写当地时区）}
+--- PASS: TestLiveColloquialPromptQuality (9.76s)
+    --- PASS: TestLiveColloquialPromptQuality/hard_deadline (1.65s)
+    --- PASS: TestLiveColloquialPromptQuality/single_return_obligation (1.71s)
+    --- PASS: TestLiveColloquialPromptQuality/afternoon_window (1.60s)
+    --- PASS: TestLiveColloquialPromptQuality/range_assumption (1.52s)
+    --- PASS: TestLiveColloquialPromptQuality/pickup_obligation (1.30s)
+    --- PASS: TestLiveColloquialPromptQuality/missing_interview_anchor (1.09s)
+    --- PASS: TestLiveColloquialPromptQuality/holdout_missing_flight_anchor (0.88s)
+=== RUN   TestLiveReminderFidelity
+=== RUN   TestLiveReminderFidelity/RC-01
+    fidelity_live_test.go:52: 2026-10-09 00:08:47 首次提醒，之后每 2 分钟提醒一次，完成后不再提醒; notes=; feedback=[2026-10-09 00:08:47 首次提醒，之后每 2 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-09 00:08:47（Asia/Shanghai）；确认后才会创建。]
+=== RUN   TestLiveReminderFidelity/RC-02
+    fidelity_live_test.go:52: 2026-10-08 14:00:00 首次提醒，之后每 20 分钟提醒一次，完成后不再提醒，每周期最多 6 次，截止 2026-10-08 17:00:00（含此时刻）; notes=; feedback=[窗口已经开始，只安排余下时段，保留原起点的节奏，不补发全部历史提醒。2026-10-08 14:00:00 首次提醒，之后每 20 分钟提醒一次，完成后不再提醒，每周期最多 6 次，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 14:40:00（Asia/Shanghai）；确认后才会创建。]
+=== RUN   TestLiveReminderFidelity/RC-03
+    fidelity_live_test.go:52: 2026-10-10 16:30，每周期只提醒一次; notes=北门快递柜，带取件码; feedback=[2026-10-10 16:30，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-10 16:30:00（Asia/Shanghai）；确认后才会创建。]
+=== RUN   TestLiveReminderFidelity/RC-04
+    fidelity_live_test.go:52: 每月 28—31 日，每天 09:00、20:00，完成后停止本月提醒，每周期最多 3 次; notes=; feedback=[每月 28—31 日，每天 09:00、20:00，完成后停止本月提醒，每周期最多 3 次。按当前时间计算，下一个规则时间点是 2027-02-28 09:00:00（Asia/Shanghai）；确认后才会创建。 短月按当月最后一天截断，不会顺延到下个月。]
+=== RUN   TestLiveReminderFidelity/RC-05
+    fidelity_live_test.go:52: 2026-12-31 至 2027-01-03，每天 08:00、20:30，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次; notes=; feedback=[2026-12-31 至 2027-01-03，每天 08:00、20:30，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次。按当前时间计算，下一个规则时间点是 2026-12-31 08:00:00（Asia/Shanghai）；确认后才会创建。]
+=== RUN   TestLiveReminderFidelity/RC-06
+    fidelity_live_test.go:52: 从 2026-10-08 起，每天 12:20、19:40，完成后不再提醒; notes=; feedback=[从 2026-10-08 起，每天 12:20、19:40，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 12:20:00（Asia/Shanghai）；确认后才会创建。]
+=== RUN   TestLiveReminderFidelity/RC-07
+    fidelity_live_test.go:52: 2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒; notes=; feedback=[2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 23:52:18（Asia/Shanghai）；确认后才会创建。 你没有明确指定首次时间、重复间隔，以上为暂定建议，可在草稿中调整。]
+=== RUN   TestLiveReminderFidelity/RC-08
+    fidelity_live_test.go:52: 2026-10-09 08:15，每周期只提醒一次; notes=纽约远程面试原始时间：2026-10-09 09:00（America/New_York）; feedback=[2026-10-09 08:15，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-09 08:15:00（America/New_York）；确认后才会创建。]
+=== RUN   TestLiveReminderFidelity/RC-09
+    fidelity_live_test.go:52: 2026-10-08 14:00:00 首次提醒，之后每 7 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）; notes=; feedback=[窗口尚未开始。2026-10-08 14:00:00 首次提醒，之后每 7 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 14:00:00（Asia/Shanghai）；确认后才会创建。 这次时段先按 2026-10-08 14:00 至 2026-10-08 17:00，起止时间可以改。 原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。]
+=== RUN   TestLiveReminderFidelity/RC-10
+    fidelity_live_test.go:52: 2026-10-25 至 2026-11-05，每天 09:00，完成后停止本轮提醒，每周期最多 4 次; notes=; feedback=[2026-10-25 至 2026-11-05，每天 09:00，完成后停止本轮提醒，每周期最多 4 次。按当前时间计算，下一个规则时间点是 2026-10-25 09:00:00（Asia/Shanghai）；确认后才会创建。 日期范围先按 2026-10-25 至 2026-11-05，起止日期可以改。 你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。 原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮；本次按上述规则的日期执行，不能自动跳过法定节假日或识别调休。请核对这些替代条件后再确认。]
+--- PASS: TestLiveReminderFidelity (16.45s)
+    --- PASS: TestLiveReminderFidelity/RC-01 (1.30s)
+    --- PASS: TestLiveReminderFidelity/RC-02 (1.57s)
+    --- PASS: TestLiveReminderFidelity/RC-03 (1.80s)
+    --- PASS: TestLiveReminderFidelity/RC-04 (1.76s)
+    --- PASS: TestLiveReminderFidelity/RC-05 (1.67s)
+    --- PASS: TestLiveReminderFidelity/RC-06 (1.58s)
+    --- PASS: TestLiveReminderFidelity/RC-07 (1.71s)
+    --- PASS: TestLiveReminderFidelity/RC-08 (1.74s)
+    --- PASS: TestLiveReminderFidelity/RC-09 (1.85s)
+    --- PASS: TestLiveReminderFidelity/RC-10 (1.46s)
+=== RUN   TestLiveReminderFidelityVariations
+=== RUN   TestLiveReminderFidelityVariations/active_window
+    fidelity_live_test.go:138: 2026-11-12 10:00:00 首次提醒，之后每 13 分钟提醒一次，完成后不再提醒，截止 2026-11-12 11:30:00（含此时刻）; feedback=[窗口已经开始，只安排余下时段，保留原起点的节奏，不补发全部历史提醒。2026-11-12 10:00:00 首次提醒，之后每 13 分钟提醒一次，完成后不再提醒，截止 2026-11-12 11:30:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-11-12 10:26:00（Asia/Shanghai）；确认后才会创建。]
+=== RUN   TestLiveReminderFidelityVariations/active_cross_month
+    fidelity_live_test.go:138: 2026-09-26 至 2026-10-04，每天 19:00，完成后停止本轮提醒，每周期最多 5 次; feedback=[2026-09-26 至 2026-10-04，每天 19:00，完成后停止本轮提醒，每周期最多 5 次。按当前时间计算，下一个规则时间点是 2026-10-02 19:00:00（Asia/Shanghai）；确认后才会创建。 原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。]
+=== RUN   TestLiveReminderFidelityVariations/cross_year
+    fidelity_live_test.go:138: 2026-12-27 至 2027-01-06，每天 18:00，完成后停止本轮提醒; feedback=[2026-12-27 至 2027-01-06，每天 18:00，完成后停止本轮提醒。按当前时间计算，下一个规则时间点是 2026-12-27 18:00:00（Asia/Shanghai）；确认后才会创建。 日期范围先按 2026-12-27 至 2027-01-06，起止日期可以改。 原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。]
+=== RUN   TestLiveReminderFidelityVariations/explicit_london_zone
+    fidelity_live_test.go:138: 2026-10-12 13:40，每周期只提醒一次; feedback=[2026-10-12 13:40，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-12 13:40:00（Europe/London）；确认后才会创建。]
+=== RUN   TestLiveReminderFidelityVariations/cross_month_daily_completion
+    fidelity_live_test.go:138: 2026-09-26 至 2026-10-04，每天 19:00，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次; feedback=[2026-09-26 至 2026-10-04，每天 19:00，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次。按当前时间计算，下一个规则时间点是 2026-10-02 19:00:00（Asia/Shanghai）；确认后才会创建。 日期范围先按 2026-09-26 至 2026-10-04，起止日期可以改。 原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。]
+=== RUN   TestLiveReminderFidelityVariations/cross_month_notify_once
+    fidelity_live_test.go:138: 2026-12-27 至 2027-01-06，每天 09:00，每周期只提醒一次; feedback=[2026-12-27 至 2027-01-06，每天 09:00，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-12-27 09:00:00（Asia/Shanghai）；确认后才会创建。 日期范围先按 2026-12-27 至 2027-01-06，起止日期可以改。 原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。]
+--- PASS: TestLiveReminderFidelityVariations (9.27s)
+    --- PASS: TestLiveReminderFidelityVariations/active_window (1.71s)
+    --- PASS: TestLiveReminderFidelityVariations/active_cross_month (1.85s)
+    --- PASS: TestLiveReminderFidelityVariations/cross_year (1.31s)
+    --- PASS: TestLiveReminderFidelityVariations/explicit_london_zone (1.05s)
+    --- PASS: TestLiveReminderFidelityVariations/cross_month_daily_completion (1.60s)
+    --- PASS: TestLiveReminderFidelityVariations/cross_month_notify_once (1.75s)
+PASS
+ok  	niannian/internal/ai	36.071s

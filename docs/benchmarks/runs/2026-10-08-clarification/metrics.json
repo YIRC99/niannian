@@ -1,0 +1,36 @@
+{
+  "source_commit": "3e6228545edf571d9e0b8ea8bf1ffb060973cb17",
+  "before_scores": [
+    77,
+    76,
+    75
+  ],
+  "after_scores": [
+    96,
+    93,
+    94
+  ],
+  "before_mean": 76,
+  "after_mean": 94.33333333333333,
+  "before_usage": {
+    "calls": 60,
+    "requests": 30,
+    "prompt_tokens": 167138,
+    "completion_tokens": 7212,
+    "total_tokens": 174350,
+    "prompt_cache_hit_tokens": 149374,
+    "prompt_cache_miss_tokens": 17764
+  },
+  "after_usage": {
+    "calls": 55,
+    "requests": 30,
+    "prompt_tokens": 141348,
+    "completion_tokens": 4379,
+    "total_tokens": 145727,
+    "prompt_cache_hit_tokens": 127479,
+    "prompt_cache_miss_tokens": 13869
+  },
+  "token_reduction_percent": 16.416977344422136,
+  "conversation_passes": 5,
+  "conversation_count": 5
+}

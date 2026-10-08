@@ -1,0 +1,925 @@
+{
+  "cases": [
+    {
+      "id": "free_text",
+      "input": "纽约那个面试，提前半小时叫我。",
+      "mail_count": 0,
+      "passed": true,
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      },
+      "steps": [
+        {
+          "elapsed_ms": 798,
+          "http_status": 200,
+          "now": "2026-10-08T20:00:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"clarification\":{\"question\":\"纽约面试的当地日期和开始时间是几点？\",\"options\":[],\"input_hint\":\"例如：10月10日 14:30（纽约时间）\"}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 142,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 41,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 137,
+                "prompt_tokens": 2185,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2048
+                },
+                "total_tokens": 2226
+              }
+            }
+          ],
+          "request": {
+            "answers": null,
+            "reference_time": "",
+            "supports_clarification": true,
+            "text": "纽约那个面试，提前半小时叫我。"
+          },
+          "response": {
+            "answered_at": "2026-10-08T20:00:00+08:00",
+            "clarification": {
+              "input_hint": "例如：10月10日 14:30（纽约时间）",
+              "options": [],
+              "question": "纽约面试的当地日期和开始时间是几点？"
+            },
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "status": "needs_clarification"
+          }
+        },
+        {
+          "elapsed_ms": 1838,
+          "http_status": 200,
+          "now": "2026-10-08T20:00:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"title\":\"纽约面试提前提醒\",\"description\":\"纽约当地2026-10-09 14:00面试开始\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"America/New_York\",\"times\":[\"13:30\"],\"start_date\":\"2026-10-09\"},\"explanation\":{\"assumptions\":[],\"limitations\":[]}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 91,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 78,
+                "prompt_cache_hit_tokens": 2304,
+                "prompt_cache_miss_tokens": 183,
+                "prompt_tokens": 2487,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2304
+                },
+                "total_tokens": 2565
+              }
+            },
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"title\":\"纽约面试提前提醒\",\"description\":\"纽约当地2026-10-09 14:00面试开始\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"America/New_York\",\"times\":[\"13:30\"],\"start_date\":\"2026-10-09\"},\"explanation\":{\"assumptions\":[],\"limitations\":[]}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 89,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 78,
+                "prompt_cache_hit_tokens": 2560,
+                "prompt_cache_miss_tokens": 753,
+                "prompt_tokens": 3313,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2560
+                },
+                "total_tokens": 3391
+              }
+            }
+          ],
+          "request": {
+            "answers": [
+              {
+                "question": "纽约面试的当地日期和开始时间是几点？",
+                "answer": "2026年10月9日纽约当地14:00开始"
+              }
+            ],
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "supports_clarification": true,
+            "text": "纽约那个面试，提前半小时叫我。"
+          },
+          "response": {
+            "answered_at": "2026-10-08T20:00:00+08:00",
+            "description": "纽约当地2026-10-09 14:00面试开始",
+            "rule": {
+              "end_date": "",
+              "every_days": 0,
+              "kind": "once",
+              "max_reminders": 0,
+              "mode": "notify_once",
+              "month_end": 0,
+              "month_start": 0,
+              "start_date": "2026-10-09",
+              "times": [
+                "13:30"
+              ],
+              "timezone": "America/New_York",
+              "weekdays": null
+            },
+            "summary": "2026-10-09 13:30，每周期只提醒一次",
+            "title": "纽约面试提前提醒",
+            "warnings": [
+              "2026-10-09 13:30，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-09 13:30:00（America/New_York）；确认后才会创建。"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "timezone_choice",
+      "input": "10月9日下午2点面试，提前半小时提醒我。两点可能是北京时间，也可能是纽约时间，先让我选一下时区。",
+      "mail_count": 0,
+      "passed": true,
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      },
+      "steps": [
+        {
+          "elapsed_ms": 804,
+          "http_status": 200,
+          "now": "2026-10-08T20:00:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"clarification\":{\"question\":\"10月9日下午2点面试按哪个时区？\",\"options\":[{\"label\":\"北京时间\",\"value\":\"按北京时间（Asia/Shanghai）10月9日14:00面试\"},{\"label\":\"纽约时间\",\"value\":\"按纽约时间（America/New_York）10月9日14:00面试\"}],\"input_hint\":\"选择面试时间所在时区\"}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 80,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 85,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 157,
+                "prompt_tokens": 2205,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2048
+                },
+                "total_tokens": 2290
+              }
+            }
+          ],
+          "request": {
+            "answers": null,
+            "reference_time": "",
+            "supports_clarification": true,
+            "text": "10月9日下午2点面试，提前半小时提醒我。两点可能是北京时间，也可能是纽约时间，先让我选一下时区。"
+          },
+          "response": {
+            "answered_at": "2026-10-08T20:00:00+08:00",
+            "clarification": {
+              "input_hint": "选择面试时间所在时区",
+              "options": [
+                {
+                  "label": "北京时间",
+                  "value": "按北京时间（Asia/Shanghai）10月9日14:00面试"
+                },
+                {
+                  "label": "纽约时间",
+                  "value": "按纽约时间（America/New_York）10月9日14:00面试"
+                }
+              ],
+              "question": "10月9日下午2点面试按哪个时区？"
+            },
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "status": "needs_clarification"
+          }
+        },
+        {
+          "elapsed_ms": 1555,
+          "http_status": 200,
+          "now": "2026-10-08T20:00:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"title\":\"面试提醒\",\"description\":\"面试时间：2026-10-09 14:00（America/New_York）\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"America/New_York\",\"times\":[\"13:30\"],\"start_date\":\"2026-10-09\"},\"explanation\":{\"assumptions\":[],\"limitations\":[]}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 86,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 82,
+                "prompt_cache_hit_tokens": 2304,
+                "prompt_cache_miss_tokens": 210,
+                "prompt_tokens": 2514,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2304
+                },
+                "total_tokens": 2596
+              }
+            },
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"title\":\"面试提醒\",\"description\":\"面试时间：2026-10-09 14:00（America/New_York）\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"America/New_York\",\"times\":[\"13:30\"],\"start_date\":\"2026-10-09\"},\"explanation\":{\"assumptions\":[],\"limitations\":[]}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 86,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 82,
+                "prompt_cache_hit_tokens": 2560,
+                "prompt_cache_miss_tokens": 784,
+                "prompt_tokens": 3344,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2560
+                },
+                "total_tokens": 3426
+              }
+            }
+          ],
+          "request": {
+            "answers": [
+              {
+                "question": "10月9日下午2点面试按哪个时区？",
+                "answer": "按纽约时间（America/New_York）10月9日14:00面试"
+              }
+            ],
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "supports_clarification": true,
+            "text": "10月9日下午2点面试，提前半小时提醒我。两点可能是北京时间，也可能是纽约时间，先让我选一下时区。"
+          },
+          "response": {
+            "answered_at": "2026-10-08T20:00:00+08:00",
+            "description": "面试时间：2026-10-09 14:00（America/New_York）",
+            "rule": {
+              "end_date": "",
+              "every_days": 0,
+              "kind": "once",
+              "max_reminders": 0,
+              "mode": "notify_once",
+              "month_end": 0,
+              "month_start": 0,
+              "start_date": "2026-10-09",
+              "times": [
+                "13:30"
+              ],
+              "timezone": "America/New_York",
+              "weekdays": null
+            },
+            "summary": "2026-10-09 13:30，每周期只提醒一次",
+            "title": "面试提醒",
+            "warnings": [
+              "2026-10-09 13:30，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-09 13:30:00（America/New_York）；确认后才会创建。"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "midnight",
+      "input": "明天面试，提前半小时提醒我。",
+      "mail_count": 0,
+      "passed": true,
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      },
+      "steps": [
+        {
+          "elapsed_ms": 706,
+          "http_status": 200,
+          "now": "2026-10-08T23:59:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"clarification\":{\"question\":\"明天面试的开始时间是几点？\",\"options\":[],\"input_hint\":\"例如：明天上午10:00面试\"}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 89,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 31,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 137,
+                "prompt_tokens": 2185,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2048
+                },
+                "total_tokens": 2216
+              }
+            }
+          ],
+          "request": {
+            "answers": null,
+            "reference_time": "",
+            "supports_clarification": true,
+            "text": "明天面试，提前半小时提醒我。"
+          },
+          "response": {
+            "answered_at": "2026-10-08T23:59:00+08:00",
+            "clarification": {
+              "input_hint": "例如：明天上午10:00面试",
+              "options": [],
+              "question": "明天面试的开始时间是几点？"
+            },
+            "reference_time": "2026-10-08T23:59:00+08:00",
+            "status": "needs_clarification"
+          }
+        },
+        {
+          "elapsed_ms": 1334,
+          "http_status": 200,
+          "now": "2026-10-09T00:01:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"title\":\"面试提醒\",\"description\":\"面试开始时间：2026-10-09 14:00（北京时间）\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"13:30\"],\"start_date\":\"2026-10-09\"},\"explanation\":{\"assumptions\":[],\"limitations\":[]}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 94,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 78,
+                "prompt_cache_hit_tokens": 2304,
+                "prompt_cache_miss_tokens": 170,
+                "prompt_tokens": 2474,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2304
+                },
+                "total_tokens": 2552
+              }
+            },
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"title\":\"面试提醒\",\"description\":\"面试开始时间：2026-10-09 14:00（北京时间）\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"13:30\"],\"start_date\":\"2026-10-09\"},\"explanation\":{\"assumptions\":[],\"limitations\":[]}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 97,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 78,
+                "prompt_cache_hit_tokens": 2432,
+                "prompt_cache_miss_tokens": 867,
+                "prompt_tokens": 3299,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2432
+                },
+                "total_tokens": 3377
+              }
+            }
+          ],
+          "request": {
+            "answers": [
+              {
+                "question": "明天面试的开始时间是几点？",
+                "answer": "下午两点，北京时间"
+              }
+            ],
+            "reference_time": "2026-10-08T23:59:00+08:00",
+            "supports_clarification": true,
+            "text": "明天面试，提前半小时提醒我。"
+          },
+          "response": {
+            "answered_at": "2026-10-09T00:01:00+08:00",
+            "description": "面试开始时间：2026-10-09 14:00（北京时间）",
+            "rule": {
+              "end_date": "",
+              "every_days": 0,
+              "kind": "once",
+              "max_reminders": 0,
+              "mode": "notify_once",
+              "month_end": 0,
+              "month_start": 0,
+              "start_date": "2026-10-09",
+              "times": [
+                "13:30"
+              ],
+              "timezone": "Asia/Shanghai",
+              "weekdays": null
+            },
+            "summary": "2026-10-09 13:30，每周期只提醒一次",
+            "title": "面试提醒",
+            "warnings": [
+              "2026-10-09 13:30，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-09 13:30:00（Asia/Shanghai）；确认后才会创建。"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "partial_then_correction",
+      "input": "纽约那个面试，提前半小时叫我。",
+      "mail_count": 0,
+      "passed": true,
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      },
+      "steps": [
+        {
+          "elapsed_ms": 512,
+          "http_status": 200,
+          "now": "2026-10-08T20:00:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"clarification\":{\"question\":\"纽约面试的日期和当地时间几点开始？\",\"options\":[],\"input_hint\":\"例如：10月15日 14:00（纽约当地时间）\"}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 91,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 40,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 137,
+                "prompt_tokens": 2185,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2048
+                },
+                "total_tokens": 2225
+              }
+            }
+          ],
+          "request": {
+            "answers": null,
+            "reference_time": "",
+            "supports_clarification": true,
+            "text": "纽约那个面试，提前半小时叫我。"
+          },
+          "response": {
+            "answered_at": "2026-10-08T20:00:00+08:00",
+            "clarification": {
+              "input_hint": "例如：10月15日 14:00（纽约当地时间）",
+              "options": [],
+              "question": "纽约面试的日期和当地时间几点开始？"
+            },
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "status": "needs_clarification"
+          }
+        },
+        {
+          "elapsed_ms": 693,
+          "http_status": 200,
+          "now": "2026-10-08T20:00:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"clarification\":{\"question\":\"纽约当地时间10月9日几点开始面试？\",\"options\":[],\"input_hint\":\"例如：10:00（纽约当地时间）\"}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 84,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 36,
+                "prompt_cache_hit_tokens": 2304,
+                "prompt_cache_miss_tokens": 176,
+                "prompt_tokens": 2480,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2304
+                },
+                "total_tokens": 2516
+              }
+            }
+          ],
+          "request": {
+            "answers": [
+              {
+                "question": "纽约面试的日期和当地时间几点开始？",
+                "answer": "10月9日，纽约当地时间",
+                "answered_at": "2026-10-08T20:00:00+08:00"
+              }
+            ],
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "supports_clarification": true,
+            "text": "纽约那个面试，提前半小时叫我。"
+          },
+          "response": {
+            "answered_at": "2026-10-08T20:00:00+08:00",
+            "clarification": {
+              "input_hint": "例如：10:00（纽约当地时间）",
+              "options": [],
+              "question": "纽约当地时间10月9日几点开始面试？"
+            },
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "status": "needs_clarification"
+          }
+        },
+        {
+          "elapsed_ms": 1491,
+          "http_status": 200,
+          "now": "2026-10-08T20:00:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"title\":\"纽约面试提前提醒\",\"description\":\"面试时间：2026-10-10 10:00（America/New_York）\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"America/New_York\",\"times\":[\"09:30\"],\"start_date\":\"2026-10-10\"},\"explanation\":{\"assumptions\":[],\"limitations\":[]}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 110,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 84,
+                "prompt_cache_hit_tokens": 2432,
+                "prompt_cache_miss_tokens": 172,
+                "prompt_tokens": 2604,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2432
+                },
+                "total_tokens": 2688
+              }
+            },
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"title\":\"纽约面试提前提醒\",\"description\":\"面试时间：2026-10-10 10:00（America/New_York）\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"America/New_York\",\"times\":[\"09:30\"],\"start_date\":\"2026-10-10\"},\"explanation\":{\"assumptions\":[],\"limitations\":[]}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 92,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 84,
+                "prompt_cache_hit_tokens": 2688,
+                "prompt_cache_miss_tokens": 748,
+                "prompt_tokens": 3436,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2688
+                },
+                "total_tokens": 3520
+              }
+            }
+          ],
+          "request": {
+            "answers": [
+              {
+                "question": "纽约面试的日期和当地时间几点开始？",
+                "answer": "10月9日，纽约当地时间",
+                "answered_at": "2026-10-08T20:00:00+08:00"
+              },
+              {
+                "question": "纽约当地时间10月9日几点开始面试？",
+                "answer": "改成10月10日上午10点，纽约当地时间"
+              }
+            ],
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "supports_clarification": true,
+            "text": "纽约那个面试，提前半小时叫我。"
+          },
+          "response": {
+            "answered_at": "2026-10-08T20:00:00+08:00",
+            "description": "面试时间：2026-10-10 10:00（America/New_York）",
+            "rule": {
+              "end_date": "",
+              "every_days": 0,
+              "kind": "once",
+              "max_reminders": 0,
+              "mode": "notify_once",
+              "month_end": 0,
+              "month_start": 0,
+              "start_date": "2026-10-10",
+              "times": [
+                "09:30"
+              ],
+              "timezone": "America/New_York",
+              "weekdays": null
+            },
+            "summary": "2026-10-10 09:30，每周期只提醒一次",
+            "title": "纽约面试提前提醒",
+            "warnings": [
+              "2026-10-10 09:30，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-10 09:30:00（America/New_York）；确认后才会创建。"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "prior_answer_midnight",
+      "input": "纽约那个面试，提前半小时叫我。",
+      "mail_count": 0,
+      "passed": true,
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      },
+      "steps": [
+        {
+          "elapsed_ms": 952,
+          "http_status": 200,
+          "now": "2026-10-08T20:00:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"clarification\":{\"question\":\"纽约面试的开始日期和当地时间几点？\",\"options\":[],\"input_hint\":\"例如：10月10日 14:00（纽约时间）\"}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 105,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 39,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 137,
+                "prompt_tokens": 2185,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2048
+                },
+                "total_tokens": 2224
+              }
+            }
+          ],
+          "request": {
+            "answers": null,
+            "reference_time": "",
+            "supports_clarification": true,
+            "text": "纽约那个面试，提前半小时叫我。"
+          },
+          "response": {
+            "answered_at": "2026-10-08T20:00:00+08:00",
+            "clarification": {
+              "input_hint": "例如：10月10日 14:00（纽约时间）",
+              "options": [],
+              "question": "纽约面试的开始日期和当地时间几点？"
+            },
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "status": "needs_clarification"
+          }
+        },
+        {
+          "elapsed_ms": 673,
+          "http_status": 200,
+          "now": "2026-10-08T20:00:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"clarification\":{\"question\":\"纽约面试明天（2026-10-09）当地时间几点开始？\",\"options\":[],\"input_hint\":\"例如：纽约时间 10:00\"}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 128,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 40,
+                "prompt_cache_hit_tokens": 2304,
+                "prompt_cache_miss_tokens": 172,
+                "prompt_tokens": 2476,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2304
+                },
+                "total_tokens": 2516
+              }
+            }
+          ],
+          "request": {
+            "answers": [
+              {
+                "question": "纽约面试的开始日期和当地时间几点？",
+                "answer": "明天，纽约当地时间",
+                "answered_at": "2026-10-08T20:00:00+08:00"
+              }
+            ],
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "supports_clarification": true,
+            "text": "纽约那个面试，提前半小时叫我。"
+          },
+          "response": {
+            "answered_at": "2026-10-08T20:00:00+08:00",
+            "clarification": {
+              "input_hint": "例如：纽约时间 10:00",
+              "options": [],
+              "question": "纽约面试明天（2026-10-09）当地时间几点开始？"
+            },
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "status": "needs_clarification"
+          }
+        },
+        {
+          "elapsed_ms": 1467,
+          "http_status": 200,
+          "now": "2026-10-09T00:01:00+08:00",
+          "provider_calls": [
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"title\":\"纽约面试提前提醒\",\"description\":\"纽约面试，当地时间2026-10-09 14:00开始\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"America/New_York\",\"times\":[\"13:30\"],\"start_date\":\"2026-10-09\"},\"explanation\":{\"assumptions\":[],\"limitations\":[]}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 92,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 79,
+                "prompt_cache_hit_tokens": 2176,
+                "prompt_cache_miss_tokens": 422,
+                "prompt_tokens": 2598,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2176
+                },
+                "total_tokens": 2677
+              }
+            },
+            {
+              "choices": [
+                {
+                  "finish_reason": "stop",
+                  "index": 0,
+                  "logprobs": null,
+                  "message": {
+                    "content": "{\"title\":\"纽约面试提前提醒\",\"description\":\"纽约面试，当地时间2026-10-09 14:00开始\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"America/New_York\",\"times\":[\"13:30\"],\"start_date\":\"2026-10-09\"},\"explanation\":{\"assumptions\":[],\"limitations\":[]}}",
+                    "role": "assistant"
+                  }
+                }
+              ],
+              "elapsed_ms": 77,
+              "model": "deepseek-flash",
+              "status": 200,
+              "usage": {
+                "completion_tokens": 79,
+                "prompt_cache_hit_tokens": 2560,
+                "prompt_cache_miss_tokens": 865,
+                "prompt_tokens": 3425,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2560
+                },
+                "total_tokens": 3504
+              }
+            }
+          ],
+          "request": {
+            "answers": [
+              {
+                "question": "纽约面试的开始日期和当地时间几点？",
+                "answer": "明天，纽约当地时间",
+                "answered_at": "2026-10-08T20:00:00+08:00"
+              },
+              {
+                "question": "纽约面试明天（2026-10-09）当地时间几点开始？",
+                "answer": "下午2点"
+              }
+            ],
+            "reference_time": "2026-10-08T20:00:00+08:00",
+            "supports_clarification": true,
+            "text": "纽约那个面试，提前半小时叫我。"
+          },
+          "response": {
+            "answered_at": "2026-10-09T00:01:00+08:00",
+            "description": "纽约面试，当地时间2026-10-09 14:00开始",
+            "rule": {
+              "end_date": "",
+              "every_days": 0,
+              "kind": "once",
+              "max_reminders": 0,
+              "mode": "notify_once",
+              "month_end": 0,
+              "month_start": 0,
+              "start_date": "2026-10-09",
+              "times": [
+                "13:30"
+              ],
+              "timezone": "America/New_York",
+              "weekdays": null
+            },
+            "summary": "2026-10-09 13:30，每周期只提醒一次",
+            "title": "纽约面试提前提醒",
+            "warnings": [
+              "2026-10-09 13:30，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-09 13:30:00（America/New_York）；确认后才会创建。"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "method": "real model and production HTTP handler; fixed clocks, temporary DB, fake mail; no scheduler or server started",
+  "source_commit": "18b4bd43c633a94e05948578eabce3b57ad79589"
+}
