@@ -24,10 +24,11 @@ notify_once：明确只通知一次、不需完成。不能把“叫我拿快递
 规则表（kind、mode、timezone每次必填，不可省略；未指定时区填Asia/Shanghai）：
 除minute_interval外，times必填，1—8个不同HH:mm升序。无关字段省略/空/0。max_reminders=每周期1—100次，没说则0；按完成周期计，不能将月上限当日上限。
 once：start_date指定一次日期。daily：每天。weekly：weekdays=1周一…7周日；until_done整周一次，every_day各日独立。monthly_window：month_start<=month_end，均1—31；短月截月末，until_done本月一次。date_range：start_date至end_date，YYYY-MM-DD，含末日，跨年换年份，保留原完成mode。interval：start_date锚点+every_days(1—365)。daily/weekly/monthly_window可有整体起止日期。
-ongoing：start_date起每天催同一事，必须until_done，完成永久停。
+ongoing：每天催同一事，必须until_done且start_date必填YYYY-MM-DD（通常从今天开始），完成永久停。由daily改成ongoing时必须同时补start_date，不能只改kind。
 minute_interval：必须until_done；first_at含秒与偏移的RFC3339、repeat_minutes=1—1440；times/weekdays为空，start_date/month_start/month_end/every_days无值。生活待办收衣服、晾衣服、整理等，未明确周期时优先此类型，完成一次永久停；不能用单日date_range/once一个时间点冒充持续催办。今晚要用、别拖到明早不是截止要求，无明确截止不得自加end_date。end_at为精确截止（含该时刻），end_date为截止日整天，只能有一个；没截止要求都空。截止不插入非节奏点。
 
 场景约束不能漏：
+事项截止不是提醒时刻。例如“材料五点截止，别忘交”要在截止前启动minute_interval，end_at保存当天17:00，缺频率可建议30分钟；不能只在description写截止，不能用once只填16:30或17:00却允许执行跟进超过截止。已过外部硬截止先问是否改期，不自动挪到明天。
 “下午隔会儿走走/上班的下午活动”暗含有限的下午时段和重复工作场景，不能生成无截止的跨夜分钟任务。具体班次未知可建议14—17点，标time_window和first_time说明窗口暂定可改，不假装知道排班。当前不支持重复小时窗口，只安排最近一次minute_interval窗口，保留end_at，并标recurrence。仅“等会儿晾衣服”不等于限定下午，不擅加截止。
 给了起止的进行中窗口：first_at保留原起点，end_at保留原截止，不从now重算节奏。例09:00起每15分钟，09:37创建，仍从09:00锚定。整段已过才建议新窗口并标rescheduled；已错过外部事件或硬截止，不能悄悄挪到明天，必要时一句问是否改期。
 每月28—31是同月monthly_window，二月截月末，不能拉到三月。每月末到次月初才用完整单轮date_range替代循环并标recurrence；模糊月底/月初是可建议偏好，暂定28日至次月3日并标date_range，不追问、不自行添加每月循环；开始日大于结束日的跨月模式，若当前日号<=结束日号，取上月开始的本轮，否则取本月开始的一轮；本轮已无未来时刻才取下一轮。选轮对三种mode一视同仁，不能因每天分别完成就跳到下轮。例如每月24日至次月3日，9月1日应是8月24日至9月3日。until_done/every_day/notify_once保留用户本意，不拆两件，不丢次月日期。
@@ -49,7 +50,8 @@ const reviewInstructions = `复核全部用户消息（最初原话与每一轮�
 1. 正在进行的有截止窗口允许first_at早于now，它是用户原始起点。漏掉不补、只管余下都不授权改为now或now+间隔。09:00起每15分钟，09:37创建仍填09:00；只有整段结束才标rescheduled。
 2. 明确海外时区必须在rule.timezone保留，times按当地时间减提前量，不换存Asia/Shanghai。
 3. 跨月：当前日号<=结束日号则start_date上月、end_date本月；否则start本月、end下月。every_day/notify_once也一样，不能跳过正在进行的本轮。
-4. times始终是数组，分钟规则填[]。只有用户没给的偏好才算假设；已有具体小时窗口不得标first_time。
+4. 只有截止、没有指定提醒点的待办：minute_interval+end_at=硬截止，首次必须早于截止，不用once、不能只把截止留备注。ongoing必须同时有start_date，改kind时补齐必填字段。
+5. times始终是数组，分钟规则填[]。只有用户没给的偏好才算假设；已有具体小时窗口不得标first_time。
 description只留下地点、携带物品、原事件时间等真实备注，其余留空。尤其删除其中每周/每月循环、频率及建议解释；具体建议全部交给explanation标签，不让备注与真实规则冲突。用户没说的首次时刻、间隔、日期范围、小时窗口分别标first_time/repeat_interval/date_range/time_window，没说年份标year。只对确实未实现的原循环标recurrence。不要写warnings/summary。
 以下是旧候选的调度事实，只辅助核对；active=正在进行，not_started=尚未开始，ended=结束。改规则后不要照搬旧事实：`
 

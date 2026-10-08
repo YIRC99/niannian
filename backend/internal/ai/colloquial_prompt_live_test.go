@@ -21,6 +21,21 @@ func TestLiveColloquialPromptQuality(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := New(cfg)
+	for _, tc := range []struct{ name, input, kind string }{{"hard_deadline", "材料五点就截止了，别让我忘了交。", "minute_interval"}, {"single_return_obligation", "后面每天中午记得提醒我还相机。", "ongoing"}} {
+		t.Run(tc.name, func(t *testing.T) {
+			now, _ := time.Parse(time.RFC3339, "2026-10-08T14:37:20+08:00")
+			if tc.kind == "ongoing" {
+				now, _ = time.Parse(time.RFC3339, "2026-10-08T11:20:00+08:00")
+			}
+			d, err := client.Parse(context.Background(), tc.input, now)
+			if err != nil || d.Rule.Kind != tc.kind {
+				t.Fatalf("kind=%s draft=%+v err=%v", tc.kind, d, err)
+			}
+			if tc.kind == "minute_interval" && d.Rule.EndAt != "2026-10-08T17:00:00+08:00" {
+				t.Fatalf("hard deadline not enforced: %+v", d)
+			}
+		})
+	}
 	t.Run("afternoon_window", func(t *testing.T) {
 		now, _ := time.Parse(time.RFC3339, "2026-10-08T13:10:00+08:00")
 		d, err := client.Parse(context.Background(), "上班的下午隔会儿叫我起来走走。", now)
