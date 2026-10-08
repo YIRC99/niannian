@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#faf9f2">
+  <meta name="description" content="把生活的小事，种成一座花园。念念是一款 Android AI 提醒助手，一句话安排待办，多渠道跟进，完成小事赚水滴，慢慢养出自己的花园。">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="念念 · 把小事种成花">
+  <meta property="og:description" content="一句话安排生活小事，让提醒有回应，让每一点努力开出花。">
+  <title>念念 · 把小事种成花</title>
+  <link rel="icon" type="image/webp" href="assets/sprout.webp">
+  <link rel="preload" as="image" href="assets/courtyard-hero.webp">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="念念，返回顶部"><img src="assets/sprout.webp" width="48" height="48" alt=""><span>念念<span class="brand-note">把小事种成花</span></span></a>
+    <nav aria-label="主导航"><a href="#everyday">怎样陪你</a><a href="#garden">小小花园</a><a href="#questions">你想知道的</a></nav>
+    <a class="button button-small" href="#start">认识念念 <span aria-hidden="true">↗</span></a>
+  </header>
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="little-sun" aria-hidden="true">☀</span> 给忙碌的生活，留一片小花园</p>
+        <h1 id="hero-title">把生活的小事，<br>种成<span class="heading-flower">一座花园<img src="assets/daisy.webp" alt="" width="72" height="72"></span>。</h1>
+        <p class="hero-description">想做的事，说给念念听。<br>从帮你安排，到适时提醒，<br>每一次小小的完成，都能滋养自己的花园。</p>
+        <div class="hero-actions"><a class="button" href="#everyday">看看念念怎样陪你 <span aria-hidden="true">↓</span></a><a class="text-link" href="https://github.com/YIRC99/niannian" target="_blank" rel="noopener noreferrer">开源项目 <span aria-hidden="true">↗</span></a></div>
+        <p class="hero-footnote">Android 应用 <span>·</span> AI 安排 <span>·</span> 按自己的节奏来</p>
+      </div>
+      <div class="hero-art" aria-label="念念的晴日小庭院插画">
+        <div class="hero-landscape"><img src="assets/courtyard-hero.webp" width="1200" height="900" alt="晴朗的小庭院，鲜花围着白色木门，一只猫睡在石板路旁" fetchpriority="high"></div>
+        <div class="floating-note reminder-note"><span class="note-icon" aria-hidden="true">✓</span><div><strong>收好衣服，今天又做好一件事</strong><span>把这份小小的成就，带回花园</span></div></div>
+        <div class="garden-sign">小小的一件事<br>也会长出美好的花</div>
+        <img class="hero-mascot" src="assets/mascot.webp" width="150" height="180" alt="探出小芽的念念种子角色">
+        <span class="art-caption">念念的晴日小庭院</span>
+      </div>
+    </section>
+    <div class="intro-line wrap"><span>收衣服、读几页书、记得交材料……</span><span>那些挂在心上的小事，<strong>有人陪你慢慢做好。</strong></span></div>
+
+    <section class="everyday wrap section" id="everyday" aria-labelledby="everyday-title">
+      <div class="section-heading"><p class="eyebrow">01 / 先说说，你想做什么</p><h2 id="everyday-title">不用把生活，<br>填成一张复杂的表。</h2><p>像平常说话一样告诉念念。AI 先给出安排和理由，<br class="desktop-break">时间与规则都能再调整，确认后才开始提醒。</p></div>
+      <div class="arrange-layout">
+        <div class="scenario-list" role="group" aria-label="选择安排示例">
+          <button class="scenario active" type="button" data-scenario="laundry" aria-pressed="true"><span class="scenario-number">01</span><span><strong>怕忙着忙着，就忘了</strong><span>“15 分钟后提醒我收衣服，没做就每 5 分钟提醒。”</span></span><span class="scenario-arrow" aria-hidden="true">↗</span></button>
+          <button class="scenario" type="button" data-scenario="reading" aria-pressed="false"><span class="scenario-number">02</span><span><strong>想给自己一点固定的时间</strong><span>“每天晚上八点半，提醒我读一会儿书。”</span></span><span class="scenario-arrow" aria-hidden="true">↗</span></button>
+          <button class="scenario" type="button" data-scenario="monthly" aria-pressed="false"><span class="scenario-number">03</span><span><strong>每个月，总有件重要的小事</strong><span>“每月 1 到 15 日早上九点提醒我申报，做完就停。”</span></span><span class="scenario-arrow" aria-hidden="true">↗</span></button>
+          <p class="demo-disclaimer">点选看看安排示例。这是网页演示，不会创建真实提醒。</p>
+        </div>
+        <div class="arrangement" aria-live="polite" aria-atomic="true">
+          <div class="arrangement-top"><span><img src="assets/mascot.webp" width="42" height="48" alt=""> 念念帮你安排</span><span class="pill">示例草稿</span></div>
+          <p class="draft-task" id="draft-task">收衣服</p><p class="draft-time" id="draft-time">15 分钟后</p>
+          <p class="draft-reason" id="draft-reason">先留一点时间做完手头的事，再提醒你去阳台看看。</p>
+          <dl class="draft-details"><div><dt>怎样跟进</dt><dd id="draft-repeat">未完成时，每 5 分钟提醒</dd></div><div><dt>完成之后</dt><dd id="draft-end">这件事就结束，不再催办</dd></div></dl>
+          <div class="draft-bottom"><span class="tiny-sprout" aria-hidden="true">✦</span> 先替你想一想，最后由你决定。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="follow-section section" aria-labelledby="follow-title">
+      <div class="wrap follow-layout"><div><p class="eyebrow">02 / 记住，也认真跟进</p><h2 id="follow-title">提醒之后，<br>还有下一步。</h2><p>念念会根据事情和你开通的提醒方式，<br>安排后续跟进。还没做就继续，<br>完成、暂停或到期，就按规则停下来。</p><a class="text-link" href="#questions">提醒方式由你掌握 <span aria-hidden="true">↗</span></a></div>
+        <div class="follow-diagram"><div class="channel-row"><span>手机通知</span><span>系统日历</span><span>闹钟</span><span>可选邮件</span></div><ol class="follow-steps"><li><span class="step-dot">1</span><div><strong>到了约好的时间</strong><p>用已开通的方式，提醒这件小事。</p></div></li><li><span class="step-dot">2</span><div><strong>还没完成，再跟进一下</strong><p>遵守你设置的间隔、次数和截止时间。</p></div></li><li><span class="step-dot done">✓</span><div><strong>完成了，就安心放下</strong><p>这一期的提醒结束，留下真实记录。</p></div></li></ol><p class="small-note">示意流程。实际渠道取决于你的授权与任务安排。</p></div>
+      </div>
+    </section>
+
+    <section class="garden-section section" id="garden" aria-labelledby="garden-title">
+      <div class="wrap garden-layout">
+        <div class="garden-interactive">
+          <div class="garden-window"><img class="garden-background" src="assets/courtyard.webp" width="800" height="1200" alt="被绿树和白色栅栏围住的花园" loading="lazy"><span class="garden-window-label">我的小小花园 <span>互动演示</span></span><div class="plant-spot"><img id="demo-plant" src="assets/seed.webp" width="200" height="200" alt="雏菊，种子阶段" loading="lazy"><span id="plant-name">雏菊 · 等待发芽</span></div><div class="water-console"><p id="growth-status" aria-live="polite">浇下第一滴水，看看会发生什么。</p><div class="water-row"><span id="growth-count">成长 0 / 7</span><button class="button button-small" id="water-button" type="button">浇一滴水 <span aria-hidden="true">＋</span></button></div><button class="reset-button" id="reset-garden" type="button">重新体验</button></div></div>
+        </div>
+        <div class="garden-copy"><p class="eyebrow">03 / 小小的完成，也值得开花</p><h2 id="garden-title">做完一件事，<br>给喜欢的花<br>浇一点水。</h2><p>完成小事，获得 3 滴水。<br>想照顾哪一株，就浇给哪一株。<br>从一颗种子，到属于你的花园。</p><div class="growth-legend"><span><b>1</b> 点发芽</span><span><b>3</b> 点长叶</span><span><b>7</b> 点开花</span></div><p class="flower-picker-label" id="flower-label">12 种花，先认识其中 4 位</p><div class="flower-picker" role="group" aria-labelledby="flower-label"><button type="button" data-flower="daisy" aria-pressed="true" class="selected"><img src="assets/daisy.webp" width="54" height="54" alt="" loading="lazy"><span>雏菊</span></button><button type="button" data-flower="tulip" aria-pressed="false"><img src="assets/tulip.webp" width="54" height="54" alt="" loading="lazy"><span>郁金香</span></button><button type="button" data-flower="hydrangea" aria-pressed="false"><img src="assets/hydrangea.webp" width="54" height="54" alt="" loading="lazy"><span>绣球</span></button><button type="button" data-flower="sunflower" aria-pressed="false"><img src="assets/sunflower.webp" width="54" height="54" alt="" loading="lazy"><span>向日葵</span></button></div><p class="garden-kindness">慢一天也没关系。不会枯萎，也不会清空成长。</p><p class="small-note">这里可以免费试浇水；应用内每次浇水消耗 1 滴水。</p></div>
+      </div>
+    </section>
+
+    <section class="screens-section wrap section" aria-labelledby="screens-title"><div class="screens-heading"><div><p class="eyebrow">04 / 日子走过，会留下痕迹</p><h2 id="screens-title">今天的小事，<br>日后的小小回忆。</h2></div><p>待办、日历、文字与照片。<br>把要做的事记清楚，也把做过的事留下来。</p></div><div class="screens"><figure><div class="phone"><img src="assets/screen-home.webp" width="540" height="1176" alt="念念早期版本首页实机截图：庭院插画下的小事列表" loading="lazy"></div><figcaption><span>今天</span>从眼前的一件小事开始</figcaption></figure><figure><div class="phone"><img src="assets/screen-sowing.webp" width="540" height="1176" alt="念念早期版本安排页实机截图：一句话输入和选花入口" loading="lazy"></div><figcaption><span>安排</span>把想法变成清楚的计划</figcaption></figure><figure><div class="phone"><img src="assets/screen-calendar.webp" width="540" height="1176" alt="念念早期版本日历实机截图：按日期查看提醒与完成记录" loading="lazy"></div><figcaption><span>日历</span>让每个认真生活的日子有迹可循</figcaption></figure></div><p class="screens-note">以上为早期版本实机画面，展示界面风格；当前提醒与花园规则以应用为准。</p></section>
+
+    <section class="faq-section wrap section" id="questions" aria-labelledby="faq-title"><div><p class="eyebrow">再多了解一点</p><h2 id="faq-title">你可能<br>还想知道。</h2><img class="faq-art" src="assets/journal.webp" width="400" height="267" alt="书本旁长出一棵小芽" loading="lazy"></div><div class="faq-list"><details open><summary>念念适合记哪些事？<span aria-hidden="true">＋</span></summary><p>收衣服、读书、拉伸、交材料、每月申报……一次性的小事、按日或按周重复的习惯、限定日期内做完的事务，都可以安排。复杂规则会先说明是否支持，草稿也能手动修改。</p></details><details><summary>必须开启所有提醒方式吗？<span aria-hidden="true">＋</span></summary><p>不用。通知、日历、闹钟都由你选择并授权，邮件也是可选项。后台执行还受系统权限、省电和厂商设置影响，可以在应用的提醒设置中检查，并分别测试通知与闹钟。</p></details><details><summary>手机没有网络，还能提醒吗？<span aria-hidden="true">＋</span></summary><p>已提前同步到手机的有限通知与闹钟步骤，可以在有效期内离线执行；邮件和日历跟进仍需要联网。系统强行停止应用、关闭权限等情况可能中断提醒，重新打开应用后可恢复安排。</p></details><details><summary>一天没做完，花会枯萎吗？<span aria-hidden="true">＋</span></summary><p>不会。漏做不扣成长，也不会让花枯萎。完成小事赚到的水滴可以浇给任何一株花，哪怕原来的任务已经结束。念念希望你慢慢积累，不用为偶尔的停顿自责。</p></details><details><summary>现在怎么使用念念？<span aria-hidden="true">＋</span></summary><p>念念目前是原生 Android 应用，需要配套服务端。本项目提供源码和自部署说明，可在下方进入 GitHub 查看。这个介绍网页不提供在线账号或提醒服务，也不会收集你的演示操作。</p></details></div></section>
+
+    <section class="start-section" id="start" aria-labelledby="start-title"><img class="footer-foliage" src="assets/foliage.webp" width="1456" height="607" alt="" loading="lazy"><div class="start-content"><p class="eyebrow">生活不必一下子变得井井有条</p><h2 id="start-title">就从一件小事开始。</h2><p>把惦记交给念念，把时间留给生活。</p><a class="button" href="https://github.com/YIRC99/niannian" target="_blank" rel="noopener noreferrer">前往 GitHub 了解与获取 <span aria-hidden="true">↗</span></a><span class="start-note">Android 客户端 + 自部署服务端 · 安装说明见仓库</span></div></section>
+  </main>
+  <footer class="site-footer wrap"><a class="brand" href="#"><img src="assets/sprout.webp" width="36" height="36" alt=""><span>念念</span></a><p>让生活的每一件小事，都被温柔记住。</p><a href="https://github.com/YIRC99/niannian" target="_blank" rel="noopener noreferrer">由 YIRC99 用心种下 <span aria-hidden="true">↗</span></a></footer>
+</body>
+</html>
