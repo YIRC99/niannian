@@ -2,7 +2,9 @@ package app
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -29,6 +31,9 @@ func TestLiveReminderCreationBenchmark(t *testing.T) {
 		t.Fatal("NIANNIAN_BENCHMARK_OUTPUT is required")
 	}
 	suitePath := filepath.Join("..", "..", "..", "docs", "benchmarks", "reminder-creation-v1.json")
+	if selected := os.Getenv("NIANNIAN_BENCHMARK_SUITE"); selected != "" {
+		suitePath = selected
+	}
 	data, err := os.ReadFile(suitePath)
 	if err != nil {
 		t.Fatal(err)
@@ -52,6 +57,7 @@ func TestLiveReminderCreationBenchmark(t *testing.T) {
 	}
 	report := map[string]any{
 		"lane": "fixed_clock_backend_handler", "model_configured": config.DeepSeekFlashModel,
+		"suite_file": filepath.Base(suitePath), "suite_sha256": fmt.Sprintf("%x", sha256.Sum256(data)),
 		"started_at": time.Now().Format(time.RFC3339Nano), "source_commit": os.Getenv("NIANNIAN_BENCHMARK_COMMIT"),
 		"method": "Real app HTTP handler and real provider; temporary DB and fake mailer; exact fixture clock; no task creation or scheduler started.",
 	}
