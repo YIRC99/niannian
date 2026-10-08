@@ -26,7 +26,7 @@ import (
 )
 
 type mailSender interface {
-	Send(context.Context, string, string, string) error
+	Send(context.Context, string, string, string, ...mail.Content) error
 }
 type aiParser interface {
 	Parse(context.Context, string, time.Time) (ai.Draft, error)

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"niannian/internal/mail"
 	"niannian/internal/schedule"
 	"time"
 )
@@ -222,7 +223,7 @@ func (a *App) tick(ctx context.Context) error {
 		// The slot is now durably claimed. Network I/O must not block completing,
 		// pausing, or editing other tasks. An already accepted mail cannot be recalled.
 		a.mu.Unlock()
-		sendErr := a.mailer.Send(sendCtx, email, "念念提醒 · "+t.Title, body)
+		sendErr := a.mailer.Send(sendCtx, email, "念念提醒 · "+t.Title, body, mail.Content{Title: t.Title, Body: t.Description + "\n\n" + schedule.Summary(t.Rule)})
 		cancelSend()
 		a.mu.Lock()
 		persistCtx, cancelPersist := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)

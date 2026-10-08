@@ -1,15 +1,18 @@
 package mail
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"mime"
+	"mime/multipart"
 	"net"
 	netmail "net/mail"
 	"net/smtp"
+	"net/textproto"
 	"strconv"
 	"strings"
 	"time"
@@ -32,7 +35,7 @@ func address(s string) (string, error) {
 	return a.Address, nil
 }
 
-func (c *Client) message(to, subject, body string) ([]byte, error) {
+func (c *Client) message(to, subject, body string, content ...Content) ([]byte, error) {
 	if _, err := address(to); err != nil {
 		return nil, err
 	}
@@ -42,7 +45,61 @@ func (c *Client) message(to, subject, body string) ([]byte, error) {
 	if strings.ContainsAny(subject, "\r\n") {
 		return nil, errors.New("邮件标题格式不正确")
 	}
-	encoded := base64.StdEncoding.EncodeToString([]byte(body))
+	html, err := renderHTML(subject, body, content)
+	if err != nil {
+		return nil, err
+	}
+	var payload bytes.Buffer
+	alternative := multipart.NewWriter(&payload)
+	if err = writePart(alternative, "text/plain; charset=UTF-8", "", []byte(body)); err != nil {
+		return nil, err
+	}
+	var relatedBody bytes.Buffer
+	related := multipart.NewWriter(&relatedBody)
+	if err = writePart(related, "text/html; charset=UTF-8", "", []byte(html)); err != nil {
+		return nil, err
+	}
+	for _, name := range []string{"letter", "garden"} {
+		data, readErr := artwork.ReadFile("assets/" + name + ".png")
+		if readErr != nil {
+			return nil, errors.New("邮件插画读取失败")
+		}
+		if err = writePart(related, "image/png", name+"@niannian", data); err != nil {
+			return nil, err
+		}
+	}
+	if err = related.Close(); err != nil {
+		return nil, err
+	}
+	h := textproto.MIMEHeader{}
+	h.Set("Content-Type", mime.FormatMediaType("multipart/related", map[string]string{"boundary": related.Boundary(), "type": "text/html"}))
+	p, err := alternative.CreatePart(h)
+	if err != nil {
+		return nil, err
+	}
+	if _, err = p.Write(relatedBody.Bytes()); err != nil {
+		return nil, err
+	}
+	if err = alternative.Close(); err != nil {
+		return nil, err
+	}
+	contentType := mime.FormatMediaType("multipart/alternative", map[string]string{"boundary": alternative.Boundary()})
+	return append([]byte(fmt.Sprintf("From: %s <%s>\r\nTo: <%s>\r\nSubject: %s\r\nDate: %s\r\nMIME-Version: 1.0\r\nContent-Type: %s\r\n\r\n", mime.QEncoding.Encode("UTF-8", "念念提醒"), c.cfg.SMTPUser, to, mime.QEncoding.Encode("UTF-8", subject), time.Now().Format(time.RFC1123Z), contentType)), payload.Bytes()...), nil
+}
+
+func writePart(w *multipart.Writer, contentType, id string, data []byte) error {
+	h := textproto.MIMEHeader{}
+	h.Set("Content-Type", contentType)
+	h.Set("Content-Transfer-Encoding", "base64")
+	if id != "" {
+		h.Set("Content-ID", "<"+id+">")
+		h.Set("Content-Disposition", "inline")
+	}
+	p, err := w.CreatePart(h)
+	if err != nil {
+		return err
+	}
+	encoded := base64.StdEncoding.EncodeToString(data)
 	var lines strings.Builder
 	for len(encoded) > 76 {
 		lines.WriteString(encoded[:76])
@@ -51,7 +108,8 @@ func (c *Client) message(to, subject, body string) ([]byte, error) {
 	}
 	lines.WriteString(encoded)
 	lines.WriteString("\r\n")
-	return []byte(fmt.Sprintf("From: %s <%s>\r\nTo: <%s>\r\nSubject: %s\r\nDate: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n%s", mime.QEncoding.Encode("UTF-8", "念念提醒"), c.cfg.SMTPUser, to, mime.QEncoding.Encode("UTF-8", subject), time.Now().Format(time.RFC1123Z), lines.String())), nil
+	_, err = p.Write([]byte(lines.String()))
+	return err
 }
 
 func (c *Client) connect(ctx context.Context) (*smtp.Client, error) {
@@ -104,8 +162,8 @@ func (c *Client) Check(ctx context.Context) error {
 	return s.Quit()
 }
 
-func (c *Client) Send(ctx context.Context, to, subject, body string) error {
-	msg, err := c.message(to, subject, body)
+func (c *Client) Send(ctx context.Context, to, subject, body string, content ...Content) error {
+	msg, err := c.message(to, subject, body, content...)
 	if err != nil {
 		return err
 	}

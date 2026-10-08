@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"niannian/internal/ai"
+	"niannian/internal/mail"
 	"niannian/internal/schedule"
 )
 
@@ -892,7 +893,7 @@ func (a *App) tickReminderAgent(ctx context.Context) error {
 			continue
 		}
 		sendCtx, cancel := context.WithTimeout(ctx, 35*time.Second)
-		sendErr := a.mailer.Send(sendCtx, email, "念念提醒 · "+p.Title, "该做这件事啦："+p.Title+"\n\n"+p.Body+"\n\n完成后请打开念念点击完成。")
+		sendErr := a.mailer.Send(sendCtx, email, "念念提醒 · "+p.Title, "该做这件事啦："+p.Title+"\n\n"+p.Body+"\n\n完成后请打开念念点击完成。", mail.Content{Title: p.Title, Body: p.Body})
 		cancel()
 		status, message, sentAt := "accepted", "", stamp(a.now())
 		if sendErr != nil {

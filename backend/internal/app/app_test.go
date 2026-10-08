@@ -12,6 +12,7 @@ import (
 
 	"net/http/httptest"
 	"niannian/internal/config"
+	"niannian/internal/mail"
 	"regexp"
 	"strings"
 	"testing"
@@ -23,9 +24,19 @@ type fakeMailer struct {
 	fail     bool
 }
 
-func (m *fakeMailer) Send(_ context.Context, to, subject, body string) error {
+func (m *fakeMailer) Send(_ context.Context, to, subject, body string, content ...mail.Content) error {
 	if m.fail {
 		return errors.New("test failure")
+	}
+	if len(content) != 1 {
+		return errors.New("missing structured email template content")
+	}
+	if strings.Contains(subject, "验证码") {
+		if len(content[0].Code) != 6 || !strings.Contains(body, content[0].Code) {
+			return errors.New("verification code not passed to HTML template")
+		}
+	} else if content[0].Title == "" || !strings.Contains(body, content[0].Title) || !strings.Contains(body, content[0].Body) {
+		return errors.New("reminder title/body not passed to HTML template")
 	}
 	m.messages = append(m.messages, to+"\n"+subject+"\n"+body)
 	return nil
@@ -455,7 +466,7 @@ func TestOTPBruteForceExpiresCode(t *testing.T) {
 
 type mailFunc func(context.Context, string, string, string) error
 
-func (f mailFunc) Send(ctx context.Context, to, subject, body string) error {
+func (f mailFunc) Send(ctx context.Context, to, subject, body string, _ ...mail.Content) error {
 	return f(ctx, to, subject, body)
 }
 func TestSlowSMTPDoesNotBlockUnrelatedCompletion(t *testing.T) {

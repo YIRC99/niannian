@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"net/http"
 	stdmail "net/mail"
+	"niannian/internal/mail"
 	"strings"
 	"time"
 )
@@ -75,7 +76,7 @@ func (a *App) requestCode(w http.ResponseWriter, r *http.Request) {
 	}
 	a.authMu.Unlock()
 	locked = false
-	if err = a.mailer.Send(r.Context(), email, "念念 · 账号验证码", "你的验证码是："+code+"\n可用于注册、设置或重设密码及验证码登录，10 分钟内有效。若非本人操作，请忽略。请勿把验证码分享给他人。"); err != nil {
+	if err = a.mailer.Send(r.Context(), email, "念念 · 账号验证码", "你的验证码是："+code+"\n可用于注册、设置或重设密码及验证码登录，10 分钟内有效。若非本人操作，请忽略。请勿把验证码分享给他人。", mail.Content{Code: code}); err != nil {
 		// A failed attempt still consumes quota; this keeps failure loops from spamming SMTP.
 		a.db.Exec(`UPDATE codes SET expires_at=? WHERE email=? AND hash=?`, stamp(now), email, digest(email+salt+code))
 		writeError(w, 502, "验证码邮件未能发出，请稍后重试或检查服务器邮件配置")
