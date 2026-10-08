@@ -1,0 +1,1063 @@
+{
+  "cases": [
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-09T00:08:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:10:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:12:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:14:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:16:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:18:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:20:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:22:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:24:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:26:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:28:47+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:30:47+08:00",
+          "CycleKey": "minute_interval"
+        }
+      ],
+      "elapsed_ms": 1288,
+      "http_status": 200,
+      "id": "RC-01",
+      "input": "十分钟后提醒我把阳台上的衣服收回来。不是每十分钟催，是第一次等十分钟，之后每隔两分钟催一次。我只需要收这一回，点完成才停，没有截止时间，也别替我限制次数。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-09T00:08:47+08:00",
+      "now": "2026-10-08T23:58:47+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"收阳台上的衣服\",\"description\":\"把阳台上的衣服收回来，完成后点完成停止提醒。\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-09T00:08:47+08:00\",\"repeat_minutes\":2,\"end_at\":\"\"},\"warnings\":[\"我先安排在10分钟后（00:08:47）提醒你收阳台上的衣服，之后每隔2分钟催一次，直到你点完成才停。\",\"没有截止时间，也不限制提醒次数；你核对一下，确认后我再开始提醒。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 160,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 177,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 260,
+            "prompt_tokens": 2308,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2485
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"收阳台上的衣服\",\"description\":\"把阳台上的衣服收回来，完成后点完成停止提醒。\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-09T00:08:47+08:00\",\"repeat_minutes\":2},\"summary\":\"2026-10-09 00:08:47 首次提醒，之后每 2 分钟提醒一次，完成后不再提醒\",\"warnings\":[\"我先安排在10分钟后（00:08:47）提醒你收阳台上的衣服，之后每隔2分钟催一次，直到你点完成才停。\",\"没有截止时间，也不限制提醒次数；你核对一下，确认后我再开始提醒。\"]}\n",
+      "request_started_at": "2026-10-08T16:04:26.5499688+08:00",
+      "response": {
+        "description": "把阳台上的衣服收回来，完成后点完成停止提醒。",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "first_at": "2026-10-09T00:08:47+08:00",
+          "kind": "minute_interval",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "repeat_minutes": 2,
+          "start_date": "",
+          "times": [],
+          "timezone": "Asia/Shanghai",
+          "weekdays": []
+        },
+        "summary": "2026-10-09 00:08:47 首次提醒，之后每 2 分钟提醒一次，完成后不再提醒",
+        "title": "收阳台上的衣服",
+        "warnings": [
+          "我先安排在10分钟后（00:08:47）提醒你收阳台上的衣服，之后每隔2分钟催一次，直到你点完成才停。",
+          "没有截止时间，也不限制提醒次数；你核对一下，确认后我再开始提醒。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-08T14:57:20+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T15:17:20+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T15:37:20+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T15:57:20+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T16:17:20+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T16:37:20+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T16:57:20+08:00",
+          "CycleKey": "minute_interval"
+        }
+      ],
+      "elapsed_ms": 1502,
+      "http_status": 200,
+      "id": "RC-02",
+      "input": "今天下午两点到五点帮我盯一下提交报名材料，每隔二十分钟提醒，整个事情最多提醒六次，交完一次就停。我知道现在已经过两点了，只管剩下的时间，之前漏掉的不用一条条补，五点以后别再催，也不要挪到明天。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-08T14:57:20+08:00",
+      "now": "2026-10-08T14:37:20+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"提交报名材料\",\"description\":\"今天14:00-17:00窗口内提醒，交完一次即停。\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":6,\"first_at\":\"2026-10-08T14:37:20+08:00\",\"repeat_minutes\":20,\"end_at\":\"2026-10-08T17:00:00+08:00\"},\"warnings\":[\"现在已过14:00，我按你说的只盯剩下的时段，从14:37:20开始每20分钟提醒一次，最多6次，17:00后不再提醒，也不会挪到明天。\",\"交完一次就停；如果到17:00还没交，提醒也会结束。你看看，确认后我再开始提醒。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 95,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 215,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 271,
+            "prompt_tokens": 2319,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2534
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"提交报名材料\",\"description\":\"今天14:00-17:00窗口内提醒，交完一次即停。\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":6,\"first_at\":\"2026-10-08T14:37:20+08:00\",\"end_at\":\"2026-10-08T17:00:00+08:00\",\"repeat_minutes\":20},\"summary\":\"2026-10-08 14:37:20 首次提醒，之后每 20 分钟提醒一次，完成后不再提醒，每周期最多 6 次，截止 2026-10-08 17:00:00（含此时刻）\",\"warnings\":[\"现在已过14:00，我按你说的只盯剩下的时段，从14:37:20开始每20分钟提醒一次，最多6次，17:00后不再提醒，也不会挪到明天。\",\"交完一次就停；如果到17:00还没交，提醒也会结束。你看看，确认后我再开始提醒。\"]}\n",
+      "request_started_at": "2026-10-08T16:04:27.8851423+08:00",
+      "response": {
+        "description": "今天14:00-17:00窗口内提醒，交完一次即停。",
+        "rule": {
+          "end_at": "2026-10-08T17:00:00+08:00",
+          "end_date": "",
+          "every_days": 0,
+          "first_at": "2026-10-08T14:37:20+08:00",
+          "kind": "minute_interval",
+          "max_reminders": 6,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "repeat_minutes": 20,
+          "start_date": "",
+          "times": [],
+          "timezone": "Asia/Shanghai",
+          "weekdays": []
+        },
+        "summary": "2026-10-08 14:37:20 首次提醒，之后每 20 分钟提醒一次，完成后不再提醒，每周期最多 6 次，截止 2026-10-08 17:00:00（含此时刻）",
+        "title": "提交报名材料",
+        "warnings": [
+          "现在已过14:00，我按你说的只盯剩下的时段，从14:37:20开始每20分钟提醒一次，最多6次，17:00后不再提醒，也不会挪到明天。",
+          "交完一次就停；如果到17:00还没交，提醒也会结束。你看看，确认后我再开始提醒。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-10T16:30:00+08:00",
+          "CycleKey": "once:2026-10-10"
+        }
+      ],
+      "elapsed_ms": 1418,
+      "http_status": 200,
+      "id": "RC-03",
+      "input": "本来想让你明天早上九点提醒取快递，没拿就每五分钟催。等一下，前面这个安排作废，改成后天下午四点半，只通知我一次，不需要我点完成，也不要再跟进。备注保留：北门快递柜，带取件码。只生成草稿让我看一下。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-10T16:30:00+08:00",
+      "now": "2026-10-08T18:12:09+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"取快递\",\"description\":\"北门快递柜，带取件码\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"16:30\"],\"start_date\":\"2026-10-10\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"\",\"repeat_minutes\":0,\"end_at\":\"\"},\"warnings\":[\"前面的明早九点、每5分钟催的安排已作废，改成后天（10月10日）下午16:30只通知一次，不需要点完成，也不会再跟进。\",\"备注保留了“北门快递柜，带取件码”，你核对一下，确认后我再开始提醒。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 113,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 173,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 279,
+            "prompt_tokens": 2327,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2500
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"取快递\",\"description\":\"北门快递柜，带取件码\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"16:30\"],\"start_date\":\"2026-10-10\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"2026-10-10 16:30，每周期只提醒一次\",\"warnings\":[\"前面的明早九点、每5分钟催的安排已作废，改成后天（10月10日）下午16:30只通知一次，不需要点完成，也不会再跟进。\",\"备注保留了“北门快递柜，带取件码”，你核对一下，确认后我再开始提醒。\"]}\n",
+      "request_started_at": "2026-10-08T16:04:29.4524915+08:00",
+      "response": {
+        "description": "北门快递柜，带取件码",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "kind": "once",
+          "max_reminders": 0,
+          "mode": "notify_once",
+          "month_end": 0,
+          "month_start": 0,
+          "start_date": "2026-10-10",
+          "times": [
+            "16:30"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": []
+        },
+        "summary": "2026-10-10 16:30，每周期只提醒一次",
+        "title": "取快递",
+        "warnings": [
+          "前面的明早九点、每5分钟催的安排已作废，改成后天（10月10日）下午16:30只通知一次，不需要点完成，也不会再跟进。",
+          "备注保留了“北门快递柜，带取件码”，你核对一下，确认后我再开始提醒。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2027-02-28T09:00:00+08:00",
+          "CycleKey": "2027-02"
+        },
+        {
+          "At": "2027-02-28T20:00:00+08:00",
+          "CycleKey": "2027-02"
+        },
+        {
+          "At": "2027-03-28T09:00:00+08:00",
+          "CycleKey": "2027-03"
+        },
+        {
+          "At": "2027-03-28T20:00:00+08:00",
+          "CycleKey": "2027-03"
+        },
+        {
+          "At": "2027-03-29T09:00:00+08:00",
+          "CycleKey": "2027-03"
+        },
+        {
+          "At": "2027-03-29T20:00:00+08:00",
+          "CycleKey": "2027-03"
+        },
+        {
+          "At": "2027-03-30T09:00:00+08:00",
+          "CycleKey": "2027-03"
+        },
+        {
+          "At": "2027-03-30T20:00:00+08:00",
+          "CycleKey": "2027-03"
+        },
+        {
+          "At": "2027-03-31T09:00:00+08:00",
+          "CycleKey": "2027-03"
+        },
+        {
+          "At": "2027-03-31T20:00:00+08:00",
+          "CycleKey": "2027-03"
+        }
+      ],
+      "elapsed_ms": 1205,
+      "http_status": 200,
+      "id": "RC-04",
+      "input": "每个月二十八号到三十一号，上午九点和晚上八点提醒我提交月度报表。没有三十一号的月份就到当月最后一天，别顺延到下个月。本月交过一次就不要再催，下个月还要重新提醒。每个月总共最多三次，不是每天三次。",
+      "mail_count": 0,
+      "next_candidate": "2027-02-28T09:00:00+08:00",
+      "now": "2027-02-27T08:00:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"提交月度报表\",\"description\":\"每月28号到月末，上午9点和晚上8点提醒提交月度报表；本月提交一次后停止，下月重新提醒。\",\"rule\":{\"kind\":\"monthly_window\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\",\"20:00\"],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":28,\"month_end\":31,\"every_days\":0,\"max_reminders\":3,\"first_at\":\"\",\"repeat_minutes\":0,\"end_at\":\"\"},\"warnings\":[\"我按每月28号到月末安排，上午9点和晚上8点各提醒一次；没有31号的月份会自动停在当月最后一天，不会顺延到下个月。\",\"本月提交过一次就停止提醒，下个月重新开始；每月最多提醒3次，不是每天3次。\",\"你确认后我再开始提醒。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 93,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 197,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 270,
+            "prompt_tokens": 2318,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2515
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"提交月度报表\",\"description\":\"每月28号到月末，上午9点和晚上8点提醒提交月度报表；本月提交一次后停止，下月重新提醒。\",\"rule\":{\"kind\":\"monthly_window\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\",\"20:00\"],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":28,\"month_end\":31,\"every_days\":0,\"max_reminders\":3},\"summary\":\"每月 28—31 日，每天 09:00、20:00，完成后停止本月提醒，每周期最多 3 次\",\"warnings\":[\"我按每月28号到月末安排，上午9点和晚上8点各提醒一次；没有31号的月份会自动停在当月最后一天，不会顺延到下个月。\",\"本月提交过一次就停止提醒，下个月重新开始；每月最多提醒3次，不是每天3次。\",\"你确认后我再开始提醒。\"]}\n",
+      "request_started_at": "2026-10-08T16:04:30.9366658+08:00",
+      "response": {
+        "description": "每月28号到月末，上午9点和晚上8点提醒提交月度报表；本月提交一次后停止，下月重新提醒。",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "kind": "monthly_window",
+          "max_reminders": 3,
+          "mode": "until_done",
+          "month_end": 31,
+          "month_start": 28,
+          "start_date": "",
+          "times": [
+            "09:00",
+            "20:00"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": []
+        },
+        "summary": "每月 28—31 日，每天 09:00、20:00，完成后停止本月提醒，每周期最多 3 次",
+        "title": "提交月度报表",
+        "warnings": [
+          "我按每月28号到月末安排，上午9点和晚上8点各提醒一次；没有31号的月份会自动停在当月最后一天，不会顺延到下个月。",
+          "本月提交过一次就停止提醒，下个月重新开始；每月最多提醒3次，不是每天3次。",
+          "你确认后我再开始提醒。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-12-31T08:00:00+08:00",
+          "CycleKey": "2026-12-31"
+        },
+        {
+          "At": "2026-12-31T20:30:00+08:00",
+          "CycleKey": "2026-12-31"
+        },
+        {
+          "At": "2027-01-01T08:00:00+08:00",
+          "CycleKey": "2027-01-01"
+        },
+        {
+          "At": "2027-01-01T20:30:00+08:00",
+          "CycleKey": "2027-01-01"
+        },
+        {
+          "At": "2027-01-02T08:00:00+08:00",
+          "CycleKey": "2027-01-02"
+        },
+        {
+          "At": "2027-01-02T20:30:00+08:00",
+          "CycleKey": "2027-01-02"
+        },
+        {
+          "At": "2027-01-03T08:00:00+08:00",
+          "CycleKey": "2027-01-03"
+        },
+        {
+          "At": "2027-01-03T20:30:00+08:00",
+          "CycleKey": "2027-01-03"
+        }
+      ],
+      "elapsed_ms": 1421,
+      "http_status": 200,
+      "id": "RC-05",
+      "input": "从明天到一月三号，包含三号，每天早上八点和晚上八点半提醒我记录一次阳台温度。每天只要记录一回，早上做了晚上就别催，但第二天还得重新记。不是这几天随便做一次就结束；每天最多两次提醒，三号之后停止。",
+      "mail_count": 0,
+      "next_candidate": "2026-12-31T08:00:00+08:00",
+      "now": "2026-12-30T22:00:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"记录阳台温度\",\"description\":\"每天记录一次阳台温度即可，早上完成则晚上不再提醒；次日重新开始。\",\"rule\":{\"kind\":\"date_range\",\"mode\":\"every_day\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"08:00\",\"20:30\"],\"start_date\":\"2026-12-31\",\"end_date\":\"2027-01-03\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":2,\"first_at\":\"\",\"repeat_minutes\":0,\"end_at\":\"\"},\"warnings\":[\"我先把提醒安排在12月31日到1月3日，每天早8点和晚8点半各一次，每天记录一回就够，当天完成后晚上不再催，第二天重新开始。\",\"每天最多两次提醒，1月3日结束后停止；你看看，确认后我再开始提醒。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 95,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 191,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 272,
+            "prompt_tokens": 2320,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2511
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"记录阳台温度\",\"description\":\"每天记录一次阳台温度即可，早上完成则晚上不再提醒；次日重新开始。\",\"rule\":{\"kind\":\"date_range\",\"mode\":\"every_day\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"08:00\",\"20:30\"],\"start_date\":\"2026-12-31\",\"end_date\":\"2027-01-03\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":2},\"summary\":\"2026-12-31 至 2027-01-03，每天 08:00、20:30，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次\",\"warnings\":[\"我先把提醒安排在12月31日到1月3日，每天早8点和晚8点半各一次，每天记录一回就够，当天完成后晚上不再催，第二天重新开始。\",\"每天最多两次提醒，1月3日结束后停止；你看看，确认后我再开始提醒。\"]}\n",
+      "request_started_at": "2026-10-08T16:04:32.178717+08:00",
+      "response": {
+        "description": "每天记录一次阳台温度即可，早上完成则晚上不再提醒；次日重新开始。",
+        "rule": {
+          "end_date": "2027-01-03",
+          "every_days": 0,
+          "kind": "date_range",
+          "max_reminders": 2,
+          "mode": "every_day",
+          "month_end": 0,
+          "month_start": 0,
+          "start_date": "2026-12-31",
+          "times": [
+            "08:00",
+            "20:30"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": []
+        },
+        "summary": "2026-12-31 至 2027-01-03，每天 08:00、20:30，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次",
+        "title": "记录阳台温度",
+        "warnings": [
+          "我先把提醒安排在12月31日到1月3日，每天早8点和晚8点半各一次，每天记录一回就够，当天完成后晚上不再催，第二天重新开始。",
+          "每天最多两次提醒，1月3日结束后停止；你看看，确认后我再开始提醒。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-08T12:20:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        },
+        {
+          "At": "2026-10-08T19:40:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        },
+        {
+          "At": "2026-10-09T12:20:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        },
+        {
+          "At": "2026-10-09T19:40:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        },
+        {
+          "At": "2026-10-10T12:20:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        },
+        {
+          "At": "2026-10-10T19:40:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        },
+        {
+          "At": "2026-10-11T12:20:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        },
+        {
+          "At": "2026-10-11T19:40:00+08:00",
+          "CycleKey": "ongoing:2026-10-08"
+        }
+      ],
+      "elapsed_ms": 1347,
+      "http_status": 200,
+      "id": "RC-06",
+      "input": "从今天开始，每天中午十二点二十和晚上七点四十催我归还借来的相机，没有最后期限。这件事只做一次，我归还以后就永远停止，别第二天又让我归还，也别默认一周后放弃。每天出现是催办频率，不是每天重新借还相机。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-08T12:20:00+08:00",
+      "now": "2026-10-08T11:20:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"归还借来的相机\",\"description\":\"每天中午12:20和晚上19:40提醒，归还后即永久停止\",\"rule\":{\"kind\":\"ongoing\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"12:20\",\"19:40\"],\"start_date\":\"2026-10-08\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"\",\"repeat_minutes\":0,\"end_at\":\"\"},\"warnings\":[\"我按你说的安排成每天12:20和19:40各提醒一次，归还后点完成就永久停止，不会第二天再催，也不会一周后自动放弃。\",\"今天12:20还没到，就从今天开始；如果今天已经过了这个点，会从下一个提醒时间开始。\",\"你看看这个草稿，确认后我再开始提醒。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 127,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 199,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 276,
+            "prompt_tokens": 2324,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2523
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"归还借来的相机\",\"description\":\"每天中午12:20和晚上19:40提醒，归还后即永久停止\",\"rule\":{\"kind\":\"ongoing\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"12:20\",\"19:40\"],\"start_date\":\"2026-10-08\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"从 2026-10-08 起，每天 12:20、19:40，完成后不再提醒\",\"warnings\":[\"我按你说的安排成每天12:20和19:40各提醒一次，归还后点完成就永久停止，不会第二天再催，也不会一周后自动放弃。\",\"今天12:20还没到，就从今天开始；如果今天已经过了这个点，会从下一个提醒时间开始。\",\"你看看这个草稿，确认后我再开始提醒。\"]}\n",
+      "request_started_at": "2026-10-08T16:04:33.6265753+08:00",
+      "response": {
+        "description": "每天中午12:20和晚上19:40提醒，归还后即永久停止",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "kind": "ongoing",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "start_date": "2026-10-08",
+          "times": [
+            "12:20",
+            "19:40"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": []
+        },
+        "summary": "从 2026-10-08 起，每天 12:20、19:40，完成后不再提醒",
+        "title": "归还借来的相机",
+        "warnings": [
+          "我按你说的安排成每天12:20和19:40各提醒一次，归还后点完成就永久停止，不会第二天再催，也不会一周后自动放弃。",
+          "今天12:20还没到，就从今天开始；如果今天已经过了这个点，会从下一个提醒时间开始。",
+          "你看看这个草稿，确认后我再开始提醒。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-08T23:52:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T23:57:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:02:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:07:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:12:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:17:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:22:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:27:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:32:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:37:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:42:18+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-09T00:47:18+08:00",
+          "CycleKey": "minute_interval"
+        }
+      ],
+      "elapsed_ms": 1022,
+      "http_status": 200,
+      "id": "RC-07",
+      "input": "等会儿提醒我把洗衣机里的衣服晾了，今晚还要穿，别拖到明早。具体几分钟你帮我定，没晾好再隔一会儿叫我，晾一次就行。我现在只是看看你怎么安排，还没确认。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-08T23:52:18+08:00",
+      "now": "2026-10-08T23:42:18+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"晾洗衣机里的衣服\",\"description\":\"今晚要穿，别拖到明早；晾好一次即可。\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-08T23:52:18+08:00\",\"repeat_minutes\":5,\"end_at\":\"\"},\"warnings\":[\"我先安排在10分钟后，也就是今晚23:52提醒你晾衣服；没晾好就每5分钟再叫你一次，晾好一次就停。\",\"你还没确认，我不会开始提醒；确认后我再按这个安排执行。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 103,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 176,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 260,
+            "prompt_tokens": 2308,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2484
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"晾洗衣机里的衣服\",\"description\":\"今晚要穿，别拖到明早；晾好一次即可。\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-08T23:52:18+08:00\",\"repeat_minutes\":5},\"summary\":\"2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒\",\"warnings\":[\"我先安排在10分钟后，也就是今晚23:52提醒你晾衣服；没晾好就每5分钟再叫你一次，晾好一次就停。\",\"你还没确认，我不会开始提醒；确认后我再按这个安排执行。\"]}\n",
+      "request_started_at": "2026-10-08T16:04:35.0087942+08:00",
+      "response": {
+        "description": "今晚要穿，别拖到明早；晾好一次即可。",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "first_at": "2026-10-08T23:52:18+08:00",
+          "kind": "minute_interval",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "repeat_minutes": 5,
+          "start_date": "",
+          "times": [],
+          "timezone": "Asia/Shanghai",
+          "weekdays": []
+        },
+        "summary": "2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒",
+        "title": "晾洗衣机里的衣服",
+        "warnings": [
+          "我先安排在10分钟后，也就是今晚23:52提醒你晾衣服；没晾好就每5分钟再叫你一次，晾好一次就停。",
+          "你还没确认，我不会开始提醒；确认后我再按这个安排执行。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-09T20:15:00+08:00",
+          "CycleKey": "once:2026-10-09"
+        }
+      ],
+      "elapsed_ms": 1166,
+      "http_status": 200,
+      "id": "RC-08",
+      "input": "我人在上海，要参加纽约那边的远程面试。对方写的是2026年10月9日纽约当地时间上午9点，按America/New_York算，提前45分钟提醒我检查摄像头，只通知一次，不用催我确认完成。请把面试原始时间留在备注里，别当成北京时间9点。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-09T20:15:00+08:00",
+      "now": "2026-10-08T20:00:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"检查摄像头（纽约远程面试）\",\"description\":\"纽约当地时间2026-10-09 09:00（America/New_York）远程面试，提前45分钟检查摄像头。\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"20:15\"],\"start_date\":\"2026-10-09\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":1,\"first_at\":\"\",\"repeat_minutes\":0,\"end_at\":\"\"},\"warnings\":[\"纽约当地10月9日上午9点按America/New_York换算成上海时间是10月9日21:00，提前45分钟就是20:15，我按这个时间只提醒一次。面试原始时间已留在备注里，没有当成北京时间9点；你确认后我再开始提醒。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 87,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 197,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 281,
+            "prompt_tokens": 2329,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2526
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"检查摄像头（纽约远程面试）\",\"description\":\"纽约当地时间2026-10-09 09:00（America/New_York）远程面试，提前45分钟检查摄像头。\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"20:15\"],\"start_date\":\"2026-10-09\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":1},\"summary\":\"2026-10-09 20:15，每周期只提醒一次\",\"warnings\":[\"纽约当地10月9日上午9点按America/New_York换算成上海时间是10月9日21:00，提前45分钟就是20:15，我按这个时间只提醒一次。面试原始时间已留在备注里，没有当成北京时间9点；你确认后我再开始提醒。\"]}\n",
+      "request_started_at": "2026-10-08T16:04:36.0634156+08:00",
+      "response": {
+        "description": "纽约当地时间2026-10-09 09:00（America/New_York）远程面试，提前45分钟检查摄像头。",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "kind": "once",
+          "max_reminders": 1,
+          "mode": "notify_once",
+          "month_end": 0,
+          "month_start": 0,
+          "start_date": "2026-10-09",
+          "times": [
+            "20:15"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": []
+        },
+        "summary": "2026-10-09 20:15，每周期只提醒一次",
+        "title": "检查摄像头（纽约远程面试）",
+        "warnings": [
+          "纽约当地10月9日上午9点按America/New_York换算成上海时间是10月9日21:00，提前45分钟就是20:15，我按这个时间只提醒一次。面试原始时间已留在备注里，没有当成北京时间9点；你确认后我再开始提醒。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-08T14:00:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T14:07:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T14:14:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T14:21:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T14:28:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T14:35:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T14:42:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T14:49:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T14:56:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T15:03:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T15:10:00+08:00",
+          "CycleKey": "minute_interval"
+        },
+        {
+          "At": "2026-10-08T15:17:00+08:00",
+          "CycleKey": "minute_interval"
+        }
+      ],
+      "elapsed_ms": 1696,
+      "http_status": 200,
+      "id": "RC-09",
+      "input": "从今天开始，每周一到周五下午两点到五点，每隔七分钟提醒我起来活动一下。每天活动一次后当天就别催，第二个工作日重新开始，五点以后绝对不要继续。周六周日不要，时间窗也别改成全天。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-08T14:00:00+08:00",
+      "now": "2026-10-08T13:10:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"工作日起来活动\",\"description\":\"每周一到周五14:00-17:00，每7分钟提醒起来活动；当天活动一次后当天不再提醒，下个工作日重新开始。\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-08T14:00:00+08:00\",\"repeat_minutes\":7,\"end_at\":\"2026-10-08T17:00:00+08:00\"},\"warnings\":[\"我先按最近一个工作日安排：今天（10月8日周四）14:00开始，每7分钟提醒一次，17:00截止，活动一次后今天就不再催。\",\"不过“每周一到周五自动重复、每天单独重新开始”目前没法原样设置，这次只安排了今天这一个窗口，不会自动延续到明天或下周一，需要你确认后我再按天补上。\",\"周六周日不提醒、时间窗保持14:00-17:00这两点已按你的要求保留。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 79,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 266,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 263,
+            "prompt_tokens": 2311,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2577
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"工作日起来活动\",\"description\":\"每周一到周五14:00-17:00，每7分钟提醒起来活动；当天活动一次后当天不再提醒，下个工作日重新开始。\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-08T14:00:00+08:00\",\"end_at\":\"2026-10-08T17:00:00+08:00\",\"repeat_minutes\":7},\"summary\":\"2026-10-08 14:00:00 首次提醒，之后每 7 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）\",\"warnings\":[\"我先按最近一个工作日安排：今天（10月8日周四）14:00开始，每7分钟提醒一次，17:00截止，活动一次后今天就不再催。\",\"不过“每周一到周五自动重复、每天单独重新开始”目前没法原样设置，这次只安排了今天这一个窗口，不会自动延续到明天或下周一，需要你确认后我再按天补上。\",\"周六周日不提醒、时间窗保持14:00-17:00这两点已按你的要求保留。\"]}\n",
+      "request_started_at": "2026-10-08T16:04:37.2701758+08:00",
+      "response": {
+        "description": "每周一到周五14:00-17:00，每7分钟提醒起来活动；当天活动一次后当天不再提醒，下个工作日重新开始。",
+        "rule": {
+          "end_at": "2026-10-08T17:00:00+08:00",
+          "end_date": "",
+          "every_days": 0,
+          "first_at": "2026-10-08T14:00:00+08:00",
+          "kind": "minute_interval",
+          "max_reminders": 0,
+          "mode": "until_done",
+          "month_end": 0,
+          "month_start": 0,
+          "repeat_minutes": 7,
+          "start_date": "",
+          "times": [],
+          "timezone": "Asia/Shanghai",
+          "weekdays": []
+        },
+        "summary": "2026-10-08 14:00:00 首次提醒，之后每 7 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）",
+        "title": "工作日起来活动",
+        "warnings": [
+          "我先按最近一个工作日安排：今天（10月8日周四）14:00开始，每7分钟提醒一次，17:00截止，活动一次后今天就不再催。",
+          "不过“每周一到周五自动重复、每天单独重新开始”目前没法原样设置，这次只安排了今天这一个窗口，不会自动延续到明天或下周一，需要你确认后我再按天补上。",
+          "周六周日不提醒、时间窗保持14:00-17:00这两点已按你的要求保留。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    },
+    {
+      "candidate_preview": [
+        {
+          "At": "2026-10-25T09:00:00+08:00",
+          "CycleKey": "2026-10"
+        },
+        {
+          "At": "2026-10-26T09:00:00+08:00",
+          "CycleKey": "2026-10"
+        },
+        {
+          "At": "2026-10-27T09:00:00+08:00",
+          "CycleKey": "2026-10"
+        },
+        {
+          "At": "2026-10-28T09:00:00+08:00",
+          "CycleKey": "2026-10"
+        }
+      ],
+      "elapsed_ms": 2943,
+      "http_status": 200,
+      "id": "RC-10",
+      "input": "每月25号到下个月5号，每天上午9点提醒我核对这一个账期的票据。这个跨月账期里做完一次就停，下个账期重新来，总共最多四次；但法定节假日不要催，调休上班的周末要催。别把25号到月底、下月1号到5号拆成两件分别完成的任务。",
+      "mail_count": 0,
+      "next_candidate": "2026-10-25T09:00:00+08:00",
+      "now": "2026-10-24T10:00:00+08:00",
+      "provider_calls": [
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"核对账期票据\",\"description\":\"每月25号到次月5号，每天上午9点提醒核对本账期票据；本账期内完成一次即停，下个账期重新开始，最多提醒4次。\",\"rule\":{\"kind\":\"monthly_window\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":25,\"month_end\":5,\"every_days\":0,\"max_reminders\":4,\"first_at\":\"\",\"repeat_minutes\":0,\"end_at\":\"\"},\"warnings\":[\"跨月账期（25号到次月5号）目前没法原样表达，我先按每月25号到月底这个窗口安排，每天9点提醒，本账期做完一次就停，最多提醒4次。\",\"法定节假日跳过、调休周末照常催这两点暂时做不到自动判断，先按每天提醒，节假日你可在草稿里手动跳过；确认后我再开始提醒。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 93,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 225,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 291,
+            "prompt_tokens": 2339,
+            "prompt_tokens_details": {
+              "cached_tokens": 2048
+            },
+            "total_tokens": 2564
+          }
+        },
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "content": "{\"title\":\"核对账期票据\",\"description\":\"每月25号到次月5号，每天上午9点提醒核对本账期票据；本账期内完成一次即停，下个账期重新开始，最多提醒4次。\",\"rule\":{\"kind\":\"monthly_window\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":25,\"month_end\":31,\"every_days\":0,\"max_reminders\":4,\"first_at\":\"\",\"repeat_minutes\":0,\"end_at\":\"\"},\"warnings\":[\"跨月账期（25号到次月5号）没法原样表达，我先按每月25号到月底这个窗口安排，每天9点提醒，本账期做完一次就停，最多提醒4次；次月1到5号这段暂未包含，需要的话可在草稿里调整。\",\"法定节假日跳过、调休周末照常催这两点暂时做不到自动判断，先按每天提醒，节假日你可在草稿里手动跳过；确认后我再开始提醒。\"]}",
+                "role": "assistant"
+              }
+            }
+          ],
+          "elapsed_ms": 113,
+          "model": "deepseek-flash",
+          "status": 200,
+          "usage": {
+            "completion_tokens": 243,
+            "prompt_cache_hit_tokens": 2432,
+            "prompt_cache_miss_tokens": 255,
+            "prompt_tokens": 2687,
+            "prompt_tokens_details": {
+              "cached_tokens": 2432
+            },
+            "total_tokens": 2930
+          }
+        }
+      ],
+      "raw_response": "{\"title\":\"核对账期票据\",\"description\":\"每月25号到次月5号，每天上午9点提醒核对本账期票据；本账期内完成一次即停，下个账期重新开始，最多提醒4次。\",\"rule\":{\"kind\":\"monthly_window\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":25,\"month_end\":31,\"every_days\":0,\"max_reminders\":4},\"summary\":\"每月 25—31 日，每天 09:00，完成后停止本月提醒，每周期最多 4 次\",\"warnings\":[\"跨月账期（25号到次月5号）没法原样表达，我先按每月25号到月底这个窗口安排，每天9点提醒，本账期做完一次就停，最多提醒4次；次月1到5号这段暂未包含，需要的话可在草稿里调整。\",\"法定节假日跳过、调休周末照常催这两点暂时做不到自动判断，先按每天提醒，节假日你可在草稿里手动跳过；确认后我再开始提醒。\"]}\n",
+      "request_started_at": "2026-10-08T16:04:39.0326857+08:00",
+      "response": {
+        "description": "每月25号到次月5号，每天上午9点提醒核对本账期票据；本账期内完成一次即停，下个账期重新开始，最多提醒4次。",
+        "rule": {
+          "end_date": "",
+          "every_days": 0,
+          "kind": "monthly_window",
+          "max_reminders": 4,
+          "mode": "until_done",
+          "month_end": 31,
+          "month_start": 25,
+          "start_date": "",
+          "times": [
+            "09:00"
+          ],
+          "timezone": "Asia/Shanghai",
+          "weekdays": []
+        },
+        "summary": "每月 25—31 日，每天 09:00，完成后停止本月提醒，每周期最多 4 次",
+        "title": "核对账期票据",
+        "warnings": [
+          "跨月账期（25号到次月5号）没法原样表达，我先按每月25号到月底这个窗口安排，每天9点提醒，本账期做完一次就停，最多提醒4次；次月1到5号这段暂未包含，需要的话可在草稿里调整。",
+          "法定节假日跳过、调休周末照常催这两点暂时做不到自动判断，先按每天提醒，节假日你可在草稿里手动跳过；确认后我再开始提醒。"
+        ]
+      },
+      "side_effect_counts": {
+        "completions": 0,
+        "garden_rewards": 0,
+        "notifications": 0,
+        "reminder_plans": 0,
+        "tasks": 0
+      }
+    }
+  ],
+  "finished_at": "2026-10-08T16:04:41.9835143+08:00",
+  "lane": "fixed_clock_backend_handler",
+  "method": "Real app HTTP handler and real provider; temporary DB and fake mailer; exact fixture clock; no task creation or scheduler started.",
+  "model_configured": "deepseek-flash",
+  "source_commit": "66c415f906f018e85d8823d8d940140e019b60e4",
+  "started_at": "2026-10-08T16:04:26.5175085+08:00"
+}

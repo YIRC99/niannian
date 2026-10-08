@@ -1,0 +1,137 @@
+{
+  "review_method": "Codex逐项审阅原始规则、summary、warnings、description和候选时间；不是模型自评。原五项标准每项2分，全满足才得分。少量文案标准具有人工判断成分，证据逐项保留供复核。",
+  "scope": "评分只用于固定时间后端Handler组。运行中HTTP组使用真实时钟，单独列出观察，不按原固定日期扣分。两组各单次采样，不能据此推算稳定成功率。",
+  "binary_provenance": {
+    "version": "2.6.0",
+    "vcs_revision": "28c04f58e8ad5abfdc2b2019cd3474ebfc3723e2",
+    "vcs_modified": true,
+    "note": "运行中二进制来自带未提交改动的构建，不能证明与本地源码逐字相同；报告因此严格分开HTTP组与固定时间源码组。HTTP响应不返回模型名，不能独立证实其实际模型。固定时间组提供方返回模型为deepseek-flash。"
+  },
+  "cases": [
+    {
+      "id": "RC-01", "verdict": "符合预期", "category": "pass", "request_fidelity": "完整保留",
+      "headline": "午夜换日与47秒都保留，10分钟后首次提醒，之后每2分钟催。",
+      "checks": [
+        {"pass":true,"evidence":"first_at=2026-10-09T00:08:47+08:00。"},
+        {"pass":true,"evidence":"repeat_minutes=2，与首次延迟10分钟分开。"},
+        {"pass":true,"evidence":"minute_interval / until_done，收一次没有变成通知一次。"},
+        {"pass":true,"evidence":"无end_at、end_date为空、max_reminders=0，未将午夜改到早晨。"},
+        {"pass":true,"evidence":"warnings明确首次、重复、完成才停及确认后开始。"}
+      ],
+      "http_observation":"真实时钟为16:04，返回16:14:24；相对10分钟正确。本组不覆盖跨午夜，午夜由固定时间组验证。"
+    },
+    {
+      "id": "RC-02", "verdict": "窗口起点被改写", "category": "issue", "request_fidelity": "原节奏未保留",
+      "headline": "应沿14:00起点继续，实际从14:37:20重算；下一候选变成14:57:20，而非14:40。",
+      "checks": [
+        {"pass":false,"evidence":"期望first_at=14:00:00，实际14:37:20，改变窗口锚点。"},
+        {"pass":true,"evidence":"end_at仍为当天17:00:00，未改到午夜或明天。"},
+        {"pass":true,"evidence":"repeat_minutes=20、max_reminders=6。"},
+        {"pass":true,"evidence":"minute_interval / until_done，单件待办永久完成。"},
+        {"pass":true,"evidence":"说明只盯剩余时段，未声称补发或已执行。"}
+      ],
+      "http_observation":"运行中后端也把first_at改成请求当时16:04:35；同一问题复现。",
+      "recommendation":"优先保留进行中窗口的原始起点；生成后的语义校验应比较用户窗口与输出锚点。"
+    },
+    {
+      "id": "RC-03", "verdict": "符合预期", "category": "pass", "request_fidelity": "完整保留",
+      "headline": "最终改口生效：后天16:30只通知一次，旧的09:00与5分钟催办均取消。",
+      "checks": [
+        {"pass":true,"evidence":"start_date=2026-10-10，times=[16:30]。"},
+        {"pass":true,"evidence":"once / notify_once。"},
+        {"pass":true,"evidence":"没有repeat_minutes、first_at或其他跟进规则。"},
+        {"pass":true,"evidence":"description保留北门快递柜、带取件码。"},
+        {"pass":true,"evidence":"反馈明确核对与确认后开始，副作用计数为0。"}
+      ],
+      "http_observation":"运行中后端同样生成10月10日16:30的一次通知。"
+    },
+    {
+      "id": "RC-04", "verdict": "符合预期", "category": "pass", "request_fidelity": "完整保留",
+      "headline": "月度窗口、每月3次上限和完成周期正确；2027年2月候选仅落在28日。",
+      "checks": [
+        {"pass":true,"evidence":"monthly_window，month_start=28、month_end=31。"},
+        {"pass":true,"evidence":"times=[09:00,20:00]。"},
+        {"pass":true,"evidence":"until_done，summary说明完成停止本月提醒。"},
+        {"pass":true,"evidence":"max_reminders=3，warnings说明每月最多3次、不是每天。"},
+        {"pass":true,"evidence":"规则引擎候选预览为2月28日09:00、20:00；之后进入3月28日。"}
+      ],
+      "http_observation":"实际10月时钟返回相同月度规则；短月展开只由固定时间组检验。"
+    },
+    {
+      "id": "RC-05", "verdict": "符合预期", "category": "pass", "request_fidelity": "完整保留",
+      "headline": "跨年4天正确，每天记录一次；当天完成不会消掉下一天。",
+      "checks": [
+        {"pass":true,"evidence":"start_date=2026-12-31、end_date=2027-01-03。"},
+        {"pass":true,"evidence":"规则预览包含1月3日，完整覆盖4个自然日。"},
+        {"pass":true,"evidence":"mode=every_day，summary说明下一提醒日重新开始。"},
+        {"pass":true,"evidence":"08:00、20:30；max_reminders=2。"},
+        {"pass":true,"evidence":"summary完整展示2027年1月3日，warnings说明每天记录一回。本项按整份草稿可见说明判定，不限定只能在warnings出现年份。"}
+      ],
+      "http_observation":"真实日期10月8日，因此返回10月9日至2027年1月3日，符合原话“明天到一月三号”；不是跨年计算错误。"
+    },
+    {
+      "id": "RC-06", "verdict": "符合预期", "category": "pass", "request_fidelity": "完整保留",
+      "headline": "能区分每天催一次性事情与每天新增任务，归还后永久停止。",
+      "checks": [
+        {"pass":true,"evidence":"kind=ongoing，而非daily。"},
+        {"pass":true,"evidence":"start_date=2026-10-08，times=[12:20,19:40]。"},
+        {"pass":true,"evidence":"until_done，summary和warnings均说明永久停止。"},
+        {"pass":true,"evidence":"end_date为空、max_reminders=0。"},
+        {"pass":true,"evidence":"标题为归还借来的相机，没有每日重新借还。"}
+      ],
+      "http_observation":"真实请求在16:05，但反馈仍说“今天就从这两个时间开始”，其中12:20已过。规则可从19:40继续，说明没有清楚交代已经过去的时间。"
+    },
+    {
+      "id": "RC-07", "verdict": "时间正确，建议说明不完整", "category": "issue", "request_fidelity": "时间与完成语义保留",
+      "headline": "自主选10分钟后并保留秒，没有拖到明早；未明确说默认跟进间隔可以调整。",
+      "checks": [
+        {"pass":true,"evidence":"23:52:18，在5—15分钟范围内，秒数保留。"},
+        {"pass":true,"evidence":"首次仍在10月8日深夜，未应用旧静默规则。"},
+        {"pass":false,"evidence":"补全了每5分钟跟进且有“先安排”语气，但未明确默认间隔可调整；按原题复合标准不给该项2分。这是说明完整性问题，不是时间错误。"},
+        {"pass":true,"evidence":"until_done，无额外硬截止或次数上限。"},
+        {"pass":true,"evidence":"明确还没确认，不会开始提醒，确认后执行。"}
+      ],
+      "http_observation":"真实16:05时选择15分钟后，属于允许范围；同样没有明确默认间隔可调整。本组不覆盖深夜场景。",
+      "recommendation":"补全默认值时，用一句话说明“暂按每5分钟，可调整”。"
+    },
+    {
+      "id": "RC-08", "verdict": "时刻等价，时区表示不同", "category": "issue", "request_fidelity": "实际提醒时刻正确",
+      "headline": "纽约08:15正确换算成上海20:15，实际时刻没错；但未按原测试要求保留纽约规则时区。",
+      "checks": [
+        {"pass":false,"evidence":"期望timezone=America/New_York，实际Asia/Shanghai。严格字段标准扣2分，不解释成早晚12小时错误。"},
+        {"pass":true,"evidence":"实际上海20:15与纽约08:15为同一时刻，正确提前45分钟。"},
+        {"pass":true,"evidence":"下一候选转换UTC为2026-10-09T12:15:00Z，与预期相同。"},
+        {"pass":true,"evidence":"once / notify_once，提醒检查摄像头。"},
+        {"pass":true,"evidence":"备注保留纽约原始2026-10-09 09:00和America/New_York，说明清晰。"}
+      ],
+      "http_observation":"运行中后端同样输出上海20:15，实际时刻正确。",
+      "recommendation":"产品可明确允许等价时区表示；若允许，本题应为10分，全组可比口径为90分。不要把这2分当成触发时间错误。"
+    },
+    {
+      "id": "RC-09", "verdict": "替代规则合理，说明有冲突", "category": "boundary", "request_fidelity": "原需求不能完整实现",
+      "headline": "生成了今天的单次7分钟窗口，并披露不会自动重复；备注仍写每周重复，还出现按天补上的承诺。",
+      "checks": [
+        {"pass":true,"evidence":"warnings说明每周一到周五重复、每日重置不能原样设置。"},
+        {"pass":true,"evidence":"生成10月8日14:00—17:00单次窗口。"},
+        {"pass":true,"evidence":"repeat_minutes=7，end_at=17:00。"},
+        {"pass":true,"evidence":"明确这次只安排今天，不自动延续明天或下周一。"},
+        {"pass":false,"evidence":"description仍写每周与下个工作日重新开始；warnings又说确认后“我再按天补上”，超出当前草稿能保证的范围，替代说明不完全一致。"}
+      ],
+      "http_observation":"真实16:05还在窗口内，却写“今天窗口已过，只提醒余下时段”；description仍保留每日重置。单次规则本身可用。",
+      "recommendation":"把原始愿望与实际安排分开；不能在实际说明里承诺未实现的后续补排。"
+    },
+    {
+      "id": "RC-10", "verdict": "替代方案丢失重要日期", "category": "boundary", "request_fidelity": "原需求不能完整实现",
+      "headline": "最终仅保留每月25日到月底，丢掉次月1—5日；本可保留完整单次跨月账期。",
+      "checks": [
+        {"pass":false,"evidence":"最终规则month_start=25、month_end=31，未保留10月25日至11月5日完整账期。"},
+        {"pass":true,"evidence":"最终HTTP草稿没有非法25→5范围或两个独立任务；但首轮模型确实输出25→5，被后端校验后修复。"},
+        {"pass":true,"evidence":"warnings同时说明跨月周期与节假日调休两类限制。"},
+        {"pass":true,"evidence":"没有编造节假日表，也没有把周一至周五冒充法定工作日。"},
+        {"pass":false,"evidence":"没有选择完整单次date_range或核对安排的备选；关键次月日期被丢弃，且声称可在草稿手动跳过节假日，当前规则没有日期排除字段。"}
+      ],
+      "http_observation":"运行中后端同样给出25日至月底，明确披露漏掉1—5日；丢失账期尾部的问题在两组均出现。",
+      "recommendation":"优先退化为10月25日至11月5日的单次date_range，保留完整账期，再说明不自动重复与节假日例外限制。"
+    }
+  ]
+}

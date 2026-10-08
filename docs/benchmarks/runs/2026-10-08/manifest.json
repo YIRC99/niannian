@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-10-08T08:14:16.341Z",
+  "fixed_score": 88,
+  "full_score_cases": 5,
+  "http_success": 10,
+  "fixed_success": 10,
+  "http_median_ms": 1532,
+  "files": {
+    "http-results.json": "5c841e1d70d1649cdecd3c6bd1aed3885bbbc3b15deb97ccfeb982c8d6c3ec9a",
+    "fixed-results.json": "26b9919101005078cb8e094ef0a70d5154372af57a0f4dcb8532a817965ae038",
+    "review.json": "c3e36d3293e47f1602e2f03e8520552494bfaded35b4625fdee99dea0185caeb",
+    "index.html": "321b058125e3de3ccabe731acd9e4a0f386c11ac8f622fa38d18203d3d4b55be"
+  },
+  "suite_sha256": "3ee18961b8db69702d54bef4f0092da6352921147b3e82c5d3a8b9428e128cb7"
+}
