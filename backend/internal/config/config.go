@@ -20,6 +20,7 @@ var defaults embed.FS
 const DeepSeekFlashModel = "deepseek-flash"
 
 type Config struct {
+	AdminKey        string `json:"admin_key"`
 	Addr            string `json:"addr"`
 	DataDir         string `json:"data_dir"`
 	DeepSeekAPIKey  string `json:"deepseek_api_key"`
@@ -77,6 +78,7 @@ func Load(embedded []byte) (Config, error) {
 		return c, fmt.Errorf("无法读取配置文件: %w", err)
 	}
 	vars := map[string]*string{"ADDR": &c.Addr, "DATA_DIR": &c.DataDir, "DEEPSEEK_API_KEY": &c.DeepSeekAPIKey, "DEEPSEEK_BASE_URL": &c.DeepSeekBaseURL, "DEEPSEEK_MODEL": &c.DeepSeekModel, "SMTP_HOST": &c.SMTPHost, "SMTP_USER": &c.SMTPUser, "SMTP_PASSWORD": &c.SMTPPassword, "PUBLIC_URL": &c.PublicURL}
+	vars["ADMIN_KEY"] = &c.AdminKey
 	for k, v := range vars {
 		if e, ok := os.LookupEnv("NIANNIAN_" + k); ok {
 			*v = strings.TrimSpace(e)

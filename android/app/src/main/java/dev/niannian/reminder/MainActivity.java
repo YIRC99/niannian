@@ -42,6 +42,7 @@ public class MainActivity extends Activity {
         if ("last_sync".equals(key)) ui.post(this::refreshVisibleReminderTimes);
     };
     private Session session;
+    private AppUpdater updater;
     private int accountEpoch = 0, pageEpoch = 0, taskLoadRequest = 0;
     private String screen = "home", filter = "待完成", search = "";
     private JSONObject selected = new JSONObject(), draft = new JSONObject(), restoredForm;
@@ -134,6 +135,7 @@ public class MainActivity extends Activity {
         else if (session.token.isEmpty() && !screen.equals("server") && !screen.equals("login")) screen = "home";
         getSharedPreferences("reminder_execution_v1", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(reminderSyncListener);
         ReminderCoordinator.attach(this,session);
+        updater = new AppUpdater(this, session);
         render();
         openReminderIntent(getIntent());
         if(screen.equals("home")&&session.token.isEmpty()&&session.autoLogin&&session.hasCredentials()&&!automaticLoginAttempted)autoLogin();
@@ -166,9 +168,9 @@ public class MainActivity extends Activity {
         out.putBoolean("automaticLoginAttempted",automaticLoginAttempted&&!authBusy);
         out.putString("plantRequestId",plantRequestId);out.putString("plantTitle",plantTitle);out.putString("gardenFocusPlantId",gardenFocusPlantId);out.putString("waterRequests",new JSONObject(waterRequests).toString());
     }
-    @Override protected void onResume() { super.onResume(); setMotionHostActive(true); if(session!=null)ReminderCoordinator.onResume(this,session); }
-    @Override protected void onPause() { setMotionHostActive(false); super.onPause(); }
-    @Override public void onDestroy() { getSharedPreferences("reminder_execution_v1", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(reminderSyncListener); dismissProfileDialog(); stopPageMotion(); super.onDestroy(); workers.shutdownNow(); photoRequests.close(); ui.removeCallbacksAndMessages(null); }
+    @Override protected void onResume() { super.onResume(); setMotionHostActive(true); if(session!=null)ReminderCoordinator.onResume(this,session); if(updater!=null)updater.resume(); }
+    @Override protected void onPause() { if(updater!=null)updater.pause(); setMotionHostActive(false); super.onPause(); }
+    @Override public void onDestroy() { if(updater!=null)updater.close(); getSharedPreferences("reminder_execution_v1", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(reminderSyncListener); dismissProfileDialog(); stopPageMotion(); super.onDestroy(); workers.shutdownNow(); photoRequests.close(); ui.removeCallbacksAndMessages(null); }
     private void refreshVisibleReminderTimes() {
         if (isDestroyed() || !motionHostActive || session == null || session.token.isEmpty() || !screen.equals("home")) return;
         if (!ReminderCoordinator.acceptsIntent(session, getSharedPreferences("reminder_execution_v1", MODE_PRIVATE).getString("scope", ""))) return;
@@ -379,7 +381,7 @@ public class MainActivity extends Activity {
                 String previous=session.base;
                 if(!previous.equals(address))ReminderCoordinator.clear(this);
                 session.switchServer(address);
-                if(!previous.equals(session.base)){accountEpoch++;clearAccountData();codeAvailableAt=0;}
+                if(!previous.equals(session.base)){accountEpoch++;clearAccountData();codeAvailableAt=0;if(updater!=null)updater.serverChanged();}
                 homeNotice="";
                 if(!session.token.isEmpty()){navigate("home");toast("服务器地址已保存");}
                 else if(session.hasCredentials()){automaticLoginAttempted=false;autoLogin();}
@@ -1871,6 +1873,8 @@ public class MainActivity extends Activity {
             },e->export.state("导出失败，点击重试\n"+failureMessage(e),false,true));
         });
         content.addView(homeTitle("关于念念",17));gap(content,7);
+        ProfileAction update = new ProfileAction(content,"info","检查新版本",updater.versionLabel());
+        update.setOnClickListener(v -> updater.check(true));
         LinearLayout about=row();about.addView(art(R.drawable.garden_sprout_v3,32));gapHorizontal(about,10);
         about.addView(text("AI 帮你安排与跟进，完成小事赚水滴。\n浇灌喜欢的花，让努力慢慢绽放。",12,MUTED,false),new LinearLayout.LayoutParams(0,-2,1));content.addView(about);
         body.addView(new Space(this),new LinearLayout.LayoutParams(1,0,1));

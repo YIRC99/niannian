@@ -111,7 +111,7 @@ func New(cfg config.Config) (*App, error) {
 	}
 	db.SetMaxOpenConns(1)
 	a := &App{cfg: cfg, db: db, lock: guard, mailer: mail.New(cfg), parser: ai.New(cfg), now: time.Now}
-	if _, err = db.Exec(schema + reminderSchema + gardenSchema); err != nil {
+	if _, err = db.Exec(schema + reminderSchema + gardenSchema + adminSchema); err != nil {
 		a.Close()
 		return nil, fmt.Errorf("initialize database: %w", err)
 	}
@@ -163,8 +163,11 @@ CREATE INDEX IF NOT EXISTS notification_user ON notifications(user_id,scheduled_
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, 200, map[string]string{"status": "ok", "version": "2.4.0"})
+		writeJSON(w, 200, map[string]string{"status": "ok", "version": "2.6.0"})
 	})
+	a.registerAdmin(mux)
+	mux.HandleFunc("GET /api/v1/updates/latest", a.latestRelease)
+	mux.HandleFunc("GET /api/v1/updates/{id}/download", a.downloadRelease)
 	mux.HandleFunc("POST /api/v1/auth/code", a.requestCode)
 	mux.HandleFunc("POST /api/v1/auth/verify", a.verifyCode)
 	mux.HandleFunc("POST /api/v1/auth/register", a.registerPassword)

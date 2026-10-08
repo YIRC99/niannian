@@ -1,6 +1,7 @@
 {
   "addr": ":56507",
   "data_dir": "data",
+  "admin_key": "",
   "deepseek_base_url": "https://api.deepseek.com",
   "deepseek_model": "deepseek-flash",
   "smtp_host": "hwsmtp.qiye.163.com",
