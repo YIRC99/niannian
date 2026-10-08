@@ -43,8 +43,10 @@ func inputMessages(text string, now time.Time) []map[string]string {
 		system += "\n原话提交时间：" + conversation.Reference + "。第一条用户消息里的今天/明天/后天相对这个原话时间计算，不能随续答变动；后续回答的相对日期按各条回答自己的发送时间。校验是否过期仍用当前时间。所有用户消息共同构成需求，最新明确改口优先。"
 		anchor := datedMessage(conversation.Reference, now)
 		messages := []map[string]string{{"role": "system", "content": system}, {"role": "user", "content": anchor + conversation.Original}}
+		questionTime := conversation.Reference
 		for _, answer := range conversation.Answers {
-			messages = append(messages, map[string]string{"role": "assistant", "content": answer.Question}, map[string]string{"role": "user", "content": datedMessage(answer.AnsweredAt, now) + answer.Answer})
+			messages = append(messages, map[string]string{"role": "assistant", "content": datedMessage(questionTime, now) + answer.Question}, map[string]string{"role": "user", "content": datedMessage(answer.AnsweredAt, now) + answer.Answer})
+			questionTime = answer.AnsweredAt
 		}
 		messages[0]["content"] += "\n现在是在继续已有追问：已选选项就是用户的确定答案，不要执行原话中已经满足的‘先让我选’。最新回答若只给时刻，沿用原话已经确定的日期，不重新理解‘明天’。"
 		return messages

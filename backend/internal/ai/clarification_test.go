@@ -78,7 +78,7 @@ func TestConversationDatesUseShanghaiAndEachAnswerClock(t *testing.T) {
 	ref, _ := time.Parse(time.RFC3339, "2026-10-08T16:01:00Z")
 	input, _ := ClarificationInput("明天面试提醒", []Answer{{Question: "日期？", Answer: "明天", AnsweredAt: "2026-10-09T15:59:00Z"}, {Question: "时刻？", Answer: "两点", AnsweredAt: "2026-10-09T17:00:00Z"}}, ref)
 	messages := inputMessages(input, now)
-	if !strings.Contains(messages[1]["content"], "今天=2026-10-09") || !strings.Contains(messages[3]["content"], "明天=2026-10-10") || !strings.Contains(messages[5]["content"], "今天=2026-10-10") {
+	if !strings.Contains(messages[1]["content"], "今天=2026-10-09") || !strings.Contains(messages[3]["content"], "明天=2026-10-10") || !strings.Contains(messages[5]["content"], "今天=2026-10-10") || !strings.Contains(messages[4]["content"], "今天=2026-10-09") {
 		t.Fatalf("timezone/turn anchors lost: %+v", messages)
 	}
 }
