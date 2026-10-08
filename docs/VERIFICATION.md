@@ -11,6 +11,7 @@
 - 本轮是生产 HTTP Handler 调真实模型，固定时钟、临时数据库、测试邮件器；未启动监听服务或调度器。全部五张业务表和邮件新增为0。已有2.6.1进程PID42316未替换，本报告不声称新版已上线。
 - Go 全包测试与 vet 通过；Android Java逻辑检查通过，release构建和Lint通过（0错误，53警告）。Android 2.6.2/versionCode35，APK已生成；用户说明手机暂不能连接，因此未安装，不宣称视觉/触控或手机通知验收通过。
 - [HTML完整对比报告](benchmarks/runs/2026-10-08-clarification/index.html) 含三轮切换、150项评分、原始模型响应/usage、5组完整追问和候选历史；脚本语法、10题数量、本地链接和证据哈希已核对。
+- 交付产物位于 `release/`：`niannian-v2.6.2.apk`（43,312,376字节，SHA-256 `d9a9b3c49bdc4057e5e3d240d60a73bc09150093fa2d5907ec5bdf0277c5f073`）；Windows后端SHA-256 `45b5119e7312a4e306be1da703f755e1c04b97a5b022b4226a1dc5e9897d320b`；Linux amd64裸程序SHA-256 `bdee4af05210c7cf5f29c13f8b0445018dae03b93e91585edce5bdc07bbf7c49`。两个后端构建提交均为`d2a6b1d44f913bac54ad9317a754a0fd8e656c98`、`vcs.modified=false`。交付说明和校验文件同目录；结束检查仅原有2.6.1进程42316，本轮未遗留新服务。
 
 ## 2026-10-08 · 全部10题改为真实短口语，三轮重评
 
