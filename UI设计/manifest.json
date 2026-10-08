@@ -11,6 +11,8 @@
       "id": "sowing-2026-10-08",
       "title": "播种页：种子面对面、轻对话、一句话确认",
       "entry": "prototypes/sowing-2026-10-08/index.html",
+      "latest_revision": "prototypes/sowing-2026-10-08/a-fusion.html",
+      "latest_revision_note": "A 庭院融合版，复用 App 原始种子、枝叶和12花种，输入至确认完整交互，尚未移植",
       "related_pages": ["10", "11", "12"],
       "source_entry": "MainActivity.renderEditor",
       "status": "交互探索，未移植正式客户端",

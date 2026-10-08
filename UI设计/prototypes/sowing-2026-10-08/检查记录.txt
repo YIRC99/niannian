@@ -1,5 +1,12 @@
 2026-10-08 · HTML 样稿交付检查
 
+第二轮：A 庭院融合版
+复用 sowing_seed_mascot / sowing_corner_leaves / sowing_footer_foliage、garden_handwriting 字体及12张花种图；没有生成新图片，没有修改 Android。
+新增 a-fusion.html 并排查看输入与确认；a-garden.html + garden.css + garden.js 提供同页输入、思考、确认、返回修改与选花交互。
+已检查 garden.js 语法、资源文件存在、manifest JSON、Git 差异；1440×1120 截图已打开复看，见 preview-fusion.png。
+抽查“帮我安排”后进入 proposal，两个预览均包含12花种；374px 预览视口 document.scrollWidth 等于 clientWidth，无整页横向溢出。
+没有做整套自动化或手机效果测试；实际观感由用户快速评价。临时浏览器与本轮预览服务已关闭。
+
 参考：用户实机截图、04 播种板、PRODUCT.md、DESIGN.md、当前 MainActivity.renderEditor。
 通过：prototype.js 语法检查；Git 差异空白检查；本地资源引用检查；manifest JSON 解析。
 浏览器：1440px 三方案对比截图，390×844px A 方案截图，均已打开检查布局。

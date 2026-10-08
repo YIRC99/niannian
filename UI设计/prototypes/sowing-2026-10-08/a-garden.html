@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>A 融合版 · 在同一座庭院里说定</title><link rel="stylesheet" href="garden.css"><script defer src="garden.js"></script></head><body>
+<div class="garden-app" id="garden-app" data-stage="input">
+  <div class="garden-scenery" aria-hidden="true"><img class="corner" src="../../../android/app/src/main/res/drawable-nodpi/sowing_corner_leaves.png" alt=""><img class="foliage" src="../../../android/app/src/main/res/drawable-nodpi/sowing_footer_foliage.png" alt=""></div>
+  <div class="sample-note">A 融合版 · 交互样稿，不会实际创建提醒</div>
+  <nav class="garden-nav"><button id="back" aria-label="返回输入">〈 返回</button><button id="restart">重新体验</button></nav>
+  <header class="garden-hero"><h1>播下一件小事</h1><p id="subtitle">把要记住的事，交给念念</p><p class="handwriting" aria-hidden="true">小小的<br>一件事<br>也会长出美好的花</p><div class="seed-anchor"><img id="seed" src="../../../android/app/src/main/res/drawable-nodpi/sowing_seed_mascot.png" alt="念念种子"></div></header>
+  <main>
+    <section id="input-stage"><label class="sr-only" for="wish">想让念念记住什么</label><div class="wish-wrap"><textarea id="wish" placeholder="等会儿提醒我搞卫生，时间你来安排" maxlength="160">待会儿记得提醒我点外卖</textarea></div><div class="arrange-actions"><button class="primary" id="arrange">帮我安排</button><button class="text-button" id="manual">手动填写</button></div><p class="error" id="input-error" role="status"></p><div id="initial-flowers"></div></section>
+    <section id="thinking-stage" hidden><p class="thinking">嗯，我来想想怎么安排<span aria-hidden="true">…</span></p><p class="muted centered">这件小事，我听见了。</p></section>
+    <section id="proposal-stage" hidden>
+      <div class="spoken" aria-live="polite"><h2>我会在 <button id="time-link" aria-expanded="false" aria-controls="time-choices">3 分钟后<span aria-hidden="true">⌄</span></button><br>提醒你<span id="task-copy">点外卖</span>。</h2><p id="follow-copy">还没完成，就每 5 分钟提醒你。<br>做完就停。</p></div>
+      <div id="time-choices" class="time-choices" hidden><span class="muted">从确认那一刻开始算</span><div class="chips" id="delay-options"></div></div>
+      <div class="original"><span id="original-copy">你说：待会儿记得提醒我点外卖</span><button id="resay">改一句</button></div>
+      <details id="plan-details"><summary>通知提醒 · 查看细节</summary><div class="detail-body"><p class="muted" id="exact-time"></p><label>这件小事<input id="task-name" maxlength="60" value="点外卖"></label><label>没完成时<select id="follow-rule"><option value="5">每 5 分钟再提醒</option><option value="2">每 2 分钟再提醒</option><option value="10">每 10 分钟再提醒</option><option value="0">只提醒一次</option></select></label><label>最晚提醒到（可不填）<input type="datetime-local" step="1" id="end-time"></label><p class="muted">本例使用手机通知，正式版按已开通渠道安排。你说“待会儿”，先建议 3 分钟后；时间和催办都能改。</p><p class="error" id="detail-error" role="status"></p></div></details>
+      <details id="flower-details"><summary><img id="selected-flower" alt=""><span id="flower-copy">这次种郁金香</span><span class="change-label">换一朵 ⌄</span></summary><div id="proposal-flowers"></div></details>
+    </section>
+    <section id="success-stage" class="centered" hidden><h2>好，说定啦。</h2><p id="success-copy"></p><p class="muted">正式版创建成功后，直接回到今天。</p><p class="muted">这里只演示反馈，没有创建真实提醒。</p></section>
+  </main>
+  <footer id="confirm-footer" hidden><button class="primary" id="confirm">好，就这样提醒我</button><p class="muted centered">确认后开始提醒，做完小事再领水滴</p></footer>
+  <div class="garden-bottom-space" aria-hidden="true"></div>
+</div></body></html>
