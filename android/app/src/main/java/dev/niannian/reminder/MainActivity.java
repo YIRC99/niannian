@@ -224,7 +224,7 @@ public class MainActivity extends Activity {
         GardenFlowers.configure(this,session.base,session.email);
         if(session.token.isEmpty()&&!Arrays.asList("home","login","server").contains(screen))screen="home";
         pageEpoch++; taskBusy = false; fields.clear(); kindPicker = null; modePicker = null; weekdays = null;
-        boolean edgeDecoration=screen.equals("record")||screen.equals("photo");
+        boolean edgeDecoration=screen.equals("record")||screen.equals("photo")||screen.equals("editor");
         boolean fixedMail=isFixedMailRecord();
         boolean recordFooter=screen.equals("record")&&hasRecordFooter()&&!fixedMail;
         // Only decoration enters system-bar space; interactive content keeps its safe insets.
@@ -235,18 +235,26 @@ public class MainActivity extends Activity {
         root = column();root.setBackgroundColor(edgeDecoration?Color.TRANSPARENT:BG);
         if(edgeDecoration){
             FrameLayout page=new FrameLayout(this);page.setBackgroundColor(BG);
-            if(fixedMail){
+            if(fixedMail||(screen.equals("editor")&&!manualVisible)){
                 ImageView grass=new ImageView(this);
                 grass.setImageBitmap(GardenArtCache.backdrop(getResources(),R.drawable.sowing_footer_foliage));
-                grass.setAdjustViewBounds(true);grass.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                // Scale against the viewport width, not the drawable's wrap-content height.
+                grass.setScaleType(ImageView.ScaleType.MATRIX);
+                grass.addOnLayoutChangeListener((v,l,t,r,b,ol,ot,or,ob)->{
+                    android.graphics.drawable.Drawable drawable=grass.getDrawable();
+                    if(drawable==null||r<=l||b<=t)return;
+                    float scale=(r-l)/(float)drawable.getIntrinsicWidth();
+                    Matrix matrix=new Matrix();matrix.setScale(scale,scale);
+                    matrix.postTranslate(0,(b-t)-drawable.getIntrinsicHeight()*scale);
+                    grass.setImageMatrix(matrix);
+                });
                 grass.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-                page.addView(grass,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
+                page.addView(grass,new FrameLayout.LayoutParams(-1,-1));
             }
             ImageView leaves=new ImageView(this);
             leaves.setImageBitmap(GardenArtCache.backdrop(getResources(),R.drawable.sowing_corner_leaves));
             leaves.setScaleType(ImageView.ScaleType.FIT_START);leaves.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             FrameLayout.LayoutParams leavesLp=new FrameLayout.LayoutParams(dp(196),dp(131),Gravity.TOP|Gravity.END);
-            if(fixedMail)leavesLp.topMargin=dp(31); // About 100 physical pixels on the user's 520dpi phone.
             page.addView(leaves,leavesLp);
             page.addView(root,new FrameLayout.LayoutParams(-1,-1));setContentView(page);
         }else setContentView(root);
@@ -261,11 +269,7 @@ public class MainActivity extends Activity {
             return insets;
         });
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setClipToPadding(false); scroll.setVerticalScrollBarEnabled(false);
-        if(screen.equals("editor")){
-            FrameLayout page=new FrameLayout(this);root.addView(page,new LinearLayout.LayoutParams(-1,0,1));
-            ImageView leaves=new ImageView(this);leaves.setImageBitmap(GardenArtCache.load(getResources(),R.drawable.sowing_corner_leaves));leaves.setScaleType(ImageView.ScaleType.FIT_END);leaves.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-            page.addView(leaves,new FrameLayout.LayoutParams(dp(160),dp(108),Gravity.TOP|Gravity.END));page.addView(scroll,new FrameLayout.LayoutParams(-1,-1));
-        }else if(!fixedMail&&!screen.equals("garden"))root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        if(!fixedMail&&!screen.equals("garden"))root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         body = column(); body.setPadding(dp(16), dp(12), dp(16), dp(20));body.setClipChildren(false);body.setClipToPadding(false);
         if(recordFooter){body.setPadding(dp(16),dp(12),dp(16),0);body.setClipToPadding(false);}
         if(screen.equals("editor"))body.setPadding(dp(16),dp(4),dp(16),0);
@@ -1039,7 +1043,7 @@ public class MainActivity extends Activity {
                 run(generate,a->a.json("POST","/api/v1/ai/parse",object("text",input)),result->{taskBusy=false;draft=result;restoredForm=null;manualVisible=true;rulesExpanded=false;advancedExpanded=false;aiExpanded=false;JSONArray warnings=result.optJSONArray("warnings");aiWarning=warnings==null?"":join(warnings,"\n");render();},failure->{arranging.setVisibility(View.GONE);manual.setEnabled(true);sentence.setEnabled(true);generate.setText("重新安排");showError("这次没有安排好，请重试。\n"+failureMessage(failure));});generate.setText("正在安排…");
             });
         }
-        if(!manualVisible){addFlowerPreview(body);botanicalFooter(R.drawable.sowing_footer_foliage,130);return;}
+        if(!manualVisible){addFlowerPreview(body);gap(body,130);return;}
         JSONObject rule=draft.optJSONObject("rule");if(rule==null)rule=new JSONObject();
         LinearLayout draftPanel=column();draftPanel.setPadding(dp(12),dp(12),dp(12),dp(2));GradientDrawable draftSurface=shape(PAPER,10);draftSurface.setStroke(dp(1),0xffe5e7dc);draftPanel.setBackground(draftSurface);body.addView(draftPanel);
         LinearLayout planHeading=row();planHeading.addView(text("本次安排",16,INK,true),new LinearLayout.LayoutParams(0,-2,1));planHeading.addView(text(editing?"修改后保存":"确认后生效",11,MUTED,false));draftPanel.addView(planHeading);gap(draftPanel,6);
