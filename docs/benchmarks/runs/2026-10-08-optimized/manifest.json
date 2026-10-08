@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-10-08T08:55:38.561Z",
+  "source_commit": "83363b69a3b2c34bdba06559966053421c2dd426",
+  "before_score": 88,
+  "after_score": 100,
+  "exact_request_satisfied": 8,
+  "handler_success": 10,
+  "old_median_ms": 1382.5,
+  "new_median_ms": 1968.5,
+  "old_model_requests": 11,
+  "new_model_requests": 20,
+  "suite_sha256": "3ee18961b8db69702d54bef4f0092da6352921147b3e82c5d3a8b9428e128cb7",
+  "files": {
+    "fixed-results.json": "940ad5d95b67c30c08b6881cda2c51e1005c9723e80057c3efbb2ecde3f98516",
+    "review.json": "f2d9e12f2e10d6a145c03af304a6b29bad3fe99e5f6b5f45510116ba1205a159",
+    "index.html": "b904925d9ff3c361b55cc97664e3d18f1bf2b03e840374334bd22d7b1ff031d3"
+  },
+  "baseline_files": {
+    "fixed-results.json": "26b9919101005078cb8e094ef0a70d5154372af57a0f4dcb8532a817965ae038",
+    "review.json": "c3e36d3293e47f1602e2f03e8520552494bfaded35b4625fdee99dea0185caeb",
+    "http-results.json": "5c841e1d70d1649cdecd3c6bd1aed3885bbbc3b15deb97ccfeb982c8d6c3ec9a",
+    "index.html": "321b058125e3de3ccabe731acd9e4a0f386c11ac8f622fa38d18203d3d4b55be"
+  }
+}

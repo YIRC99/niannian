@@ -7,6 +7,8 @@
 - 新增覆盖复核原句/时钟保留、第二次非法或父上下文取消时拒绝初稿、旧候选时间及虚假承诺不进入 warnings、标签缺失/未知/重复/冲突校验。`go test ./... -count=1` 与 `go vet ./...` 通过。
 - 调整过程中曾出现跨月每日完成方式、当前账期及同月短月窗口混淆，均保留回归覆盖；最终 `NIANNIAN_LIVE_AI=1 go test ./internal/ai -run '^TestLiveReminderFidelity($|Variations$)' -count=1 -v` 通过原 10 题和额外 6 个变体。使用真实 deepseek-flash，未修改原 benchmark 输入与评分标准。它们是定向回归，不能据此承诺任意表达均正确。
 - 仍不支持自动跨月循环、每天/每周分钟级小时窗口和法定节假日筛选；修复的是完整、诚实的单轮替代。没有实际确认创建或验证消息送达。后端升级兼容 Android 2.6.0，不涉及 APK 改动。
+- 提交 `83363b6` 后，通过真实 `/api/v1/ai/parse` Handler 连续保存10题固定时钟结果与20次模型返回；全部HTTP 200，人工按原标准审阅100/100（基线88），其中8题完整满足原需求、2题仅边界替代通过。中位数1.9685秒，基线1.3825秒；不是盲测或长期稳定性结论。对比报告：[优化后报告](benchmarks/runs/2026-10-08-optimized/index.html)，原始基线未改。
+- 已构建 `release/niannian-windows-amd64-v2.6.1.exe` 与 `release/niannian-linux-amd64-v2.6.1`，两者构建信息均为 `83363b69a3b2c34bdba06559966053421c2dd426`、modified=false。临时进程启动与测试后停止的命令被自动审批拒绝（仅给出blocked by policy），因此没有新版进程HTTP运行验证。未重复启动或部署；结束时只见原有2.6.0后端PID7044，未替换或停止它。
 
 ## 2026-10-08 · 安装 2.6.0 与私人默认管理密钥
 

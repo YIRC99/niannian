@@ -1,0 +1,1028 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>念念 · 创建提醒优化前后对比</title><style>
+:root{color-scheme:light;--bg:oklch(97.3% .012 110);--paper:oklch(99% .007 105);--ink:oklch(28% .032 155);--muted:oklch(48% .023 155);--line:oklch(86% .024 140);--green:oklch(42% .077 150);--soft:oklch(94% .03 140);--amber:oklch(43% .085 65);--amber-bg:oklch(96% .035 83)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.75 'Segoe UI','Microsoft YaHei',system-ui,sans-serif}a{color:var(--green);text-underline-offset:4px}a:hover{color:var(--ink)}button,input,summary,a{outline-offset:4px}button:focus-visible,input:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--green)}.page{max-width:1200px;margin:auto;padding:36px 36px 64px}.topline{display:flex;justify-content:space-between;gap:20px;border-bottom:1px solid var(--line);padding-bottom:16px;font-size:13px}.brand{font-weight:700;color:var(--green)}header{padding:36px 0 28px}h1{font-size:34px;line-height:1.3;letter-spacing:-.8px;margin:0 0 18px}h2{font-size:23px;margin:32px 0 16px}h3{font-size:17px;margin:0 0 12px}p{max-width:78ch;margin:10px 0}header p{max-width:80ch;font-size:17px}.muted,small{color:var(--muted)}.statline{display:flex;flex-wrap:wrap;gap:12px 28px;border-block:1px solid var(--line);padding:16px 0}.statline strong{font-size:19px}.notice{padding:18px 22px;background:var(--soft);border-radius:10px;margin:24px 0}.priorities{padding-left:24px}.priorities li{padding:7px 0}.priorities b{color:var(--green)}table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;border-bottom:1px solid var(--line);padding:13px 12px;vertical-align:top}th{font-weight:600}thead th{font-size:12px;letter-spacing:.04em;color:var(--muted);background:var(--soft)}.table-scroll{overflow-x:auto}.overview td:first-child{white-space:nowrap}.overview td:nth-last-child(-n+2){white-space:nowrap;font-variant-numeric:tabular-nums}.overview tbody th{min-width:240px;font-weight:500}.tag{display:inline-block;padding:2px 8px;border-radius:5px;background:var(--soft);font-size:12px;font-weight:500}.good{color:var(--green);background:var(--soft)}.warn{color:var(--amber);background:var(--amber-bg)}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:20px 0}.toolbar input{margin-left:auto;min-height:44px;width:240px;padding:8px 12px;border:1px solid var(--line);background:var(--paper);border-radius:7px;color:var(--ink)}button{border:1px solid var(--line);border-radius:7px;min-height:44px;padding:8px 14px;background:var(--paper);color:var(--ink);font:inherit;cursor:pointer}button:hover{background:var(--soft)}button[aria-pressed=true]{background:var(--green);color:var(--paper);border-color:var(--green)}button:active{transform:translateY(1px)}.case{border-top:1px solid var(--line);scroll-margin-top:20px}.case:last-of-type{border-bottom:1px solid var(--line)}.case>summary{display:flex;align-items:center;gap:20px;padding:20px 0;cursor:pointer;list-style:none}.case>summary::-webkit-details-marker{display:none}.case>summary:after{content:'＋';font-size:23px;color:var(--green)}.case[open]>summary:after{content:'−'}.number{font:13px ui-monospace,Consolas,monospace;color:var(--muted)}.case-title{font-weight:600;flex:1;font-size:17px}.case-title small{display:block;font-size:12px;font-weight:400}.points{font-size:22px;white-space:nowrap}.points small{font-size:12px;font-weight:400}.case-body{padding:0 0 30px 68px}.finding{font-size:17px;font-weight:600;max-width:none;margin-bottom:22px}.two-columns{display:grid;grid-template-columns:1fr 1fr;gap:32px}.two-columns section{min-width:0}.two-columns section:nth-child(2){background:var(--paper);padding:20px;border:1px solid var(--line);border-radius:10px}.actual-title{font-size:20px;font-weight:700}blockquote{margin:0;padding:0;font-size:15px;line-height:1.9}.feedback{padding-left:20px;margin:12px 0}.feedback li{padding:3px 0}.sub{margin-top:12px}.sub>summary,.raw>summary{cursor:pointer;padding:10px 0;color:var(--green);font-size:14px}.sub[open]>summary{font-weight:600}.rules{margin-top:10px}.rules th:first-child{width:22%}.rules td{word-break:break-word}.diff{background:var(--amber-bg)}.note,.recommendation{max-width:none;background:var(--soft);padding:12px 16px;border-radius:7px;font-size:14px}.checks{list-style:none;padding:0}.checks li{border-bottom:1px solid var(--line);padding:12px 0}.checks strong{font-size:14px}.checks p{font-size:13px;color:var(--muted);margin-left:60px}.raw pre{font:12px/1.7 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--paper);padding:18px;border:1px solid var(--line);max-height:520px;overflow:auto;border-radius:6px}.method{margin-top:32px;padding-top:12px;border-top:1px solid var(--line);font-size:14px}.method li{padding:4px 0}.downloads{display:flex;gap:20px;flex-wrap:wrap;margin-top:18px}footer{margin-top:36px;font-size:12px;color:var(--muted)}[hidden]{display:none!important}.empty{padding:30px;text-align:center;color:var(--muted)}
+@media(max-width:760px){.page{padding:20px 18px 40px}h1{font-size:28px}.topline{flex-direction:column;gap:3px}header{padding-top:25px}.two-columns{grid-template-columns:1fr;gap:16px}.case-body{padding-left:0}.case>summary{gap:12px}.case-title{font-size:15px}.number{font-size:11px}.toolbar input{width:100%;margin:0}.statline{gap:10px 18px}.checks p{margin-left:0}.overview{min-width:690px}.points{font-size:20px}}
+@media print{.toolbar,.downloads{display:none}.page{padding:0;max-width:none}body{background:var(--paper)}details>div,details>table,details>ol,details>p,details>ul,details>details{display:block!important}.case{break-inside:auto}.case-body{padding-left:0}.raw{display:none!important}.case[hidden]{display:block!important}h2,h3,summary{break-after:avoid}.two-columns{display:block}.statline{font-size:12px}}
+</style></head><body><main class="page">
+<div class="topline"><span class="brand">念念 / 创建提醒复测</span><span>2026-10-08 · 后端 2.6.1 源码 · 真实模型返回</span></div>
+<header><h1>原来的问题，这次修到了哪一步？</h1><p>沿用同一组复杂原话和评分标准，固定时间评分从 <strong>88 提升到 100</strong>。窗口原始节奏、跨月完整日期、明确时区与可调整说明均通过本次复测。</p></header>
+<div class="statline"><span>回归评分 <strong>88 → 100/100</strong></span><span>返回草稿 <strong>10/10</strong></span><span>完整满足原需求 <strong>8/10</strong></span><span>额外变体 <strong>6/6</strong></span></div>
+<div class="notice"><strong>100分是这10题的回归评分，不是100%能力覆盖。</strong><br>RC-09、RC-10按原标准考察“诚实的替代方案”，本次仍没有实现自动重复小时窗口、自动跨月账期和节假日筛选。两题明确标记原需求未完整满足。本轮评分来自固定时间的真实后端HTTP Handler与真实模型。原10题输入、now与评分标准均未改变；调优中用过这些题，属于回归结果而非盲测准确率。</div>
+<h2>主要变化</h2><ol class="priorities"><li><b>原节奏保留下来了。</b>14:00开始每20分钟，在14:37:20生成草稿，下一候选是14:40，不再从现在重新计时。</li><li><b>跨月日期完整了。</b>25日至次月5日保留为完整单轮；说明不会自动产生下一账期，不能自动筛选节假日。</li><li><b>时间说明与最终规则一致。</b>AI标记补全项与能力限制，后端计算最终时间和完成说明，避免复核改了规则、说明仍引用旧候选。</li><li><b>补全项与边界更清楚。</b>模糊时间明确可调整；纽约时区原样保存；备注不再承诺未实现的自动循环。</li></ol>
+<h2>速度与代价</h2><div class="statline"><span>固定时间组中位数 <strong>1.38 秒 → 1.97 秒</strong></span><span>10题模型请求 <strong>11 → 20 次</strong></span></div><p class="muted">初稿合法时增加一次语义复核；初稿非法时使用一次修复，两次共用65秒期限。两批采样网络状态不同，耗时仅为观察值，不是性能保证。公开接口协议保持不变。</p>
+<h2>10题结果</h2><div class="table-scroll"><table class="overview"><thead><tr><th>题号</th><th>考察点</th><th>前 → 后</th><th>本次结论</th><th>后端路由耗时</th></tr></thead><tbody><tr><td><a href="#RC-01">RC-01</a></td><th scope="row">跨午夜、保留秒、首次延迟与重复间隔分离</th><td>10 → <strong>10</strong></td><td><span class="tag good">符合预期</span></td><td>2.07 秒</td></tr><tr><td><a href="#RC-02">RC-02</a></td><th scope="row">窗口已经开始、精确截止、次数上限</th><td>8 → <strong>10</strong></td><td><span class="tag good">原始节奏已保留</span></td><td>2.19 秒</td></tr><tr><td><a href="#RC-03">RC-03</a></td><th scope="row">长句改口、撤销前文、只通知一次</th><td>10 → <strong>10</strong></td><td><span class="tag good">符合预期</span></td><td>1.76 秒</td></tr><tr><td><a href="#RC-04">RC-04</a></td><th scope="row">月度完成周期、短月截断、每月次数重置</th><td>10 → <strong>10</strong></td><td><span class="tag good">符合预期</span></td><td>1.66 秒</td></tr><tr><td><a href="#RC-05">RC-05</a></td><th scope="row">跨年日期范围、每天独立完成、一天多个时间</th><td>10 → <strong>10</strong></td><td><span class="tag good">符合预期</span></td><td>1.85 秒</td></tr><tr><td><a href="#RC-06">RC-06</a></td><th scope="row">每天催办与每天必须完成的区别</th><td>10 → <strong>10</strong></td><td><span class="tag good">符合预期</span></td><td>1.99 秒</td></tr><tr><td><a href="#RC-07">RC-07</a></td><th scope="row">模糊时间、自主建议、深夜不擅自延到明天</th><td>8 → <strong>10</strong></td><td><span class="tag good">默认建议已说明</span></td><td>1.93 秒</td></tr><tr><td><a href="#RC-08">RC-08</a></td><th scope="row">显式海外时区、跨日换算、保留会议备注</th><td>8 → <strong>10</strong></td><td><span class="tag good">明确时区已保留</span></td><td>2.07 秒</td></tr><tr><td><a href="#RC-09">RC-09</a></td><th scope="row">每周重复小时窗口无法精确表达时的诚实替代</th><td>8 → <strong>10</strong></td><td><span class="tag warn">边界处理通过</span></td><td>1.95 秒</td></tr><tr><td><a href="#RC-10">RC-10</a></td><th scope="row">跨月账期、节假日例外、多重不可表达条件</th><td>6 → <strong>10</strong></td><td><span class="tag warn">边界处理通过</span></td><td>2.09 秒</td></tr></tbody></table></div>
+<h2>逐题查看生成效果</h2><div class="toolbar"><button id="expand" type="button">展开题目</button><button id="collapse" type="button">收起题目</button></div><details class="case" id="RC-01" >
+<summary><span class="number">RC-01</span><span class="case-title">跨午夜、保留秒、首次延迟与重复间隔分离<small>符合预期</small></span><strong class="points">10<small>/10</small></strong></summary>
+<div class="case-body"><p class="finding">跨午夜与秒数正确，首次10分钟和之后2分钟保持分离。</p><blockquote>十分钟后提醒我把阳台上的衣服收回来。不是每十分钟催，是第一次等十分钟，之后每隔两分钟催一次。我只需要收这一回，点完成才停，没有截止时间，也别替我限制次数。</blockquote><p class="muted">固定当前时间：2026-10-08T23:58:47+08:00</p>
+<div class="two-columns"><section><h3>优化前 · 10/10</h3><p>午夜换日与47秒都保留，10分钟后首次提醒，之后每2分钟催。</p><p>2026-10-09 00:08:47 首次提醒，之后每 2 分钟提醒一次，完成后不再提醒</p><ul><li>我先安排在10分钟后（00:08:47）提醒你收阳台上的衣服，之后每隔2分钟催一次，直到你点完成才停。</li><li>没有截止时间，也不限制提醒次数；你核对一下，确认后我再开始提醒。</li></ul><p class="muted">下一候选：2026-10-09T00:08:47+08:00<br>耗时 1.29 秒</p></section>
+<section><h3>优化后 · 10/10</h3><p class="actual-title">收阳台上的衣服</p><p>2026-10-09 00:08:47 首次提醒，之后每 2 分钟提醒一次，完成后不再提醒</p><ul class="feedback"><li>2026-10-09 00:08:47 首次提醒，之后每 2 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-09 00:08:47（Asia/Shanghai）；确认后才会创建。</li></ul><p class="muted">下一候选：2026-10-09T00:08:47+08:00<br>耗时 2.07 秒 · 模型调用 2 次</p></section></div>
+<details class="sub"><summary>原五项标准与得分依据</summary><ol class="checks"><li><span class="tag good">2/2</span> <strong>首次时间为10月9日00:08:47，跨日且保留47秒。</strong><p>first_at=2026-10-09T00:08:47+08:00，保留47秒。</p></li><li><span class="tag good">2/2</span> <strong>重复间隔为2分钟，未误用首次延迟10分钟。</strong><p>repeat_minutes=2，与首次延迟10分钟不同。</p></li><li><span class="tag good">2/2</span> <strong>minute_interval+until_done，收一回不解释成notify_once。</strong><p>minute_interval + until_done。</p></li><li><span class="tag good">2/2</span> <strong>没有自动添加截止或次数上限，午夜不被当作默认静默时间。</strong><p>没有截止，max_reminders=0，未顺延到早晨。</p></li><li><span class="tag good">2/2</span> <strong>说明区分首次时间、之后节奏、完成后永久停止，并保持待确认语气。</strong><p>说明写明首次、之后每2分钟、完成后不再提醒及确认后才创建。</p></li></ol></details>
+<details class="sub"><summary>关键字段对照</summary><p class="muted">原始关键字段预期</p><div class="table-scroll"><table class="rules"><thead><tr><th>字段</th><th>预期</th><th>优化后</th></tr></thead><tbody><tr class=""><th>kind</th><td>minute_interval</td><td>minute_interval</td></tr><tr class=""><th>mode</th><td>until_done</td><td>until_done</td></tr><tr class=""><th>timezone</th><td>Asia/Shanghai</td><td>Asia/Shanghai</td></tr><tr class=""><th>first_at</th><td>2026-10-09T00:08:47+08:00</td><td>2026-10-09T00:08:47+08:00</td></tr><tr class=""><th>repeat_minutes</th><td>2</td><td>2</td></tr><tr class=""><th>times</th><td>[]</td><td>[]</td></tr><tr class=""><th>start_date</th><td>未设置</td><td>未设置</td></tr><tr class=""><th>end_date</th><td>未设置</td><td>未设置</td></tr><tr class=""><th>end_at</th><td>未设置</td><td>未设置</td></tr><tr class=""><th>max_reminders</th><td>0</td><td>0</td></tr></tbody></table></div></details>
+<details class="sub"><summary>完整原始响应与模型调用</summary><details class="raw"><summary>后端最终响应 · HTTP 200</summary><pre>{&quot;title&quot;:&quot;收阳台上的衣服&quot;,&quot;description&quot;:&quot;&quot;,&quot;rule&quot;:{&quot;kind&quot;:&quot;minute_interval&quot;,&quot;mode&quot;:&quot;until_done&quot;,&quot;timezone&quot;:&quot;Asia/Shanghai&quot;,&quot;times&quot;:[],&quot;start_date&quot;:&quot;&quot;,&quot;end_date&quot;:&quot;&quot;,&quot;weekdays&quot;:[],&quot;month_start&quot;:0,&quot;month_end&quot;:0,&quot;every_days&quot;:0,&quot;max_reminders&quot;:0,&quot;first_at&quot;:&quot;2026-10-09T00:08:47+08:00&quot;,&quot;repeat_minutes&quot;:2},&quot;summary&quot;:&quot;2026-10-09 00:08:47 首次提醒，之后每 2 分钟提醒一次，完成后不再提醒&quot;,&quot;warnings&quot;:[&quot;2026-10-09 00:08:47 首次提醒，之后每 2 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-09 00:08:47（Asia/Shanghai）；确认后才会创建。&quot;]}
+</pre></details><details class="raw"><summary>模型第 1 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;收阳台上的衣服\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;minute_interval\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[],\&quot;start_date\&quot;:\&quot;\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;2026-10-09T00:08:47+08:00\&quot;,\&quot;repeat_minutes\&quot;:2,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 196,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 119,
+    &quot;prompt_cache_hit_tokens&quot;: 2304,
+    &quot;prompt_cache_miss_tokens&quot;: 173,
+    &quot;prompt_tokens&quot;: 2477,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2304
+    },
+    &quot;total_tokens&quot;: 2596
+  }
+}</pre></details><details class="raw"><summary>模型第 2 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;收阳台上的衣服\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;minute_interval\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[],\&quot;start_date\&quot;:\&quot;\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;2026-10-09T00:08:47+08:00\&quot;,\&quot;repeat_minutes\&quot;:2,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 105,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 119,
+    &quot;prompt_cache_hit_tokens&quot;: 2944,
+    &quot;prompt_cache_miss_tokens&quot;: 226,
+    &quot;prompt_tokens&quot;: 3170,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2944
+    },
+    &quot;total_tokens&quot;: 3289
+  }
+}</pre></details><details class="raw"><summary>调度候选预览与副作用检查</summary><pre>{
+  &quot;next_candidate&quot;: &quot;2026-10-09T00:08:47+08:00&quot;,
+  &quot;candidate_preview&quot;: [
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:08:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:10:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:12:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:14:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:16:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:18:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:20:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:22:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:24:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:26:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:28:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:30:47+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    }
+  ],
+  &quot;side_effect_counts&quot;: {
+    &quot;completions&quot;: 0,
+    &quot;garden_rewards&quot;: 0,
+    &quot;notifications&quot;: 0,
+    &quot;reminder_plans&quot;: 0,
+    &quot;tasks&quot;: 0
+  },
+  &quot;mail_count&quot;: 0
+}</pre></details></details></div></details><details class="case" id="RC-02" open>
+<summary><span class="number">RC-02</span><span class="case-title">窗口已经开始、精确截止、次数上限<small>原始节奏已保留</small></span><strong class="points">10<small>/10</small></strong></summary>
+<div class="case-body"><p class="finding">保留14:00起点，14:37:20之后的下一候选恢复为14:40。</p><blockquote>今天下午两点到五点帮我盯一下提交报名材料，每隔二十分钟提醒，整个事情最多提醒六次，交完一次就停。我知道现在已经过两点了，只管剩下的时间，之前漏掉的不用一条条补，五点以后别再催，也不要挪到明天。</blockquote><p class="muted">固定当前时间：2026-10-08T14:37:20+08:00</p>
+<div class="two-columns"><section><h3>优化前 · 8/10</h3><p>应沿14:00起点继续，实际从14:37:20重算；下一候选变成14:57:20，而非14:40。</p><p>2026-10-08 14:37:20 首次提醒，之后每 20 分钟提醒一次，完成后不再提醒，每周期最多 6 次，截止 2026-10-08 17:00:00（含此时刻）</p><ul><li>现在已过14:00，我按你说的只盯剩下的时段，从14:37:20开始每20分钟提醒一次，最多6次，17:00后不再提醒，也不会挪到明天。</li><li>交完一次就停；如果到17:00还没交，提醒也会结束。你看看，确认后我再开始提醒。</li></ul><p class="muted">下一候选：2026-10-08T14:57:20+08:00<br>耗时 1.50 秒</p></section>
+<section><h3>优化后 · 10/10</h3><p class="actual-title">提交报名材料</p><p>2026-10-08 14:00:00 首次提醒，之后每 20 分钟提醒一次，完成后不再提醒，每周期最多 6 次，截止 2026-10-08 17:00:00（含此时刻）</p><ul class="feedback"><li>窗口已经开始，只安排余下时段，保留原起点的节奏，不补发全部历史提醒。2026-10-08 14:00:00 首次提醒，之后每 20 分钟提醒一次，完成后不再提醒，每周期最多 6 次，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 14:40:00（Asia/Shanghai）；确认后才会创建。</li></ul><p class="muted">下一候选：2026-10-08T14:40:00+08:00<br>耗时 2.19 秒 · 模型调用 2 次</p></section></div>
+<details class="sub"><summary>原五项标准与得分依据</summary><ol class="checks"><li><span class="tag good">2/2</span> <strong>保留原窗口起点14:00，允许该起点早于当前时间。</strong><p>first_at=2026-10-08T14:00:00+08:00，早于now仍保留。</p></li><li><span class="tag good">2/2</span> <strong>精确截止17:00，未改为当日23:59或次日。</strong><p>end_at=当日17:00:00，无日期顺延。</p></li><li><span class="tag good">2/2</span> <strong>间隔20分钟且整个任务上限6次，不按每小时或每天重置。</strong><p>repeat_minutes=20、max_reminders=6，同一任务周期。</p></li><li><span class="tag good">2/2</span> <strong>完成一次永久停止，不拆成多项待办或每天重复。</strong><p>minute_interval + until_done，完成永久停止。</p></li><li><span class="tag good">2/2</span> <strong>说明仅安排剩余窗口，不承诺补发全部历史提醒；不把尚未发生的提醒算入次数。</strong><p>说明窗口已开始、只安排余下、保留原节奏、不补发全部历史；下一候选14:40。</p></li></ol></details>
+<details class="sub"><summary>关键字段对照</summary><p class="muted">原始关键字段预期</p><div class="table-scroll"><table class="rules"><thead><tr><th>字段</th><th>预期</th><th>优化后</th></tr></thead><tbody><tr class=""><th>kind</th><td>minute_interval</td><td>minute_interval</td></tr><tr class=""><th>mode</th><td>until_done</td><td>until_done</td></tr><tr class=""><th>timezone</th><td>Asia/Shanghai</td><td>Asia/Shanghai</td></tr><tr class=""><th>first_at</th><td>2026-10-08T14:00:00+08:00</td><td>2026-10-08T14:00:00+08:00</td></tr><tr class=""><th>repeat_minutes</th><td>20</td><td>20</td></tr><tr class=""><th>end_at</th><td>2026-10-08T17:00:00+08:00</td><td>2026-10-08T17:00:00+08:00</td></tr><tr class=""><th>end_date</th><td>未设置</td><td>未设置</td></tr><tr class=""><th>max_reminders</th><td>6</td><td>6</td></tr></tbody></table></div></details>
+<details class="sub"><summary>完整原始响应与模型调用</summary><details class="raw"><summary>后端最终响应 · HTTP 200</summary><pre>{&quot;title&quot;:&quot;提交报名材料&quot;,&quot;description&quot;:&quot;&quot;,&quot;rule&quot;:{&quot;kind&quot;:&quot;minute_interval&quot;,&quot;mode&quot;:&quot;until_done&quot;,&quot;timezone&quot;:&quot;Asia/Shanghai&quot;,&quot;times&quot;:[],&quot;start_date&quot;:&quot;&quot;,&quot;end_date&quot;:&quot;&quot;,&quot;weekdays&quot;:[],&quot;month_start&quot;:0,&quot;month_end&quot;:0,&quot;every_days&quot;:0,&quot;max_reminders&quot;:6,&quot;first_at&quot;:&quot;2026-10-08T14:00:00+08:00&quot;,&quot;end_at&quot;:&quot;2026-10-08T17:00:00+08:00&quot;,&quot;repeat_minutes&quot;:20},&quot;summary&quot;:&quot;2026-10-08 14:00:00 首次提醒，之后每 20 分钟提醒一次，完成后不再提醒，每周期最多 6 次，截止 2026-10-08 17:00:00（含此时刻）&quot;,&quot;warnings&quot;:[&quot;窗口已经开始，只安排余下时段，保留原起点的节奏，不补发全部历史提醒。2026-10-08 14:00:00 首次提醒，之后每 20 分钟提醒一次，完成后不再提醒，每周期最多 6 次，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 14:40:00（Asia/Shanghai）；确认后才会创建。&quot;]}
+</pre></details><details class="raw"><summary>模型第 1 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;提交报名材料\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;minute_interval\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[],\&quot;start_date\&quot;:\&quot;\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:6,\&quot;first_at\&quot;:\&quot;2026-10-08T14:00:00+08:00\&quot;,\&quot;repeat_minutes\&quot;:20,\&quot;end_at\&quot;:\&quot;2026-10-08T17:00:00+08:00\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 90,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 133,
+    &quot;prompt_cache_hit_tokens&quot;: 2304,
+    &quot;prompt_cache_miss_tokens&quot;: 184,
+    &quot;prompt_tokens&quot;: 2488,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2304
+    },
+    &quot;total_tokens&quot;: 2621
+  }
+}</pre></details><details class="raw"><summary>模型第 2 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;提交报名材料\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;minute_interval\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[],\&quot;start_date\&quot;:\&quot;\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:6,\&quot;first_at\&quot;:\&quot;2026-10-08T14:00:00+08:00\&quot;,\&quot;repeat_minutes\&quot;:20,\&quot;end_at\&quot;:\&quot;2026-10-08T17:00:00+08:00\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 190,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 133,
+    &quot;prompt_cache_hit_tokens&quot;: 3072,
+    &quot;prompt_cache_miss_tokens&quot;: 156,
+    &quot;prompt_tokens&quot;: 3228,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 3072
+    },
+    &quot;total_tokens&quot;: 3361
+  }
+}</pre></details><details class="raw"><summary>调度候选预览与副作用检查</summary><pre>{
+  &quot;next_candidate&quot;: &quot;2026-10-08T14:40:00+08:00&quot;,
+  &quot;candidate_preview&quot;: [
+    {
+      &quot;At&quot;: &quot;2026-10-08T14:40:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T15:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T15:20:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T15:40:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T16:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T16:20:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T16:40:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T17:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    }
+  ],
+  &quot;side_effect_counts&quot;: {
+    &quot;completions&quot;: 0,
+    &quot;garden_rewards&quot;: 0,
+    &quot;notifications&quot;: 0,
+    &quot;reminder_plans&quot;: 0,
+    &quot;tasks&quot;: 0
+  },
+  &quot;mail_count&quot;: 0
+}</pre></details></details></div></details><details class="case" id="RC-03" >
+<summary><span class="number">RC-03</span><span class="case-title">长句改口、撤销前文、只通知一次<small>符合预期</small></span><strong class="points">10<small>/10</small></strong></summary>
+<div class="case-body"><p class="finding">最终改口生效，10月10日16:30仅通知一次，备注保留。</p><blockquote>本来想让你明天早上九点提醒取快递，没拿就每五分钟催。等一下，前面这个安排作废，改成后天下午四点半，只通知我一次，不需要我点完成，也不要再跟进。备注保留：北门快递柜，带取件码。只生成草稿让我看一下。</blockquote><p class="muted">固定当前时间：2026-10-08T18:12:09+08:00</p>
+<div class="two-columns"><section><h3>优化前 · 10/10</h3><p>最终改口生效：后天16:30只通知一次，旧的09:00与5分钟催办均取消。</p><p>2026-10-10 16:30，每周期只提醒一次</p><ul><li>前面的明早九点、每5分钟催的安排已作废，改成后天（10月10日）下午16:30只通知一次，不需要点完成，也不会再跟进。</li><li>备注保留了“北门快递柜，带取件码”，你核对一下，确认后我再开始提醒。</li></ul><p class="muted">下一候选：2026-10-10T16:30:00+08:00<br>耗时 1.42 秒</p></section>
+<section><h3>优化后 · 10/10</h3><p class="actual-title">取快递</p><p>2026-10-10 16:30，每周期只提醒一次</p><p>备注：北门快递柜，带取件码</p><ul class="feedback"><li>2026-10-10 16:30，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-10 16:30:00（Asia/Shanghai）；确认后才会创建。</li></ul><p class="muted">下一候选：2026-10-10T16:30:00+08:00<br>耗时 1.76 秒 · 模型调用 2 次</p></section></div>
+<details class="sub"><summary>原五项标准与得分依据</summary><ol class="checks"><li><span class="tag good">2/2</span> <strong>识别最终日期10月10日16:30，丢弃已撤销的明天09:00。</strong><p>start_date=2026-10-10、times=[16:30]。</p></li><li><span class="tag good">2/2</span> <strong>once+notify_once，不因取快递属于待办而覆盖明确的一次通知要求。</strong><p>once + notify_once。</p></li><li><span class="tag good">2/2</span> <strong>没有保留5分钟催办或其他后续提醒。</strong><p>无first_at和repeat_minutes，不保留已撤销的催办。</p></li><li><span class="tag good">2/2</span> <strong>保留北门快递柜和带取件码备注，不将口头改口过程塞进标题。</strong><p>description为北门快递柜，带取件码；标题仅取快递。</p></li><li><span class="tag good">2/2</span> <strong>输出待确认草稿，未声称已创建或已经开始提醒。</strong><p>明确确认后才创建，五张业务表和邮件计数均为0。</p></li></ol></details>
+<details class="sub"><summary>关键字段对照</summary><p class="muted">原始关键字段预期</p><div class="table-scroll"><table class="rules"><thead><tr><th>字段</th><th>预期</th><th>优化后</th></tr></thead><tbody><tr class=""><th>kind</th><td>once</td><td>once</td></tr><tr class=""><th>mode</th><td>notify_once</td><td>notify_once</td></tr><tr class=""><th>timezone</th><td>Asia/Shanghai</td><td>Asia/Shanghai</td></tr><tr class=""><th>start_date</th><td>2026-10-10</td><td>2026-10-10</td></tr><tr class=""><th>times</th><td>[&quot;16:30&quot;]</td><td>[&quot;16:30&quot;]</td></tr><tr class=""><th>repeat_minutes</th><td>0</td><td>0</td></tr><tr class=""><th>first_at</th><td>未设置</td><td>未设置</td></tr><tr class=""><th>end_at</th><td>未设置</td><td>未设置</td></tr></tbody></table></div></details>
+<details class="sub"><summary>完整原始响应与模型调用</summary><details class="raw"><summary>后端最终响应 · HTTP 200</summary><pre>{&quot;title&quot;:&quot;取快递&quot;,&quot;description&quot;:&quot;北门快递柜，带取件码&quot;,&quot;rule&quot;:{&quot;kind&quot;:&quot;once&quot;,&quot;mode&quot;:&quot;notify_once&quot;,&quot;timezone&quot;:&quot;Asia/Shanghai&quot;,&quot;times&quot;:[&quot;16:30&quot;],&quot;start_date&quot;:&quot;2026-10-10&quot;,&quot;end_date&quot;:&quot;&quot;,&quot;weekdays&quot;:[],&quot;month_start&quot;:0,&quot;month_end&quot;:0,&quot;every_days&quot;:0,&quot;max_reminders&quot;:0},&quot;summary&quot;:&quot;2026-10-10 16:30，每周期只提醒一次&quot;,&quot;warnings&quot;:[&quot;2026-10-10 16:30，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-10 16:30:00（Asia/Shanghai）；确认后才会创建。&quot;]}
+</pre></details><details class="raw"><summary>模型第 1 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;取快递\&quot;,\&quot;description\&quot;:\&quot;北门快递柜，带取件码\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;once\&quot;,\&quot;mode\&quot;:\&quot;notify_once\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[\&quot;16:30\&quot;],\&quot;start_date\&quot;:\&quot;2026-10-10\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 79,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 117,
+    &quot;prompt_cache_hit_tokens&quot;: 2304,
+    &quot;prompt_cache_miss_tokens&quot;: 192,
+    &quot;prompt_tokens&quot;: 2496,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2304
+    },
+    &quot;total_tokens&quot;: 2613
+  }
+}</pre></details><details class="raw"><summary>模型第 2 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;取快递\&quot;,\&quot;description\&quot;:\&quot;北门快递柜，带取件码\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;once\&quot;,\&quot;mode\&quot;:\&quot;notify_once\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[\&quot;16:30\&quot;],\&quot;start_date\&quot;:\&quot;2026-10-10\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 91,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 117,
+    &quot;prompt_cache_hit_tokens&quot;: 2944,
+    &quot;prompt_cache_miss_tokens&quot;: 231,
+    &quot;prompt_tokens&quot;: 3175,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2944
+    },
+    &quot;total_tokens&quot;: 3292
+  }
+}</pre></details><details class="raw"><summary>调度候选预览与副作用检查</summary><pre>{
+  &quot;next_candidate&quot;: &quot;2026-10-10T16:30:00+08:00&quot;,
+  &quot;candidate_preview&quot;: [
+    {
+      &quot;At&quot;: &quot;2026-10-10T16:30:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;once:2026-10-10&quot;
+    }
+  ],
+  &quot;side_effect_counts&quot;: {
+    &quot;completions&quot;: 0,
+    &quot;garden_rewards&quot;: 0,
+    &quot;notifications&quot;: 0,
+    &quot;reminder_plans&quot;: 0,
+    &quot;tasks&quot;: 0
+  },
+  &quot;mail_count&quot;: 0
+}</pre></details></details></div></details><details class="case" id="RC-04" >
+<summary><span class="number">RC-04</span><span class="case-title">月度完成周期、短月截断、每月次数重置<small>符合预期</small></span><strong class="points">10<small>/10</small></strong></summary>
+<div class="case-body"><p class="finding">同月28—31日保留月度循环；短月截断明确说明。</p><blockquote>每个月二十八号到三十一号，上午九点和晚上八点提醒我提交月度报表。没有三十一号的月份就到当月最后一天，别顺延到下个月。本月交过一次就不要再催，下个月还要重新提醒。每个月总共最多三次，不是每天三次。</blockquote><p class="muted">固定当前时间：2027-02-27T08:00:00+08:00</p>
+<div class="two-columns"><section><h3>优化前 · 10/10</h3><p>月度窗口、每月3次上限和完成周期正确；2027年2月候选仅落在28日。</p><p>每月 28—31 日，每天 09:00、20:00，完成后停止本月提醒，每周期最多 3 次</p><ul><li>我按每月28号到月末安排，上午9点和晚上8点各提醒一次；没有31号的月份会自动停在当月最后一天，不会顺延到下个月。</li><li>本月提交过一次就停止提醒，下个月重新开始；每月最多提醒3次，不是每天3次。</li><li>你确认后我再开始提醒。</li></ul><p class="muted">下一候选：2027-02-28T09:00:00+08:00<br>耗时 1.21 秒</p></section>
+<section><h3>优化后 · 10/10</h3><p class="actual-title">提交月度报表</p><p>每月 28—31 日，每天 09:00、20:00，完成后停止本月提醒，每周期最多 3 次</p><ul class="feedback"><li>每月 28—31 日，每天 09:00、20:00，完成后停止本月提醒，每周期最多 3 次。按当前时间计算，下一个规则时间点是 2027-02-28 09:00:00（Asia/Shanghai）；确认后才会创建。</li><li>短月按当月最后一天截断，不会顺延到下个月。</li></ul><p class="muted">下一候选：2027-02-28T09:00:00+08:00<br>耗时 1.66 秒 · 模型调用 2 次</p></section></div>
+<details class="sub"><summary>原五项标准与得分依据</summary><ol class="checks"><li><span class="tag good">2/2</span> <strong>生成每月28—31日窗口，未只生成2027年2月的单次任务。</strong><p>monthly_window，month_start=28、month_end=31。</p></li><li><span class="tag good">2/2</span> <strong>保留09:00和20:00两个时间点。</strong><p>times=[09:00,20:00]。</p></li><li><span class="tag good">2/2</span> <strong>使用until_done，以整个月度窗口为一个完成周期。</strong><p>until_done，说明完成后停止本月提醒。</p></li><li><span class="tag good">2/2</span> <strong>max_reminders=3且说明为每月总上限，不是每天上限。</strong><p>max_reminders=3，周期为月度窗口，不是每天。</p></li><li><span class="tag good">2/2</span> <strong>说明短月截断；2027年2月只有2月28日，不产生2月29—31日或顺延到3月的候选。</strong><p>明确短月截到月末、不顺延；候选预览2月仅28日09:00和20:00。</p></li></ol></details>
+<details class="sub"><summary>关键字段对照</summary><p class="muted">原始关键字段预期</p><div class="table-scroll"><table class="rules"><thead><tr><th>字段</th><th>预期</th><th>优化后</th></tr></thead><tbody><tr class=""><th>kind</th><td>monthly_window</td><td>monthly_window</td></tr><tr class=""><th>mode</th><td>until_done</td><td>until_done</td></tr><tr class=""><th>timezone</th><td>Asia/Shanghai</td><td>Asia/Shanghai</td></tr><tr class=""><th>month_start</th><td>28</td><td>28</td></tr><tr class=""><th>month_end</th><td>31</td><td>31</td></tr><tr class=""><th>times</th><td>[&quot;09:00&quot;,&quot;20:00&quot;]</td><td>[&quot;09:00&quot;,&quot;20:00&quot;]</td></tr><tr class=""><th>max_reminders</th><td>3</td><td>3</td></tr></tbody></table></div></details>
+<details class="sub"><summary>完整原始响应与模型调用</summary><details class="raw"><summary>后端最终响应 · HTTP 200</summary><pre>{&quot;title&quot;:&quot;提交月度报表&quot;,&quot;description&quot;:&quot;&quot;,&quot;rule&quot;:{&quot;kind&quot;:&quot;monthly_window&quot;,&quot;mode&quot;:&quot;until_done&quot;,&quot;timezone&quot;:&quot;Asia/Shanghai&quot;,&quot;times&quot;:[&quot;09:00&quot;,&quot;20:00&quot;],&quot;start_date&quot;:&quot;&quot;,&quot;end_date&quot;:&quot;&quot;,&quot;weekdays&quot;:[],&quot;month_start&quot;:28,&quot;month_end&quot;:31,&quot;every_days&quot;:0,&quot;max_reminders&quot;:3},&quot;summary&quot;:&quot;每月 28—31 日，每天 09:00、20:00，完成后停止本月提醒，每周期最多 3 次&quot;,&quot;warnings&quot;:[&quot;每月 28—31 日，每天 09:00、20:00，完成后停止本月提醒，每周期最多 3 次。按当前时间计算，下一个规则时间点是 2027-02-28 09:00:00（Asia/Shanghai）；确认后才会创建。&quot;,&quot;短月按当月最后一天截断，不会顺延到下个月。&quot;]}
+</pre></details><details class="raw"><summary>模型第 1 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;提交月度报表\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;monthly_window\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[\&quot;09:00\&quot;,\&quot;20:00\&quot;],\&quot;start_date\&quot;:\&quot;\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:28,\&quot;month_end\&quot;:31,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:3,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 91,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 109,
+    &quot;prompt_cache_hit_tokens&quot;: 2304,
+    &quot;prompt_cache_miss_tokens&quot;: 183,
+    &quot;prompt_tokens&quot;: 2487,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2304
+    },
+    &quot;total_tokens&quot;: 2596
+  }
+}</pre></details><details class="raw"><summary>模型第 2 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;提交月度报表\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;monthly_window\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[\&quot;09:00\&quot;,\&quot;20:00\&quot;],\&quot;start_date\&quot;:\&quot;\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:28,\&quot;month_end\&quot;:31,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:3,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 94,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 109,
+    &quot;prompt_cache_hit_tokens&quot;: 2944,
+    &quot;prompt_cache_miss_tokens&quot;: 228,
+    &quot;prompt_tokens&quot;: 3172,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2944
+    },
+    &quot;total_tokens&quot;: 3281
+  }
+}</pre></details><details class="raw"><summary>调度候选预览与副作用检查</summary><pre>{
+  &quot;next_candidate&quot;: &quot;2027-02-28T09:00:00+08:00&quot;,
+  &quot;candidate_preview&quot;: [
+    {
+      &quot;At&quot;: &quot;2027-02-28T09:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-02&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-02-28T20:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-02&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-03-28T09:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-03&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-03-28T20:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-03&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-03-29T09:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-03&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-03-29T20:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-03&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-03-30T09:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-03&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-03-30T20:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-03&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-03-31T09:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-03&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-03-31T20:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-03&quot;
+    }
+  ],
+  &quot;side_effect_counts&quot;: {
+    &quot;completions&quot;: 0,
+    &quot;garden_rewards&quot;: 0,
+    &quot;notifications&quot;: 0,
+    &quot;reminder_plans&quot;: 0,
+    &quot;tasks&quot;: 0
+  },
+  &quot;mail_count&quot;: 0
+}</pre></details></details></div></details><details class="case" id="RC-05" >
+<summary><span class="number">RC-05</span><span class="case-title">跨年日期范围、每天独立完成、一天多个时间<small>符合预期</small></span><strong class="points">10<small>/10</small></strong></summary>
+<div class="case-body"><p class="finding">跨年范围完整，每天分别完成，次日继续。</p><blockquote>从明天到一月三号，包含三号，每天早上八点和晚上八点半提醒我记录一次阳台温度。每天只要记录一回，早上做了晚上就别催，但第二天还得重新记。不是这几天随便做一次就结束；每天最多两次提醒，三号之后停止。</blockquote><p class="muted">固定当前时间：2026-12-30T22:00:00+08:00</p>
+<div class="two-columns"><section><h3>优化前 · 10/10</h3><p>跨年4天正确，每天记录一次；当天完成不会消掉下一天。</p><p>2026-12-31 至 2027-01-03，每天 08:00、20:30，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次</p><ul><li>我先把提醒安排在12月31日到1月3日，每天早8点和晚8点半各一次，每天记录一回就够，当天完成后晚上不再催，第二天重新开始。</li><li>每天最多两次提醒，1月3日结束后停止；你看看，确认后我再开始提醒。</li></ul><p class="muted">下一候选：2026-12-31T08:00:00+08:00<br>耗时 1.42 秒</p></section>
+<section><h3>优化后 · 10/10</h3><p class="actual-title">记录阳台温度</p><p>2026-12-31 至 2027-01-03，每天 08:00、20:30，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次</p><ul class="feedback"><li>2026-12-31 至 2027-01-03，每天 08:00、20:30，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次。按当前时间计算，下一个规则时间点是 2026-12-31 08:00:00（Asia/Shanghai）；确认后才会创建。</li></ul><p class="muted">下一候选：2026-12-31T08:00:00+08:00<br>耗时 1.85 秒 · 模型调用 2 次</p></section></div>
+<details class="sub"><summary>原五项标准与得分依据</summary><ol class="checks"><li><span class="tag good">2/2</span> <strong>正确跨年，起止为2026-12-31至2027-01-03。</strong><p>start_date=2026-12-31，end_date=2027-01-03。</p></li><li><span class="tag good">2/2</span> <strong>结束日期包含1月3日，共4个自然日。</strong><p>日期范围包含末日，候选预览覆盖12月31日至1月3日四天。</p></li><li><span class="tag good">2/2</span> <strong>every_day，完成只结束当天，次日仍需要完成。</strong><p>every_day，完成后停止当天提醒、下一提醒日重新开始。</p></li><li><span class="tag good">2/2</span> <strong>保留08:00和20:30，每天最多2次。</strong><p>times=[08:00,20:30]、max_reminders=2，按天完成周期。</p></li><li><span class="tag good">2/2</span> <strong>说明推断的一月属于2027年，不把每日两个提醒解释成每天必须完成两次。</strong><p>summary和warnings均明确2027-01-03；表达完成当天即停，没有要求每天做两次。沿用基线对整份草稿年份的判定口径。</p></li></ol></details>
+<details class="sub"><summary>关键字段对照</summary><p class="muted">原始关键字段预期</p><div class="table-scroll"><table class="rules"><thead><tr><th>字段</th><th>预期</th><th>优化后</th></tr></thead><tbody><tr class=""><th>kind</th><td>date_range</td><td>date_range</td></tr><tr class=""><th>mode</th><td>every_day</td><td>every_day</td></tr><tr class=""><th>timezone</th><td>Asia/Shanghai</td><td>Asia/Shanghai</td></tr><tr class=""><th>start_date</th><td>2026-12-31</td><td>2026-12-31</td></tr><tr class=""><th>end_date</th><td>2027-01-03</td><td>2027-01-03</td></tr><tr class=""><th>times</th><td>[&quot;08:00&quot;,&quot;20:30&quot;]</td><td>[&quot;08:00&quot;,&quot;20:30&quot;]</td></tr><tr class=""><th>max_reminders</th><td>2</td><td>2</td></tr></tbody></table></div></details>
+<details class="sub"><summary>完整原始响应与模型调用</summary><details class="raw"><summary>后端最终响应 · HTTP 200</summary><pre>{&quot;title&quot;:&quot;记录阳台温度&quot;,&quot;description&quot;:&quot;&quot;,&quot;rule&quot;:{&quot;kind&quot;:&quot;date_range&quot;,&quot;mode&quot;:&quot;every_day&quot;,&quot;timezone&quot;:&quot;Asia/Shanghai&quot;,&quot;times&quot;:[&quot;08:00&quot;,&quot;20:30&quot;],&quot;start_date&quot;:&quot;2026-12-31&quot;,&quot;end_date&quot;:&quot;2027-01-03&quot;,&quot;weekdays&quot;:[],&quot;month_start&quot;:0,&quot;month_end&quot;:0,&quot;every_days&quot;:0,&quot;max_reminders&quot;:2},&quot;summary&quot;:&quot;2026-12-31 至 2027-01-03，每天 08:00、20:30，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次&quot;,&quot;warnings&quot;:[&quot;2026-12-31 至 2027-01-03，每天 08:00、20:30，完成后停止当天提醒，下一提醒日重新开始，每周期最多 2 次。按当前时间计算，下一个规则时间点是 2026-12-31 08:00:00（Asia/Shanghai）；确认后才会创建。&quot;]}
+</pre></details><details class="raw"><summary>模型第 1 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;记录阳台温度\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;date_range\&quot;,\&quot;mode\&quot;:\&quot;every_day\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[\&quot;08:00\&quot;,\&quot;20:30\&quot;],\&quot;start_date\&quot;:\&quot;2026-12-31\&quot;,\&quot;end_date\&quot;:\&quot;2027-01-03\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:2,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 94,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 119,
+    &quot;prompt_cache_hit_tokens&quot;: 2304,
+    &quot;prompt_cache_miss_tokens&quot;: 185,
+    &quot;prompt_tokens&quot;: 2489,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2304
+    },
+    &quot;total_tokens&quot;: 2608
+  }
+}</pre></details><details class="raw"><summary>模型第 2 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;记录阳台温度\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;date_range\&quot;,\&quot;mode\&quot;:\&quot;every_day\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[\&quot;08:00\&quot;,\&quot;20:30\&quot;],\&quot;start_date\&quot;:\&quot;2026-12-31\&quot;,\&quot;end_date\&quot;:\&quot;2027-01-03\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:2,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 98,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 119,
+    &quot;prompt_cache_hit_tokens&quot;: 2944,
+    &quot;prompt_cache_miss_tokens&quot;: 254,
+    &quot;prompt_tokens&quot;: 3198,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2944
+    },
+    &quot;total_tokens&quot;: 3317
+  }
+}</pre></details><details class="raw"><summary>调度候选预览与副作用检查</summary><pre>{
+  &quot;next_candidate&quot;: &quot;2026-12-31T08:00:00+08:00&quot;,
+  &quot;candidate_preview&quot;: [
+    {
+      &quot;At&quot;: &quot;2026-12-31T08:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2026-12-31&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-12-31T20:30:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2026-12-31&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-01-01T08:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-01-01&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-01-01T20:30:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-01-01&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-01-02T08:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-01-02&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-01-02T20:30:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-01-02&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-01-03T08:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-01-03&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2027-01-03T20:30:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;2027-01-03&quot;
+    }
+  ],
+  &quot;side_effect_counts&quot;: {
+    &quot;completions&quot;: 0,
+    &quot;garden_rewards&quot;: 0,
+    &quot;notifications&quot;: 0,
+    &quot;reminder_plans&quot;: 0,
+    &quot;tasks&quot;: 0
+  },
+  &quot;mail_count&quot;: 0
+}</pre></details></details></div></details><details class="case" id="RC-06" >
+<summary><span class="number">RC-06</span><span class="case-title">每天催办与每天必须完成的区别<small>符合预期</small></span><strong class="points">10<small>/10</small></strong></summary>
+<div class="case-body"><p class="finding">同一台相机只归还一次，日常催办不变成每天重复完成。</p><blockquote>从今天开始，每天中午十二点二十和晚上七点四十催我归还借来的相机，没有最后期限。这件事只做一次，我归还以后就永远停止，别第二天又让我归还，也别默认一周后放弃。每天出现是催办频率，不是每天重新借还相机。</blockquote><p class="muted">固定当前时间：2026-10-08T11:20:00+08:00</p>
+<div class="two-columns"><section><h3>优化前 · 10/10</h3><p>能区分每天催一次性事情与每天新增任务，归还后永久停止。</p><p>从 2026-10-08 起，每天 12:20、19:40，完成后不再提醒</p><ul><li>我按你说的安排成每天12:20和19:40各提醒一次，归还后点完成就永久停止，不会第二天再催，也不会一周后自动放弃。</li><li>今天12:20还没到，就从今天开始；如果今天已经过了这个点，会从下一个提醒时间开始。</li><li>你看看这个草稿，确认后我再开始提醒。</li></ul><p class="muted">下一候选：2026-10-08T12:20:00+08:00<br>耗时 1.35 秒</p></section>
+<section><h3>优化后 · 10/10</h3><p class="actual-title">归还借来的相机</p><p>从 2026-10-08 起，每天 12:20、19:40，完成后不再提醒</p><ul class="feedback"><li>从 2026-10-08 起，每天 12:20、19:40，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 12:20:00（Asia/Shanghai）；确认后才会创建。</li></ul><p class="muted">下一候选：2026-10-08T12:20:00+08:00<br>耗时 1.99 秒 · 模型调用 2 次</p></section></div>
+<details class="sub"><summary>原五项标准与得分依据</summary><ol class="checks"><li><span class="tag good">2/2</span> <strong>使用ongoing，而非daily或every_day。</strong><p>kind=ongoing，mode=until_done。</p></li><li><span class="tag good">2/2</span> <strong>开始日期为今天，保留12:20和19:40。</strong><p>start_date=2026-10-08，times=[12:20,19:40]。</p></li><li><span class="tag good">2/2</span> <strong>所有日期共用一次完成语义，完成后永久停止。</strong><p>完成后不再提醒，整个ongoing任务共用一个完成周期。</p></li><li><span class="tag good">2/2</span> <strong>没有擅自添加7天期限或任何次数上限。</strong><p>end_date为空、max_reminders=0。</p></li><li><span class="tag good">2/2</span> <strong>标题与说明表达归还同一台相机的一件待办，没有生成每日新事项。</strong><p>标题归还借来的相机，说明围绕同一待办；下一候选按11:20算为当天12:20。</p></li></ol></details>
+<details class="sub"><summary>关键字段对照</summary><p class="muted">原始关键字段预期</p><div class="table-scroll"><table class="rules"><thead><tr><th>字段</th><th>预期</th><th>优化后</th></tr></thead><tbody><tr class=""><th>kind</th><td>ongoing</td><td>ongoing</td></tr><tr class=""><th>mode</th><td>until_done</td><td>until_done</td></tr><tr class=""><th>timezone</th><td>Asia/Shanghai</td><td>Asia/Shanghai</td></tr><tr class=""><th>start_date</th><td>2026-10-08</td><td>2026-10-08</td></tr><tr class=""><th>end_date</th><td>未设置</td><td>未设置</td></tr><tr class=""><th>times</th><td>[&quot;12:20&quot;,&quot;19:40&quot;]</td><td>[&quot;12:20&quot;,&quot;19:40&quot;]</td></tr><tr class=""><th>max_reminders</th><td>0</td><td>0</td></tr></tbody></table></div></details>
+<details class="sub"><summary>完整原始响应与模型调用</summary><details class="raw"><summary>后端最终响应 · HTTP 200</summary><pre>{&quot;title&quot;:&quot;归还借来的相机&quot;,&quot;description&quot;:&quot;&quot;,&quot;rule&quot;:{&quot;kind&quot;:&quot;ongoing&quot;,&quot;mode&quot;:&quot;until_done&quot;,&quot;timezone&quot;:&quot;Asia/Shanghai&quot;,&quot;times&quot;:[&quot;12:20&quot;,&quot;19:40&quot;],&quot;start_date&quot;:&quot;2026-10-08&quot;,&quot;end_date&quot;:&quot;&quot;,&quot;weekdays&quot;:[],&quot;month_start&quot;:0,&quot;month_end&quot;:0,&quot;every_days&quot;:0,&quot;max_reminders&quot;:0},&quot;summary&quot;:&quot;从 2026-10-08 起，每天 12:20、19:40，完成后不再提醒&quot;,&quot;warnings&quot;:[&quot;从 2026-10-08 起，每天 12:20、19:40，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 12:20:00（Asia/Shanghai）；确认后才会创建。&quot;]}
+</pre></details><details class="raw"><summary>模型第 1 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;归还借来的相机\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;ongoing\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[\&quot;12:20\&quot;,\&quot;19:40\&quot;],\&quot;start_date\&quot;:\&quot;2026-10-08\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 128,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 115,
+    &quot;prompt_cache_hit_tokens&quot;: 2304,
+    &quot;prompt_cache_miss_tokens&quot;: 189,
+    &quot;prompt_tokens&quot;: 2493,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2304
+    },
+    &quot;total_tokens&quot;: 2608
+  }
+}</pre></details><details class="raw"><summary>模型第 2 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;归还借来的相机\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;ongoing\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[\&quot;12:20\&quot;,\&quot;19:40\&quot;],\&quot;start_date\&quot;:\&quot;2026-10-08\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 101,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 115,
+    &quot;prompt_cache_hit_tokens&quot;: 2944,
+    &quot;prompt_cache_miss_tokens&quot;: 234,
+    &quot;prompt_tokens&quot;: 3178,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2944
+    },
+    &quot;total_tokens&quot;: 3293
+  }
+}</pre></details><details class="raw"><summary>调度候选预览与副作用检查</summary><pre>{
+  &quot;next_candidate&quot;: &quot;2026-10-08T12:20:00+08:00&quot;,
+  &quot;candidate_preview&quot;: [
+    {
+      &quot;At&quot;: &quot;2026-10-08T12:20:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;ongoing:2026-10-08&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T19:40:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;ongoing:2026-10-08&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T12:20:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;ongoing:2026-10-08&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T19:40:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;ongoing:2026-10-08&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-10T12:20:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;ongoing:2026-10-08&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-10T19:40:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;ongoing:2026-10-08&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-11T12:20:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;ongoing:2026-10-08&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-11T19:40:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;ongoing:2026-10-08&quot;
+    }
+  ],
+  &quot;side_effect_counts&quot;: {
+    &quot;completions&quot;: 0,
+    &quot;garden_rewards&quot;: 0,
+    &quot;notifications&quot;: 0,
+    &quot;reminder_plans&quot;: 0,
+    &quot;tasks&quot;: 0
+  },
+  &quot;mail_count&quot;: 0
+}</pre></details></details></div></details><details class="case" id="RC-07" >
+<summary><span class="number">RC-07</span><span class="case-title">模糊时间、自主建议、深夜不擅自延到明天<small>默认建议已说明</small></span><strong class="points">10<small>/10</small></strong></summary>
+<div class="case-body"><p class="finding">建议10分钟后首次、之后每5分钟，明确是可调整的暂定安排。</p><blockquote>等会儿提醒我把洗衣机里的衣服晾了，今晚还要穿，别拖到明早。具体几分钟你帮我定，没晾好再隔一会儿叫我，晾一次就行。我现在只是看看你怎么安排，还没确认。</blockquote><p class="muted">固定当前时间：2026-10-08T23:42:18+08:00</p>
+<div class="two-columns"><section><h3>优化前 · 8/10</h3><p>自主选10分钟后并保留秒，没有拖到明早；未明确说默认跟进间隔可以调整。</p><p>2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒</p><ul><li>我先安排在10分钟后，也就是今晚23:52提醒你晾衣服；没晾好就每5分钟再叫你一次，晾好一次就停。</li><li>你还没确认，我不会开始提醒；确认后我再按这个安排执行。</li></ul><p class="muted">下一候选：2026-10-08T23:52:18+08:00<br>耗时 1.02 秒</p></section>
+<section><h3>优化后 · 10/10</h3><p class="actual-title">晾洗衣机里的衣服</p><p>2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒</p><p>备注：今晚还要穿，别拖到明早</p><ul class="feedback"><li>2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 23:52:18（Asia/Shanghai）；确认后才会创建。</li><li>你没有明确指定首次时间、重复间隔，以上为暂定建议，可在草稿中调整。</li></ul><p class="muted">下一候选：2026-10-08T23:52:18+08:00<br>耗时 1.93 秒 · 模型调用 2 次</p></section></div>
+<details class="sub"><summary>原五项标准与得分依据</summary><ol class="checks"><li><span class="tag good">2/2</span> <strong>自主选5—15分钟后的首次时间，保留18秒，不要求用户补精确时间。</strong><p>first_at=23:52:18，在5—15分钟范围内，保留18秒。</p></li><li><span class="tag good">2/2</span> <strong>首次时间仍在今晚，不因旧静默规则顺延到明早。</strong><p>首次仍在10月8日今晚，没有推迟到明早。</p></li><li><span class="tag good">2/2</span> <strong>短时生活待办补全每5分钟跟进，且明确属于建议、可以调整。</strong><p>repeat_minutes=5，说明首次时间和重复间隔为暂定建议，可在草稿中调整。</p></li><li><span class="tag good">2/2</span> <strong>until_done，晾一次是完成次数，不是只通知一次；未将今晚推断成未经要求的硬截止。</strong><p>until_done，没有end_date或end_at。</p></li><li><span class="tag good">2/2</span> <strong>说明首次时间、默认跟进和完成后停止，明确尚待用户确认。</strong><p>说明首次时间、默认跟进、完成后不再提醒及确认后才创建。</p></li></ol></details>
+<details class="sub"><summary>关键字段对照</summary><p class="muted">原始关键字段预期</p><div class="table-scroll"><table class="rules"><thead><tr><th>字段</th><th>预期</th><th>优化后</th></tr></thead><tbody><tr class=""><th>kind</th><td>minute_interval</td><td>minute_interval</td></tr><tr class=""><th>mode</th><td>until_done</td><td>until_done</td></tr><tr class=""><th>timezone</th><td>Asia/Shanghai</td><td>Asia/Shanghai</td></tr><tr class=""><th>repeat_minutes</th><td>5</td><td>5</td></tr><tr class=""><th>end_date</th><td>未设置</td><td>未设置</td></tr><tr class=""><th>end_at</th><td>未设置</td><td>未设置</td></tr><tr class=""><th>max_reminders</th><td>0</td><td>0</td></tr></tbody></table></div></details>
+<details class="sub"><summary>完整原始响应与模型调用</summary><details class="raw"><summary>后端最终响应 · HTTP 200</summary><pre>{&quot;title&quot;:&quot;晾洗衣机里的衣服&quot;,&quot;description&quot;:&quot;今晚还要穿，别拖到明早&quot;,&quot;rule&quot;:{&quot;kind&quot;:&quot;minute_interval&quot;,&quot;mode&quot;:&quot;until_done&quot;,&quot;timezone&quot;:&quot;Asia/Shanghai&quot;,&quot;times&quot;:[],&quot;start_date&quot;:&quot;&quot;,&quot;end_date&quot;:&quot;&quot;,&quot;weekdays&quot;:[],&quot;month_start&quot;:0,&quot;month_end&quot;:0,&quot;every_days&quot;:0,&quot;max_reminders&quot;:0,&quot;first_at&quot;:&quot;2026-10-08T23:52:18+08:00&quot;,&quot;repeat_minutes&quot;:5},&quot;summary&quot;:&quot;2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒&quot;,&quot;warnings&quot;:[&quot;2026-10-08 23:52:18 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 23:52:18（Asia/Shanghai）；确认后才会创建。&quot;,&quot;你没有明确指定首次时间、重复间隔，以上为暂定建议，可在草稿中调整。&quot;]}
+</pre></details><details class="raw"><summary>模型第 1 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;晾洗衣机里的衣服\&quot;,\&quot;description\&quot;:\&quot;今晚还要穿，别拖到明早\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;minute_interval\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[],\&quot;start_date\&quot;:\&quot;\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;2026-10-08T23:52:18+08:00\&quot;,\&quot;repeat_minutes\&quot;:5,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[\&quot;first_time\&quot;,\&quot;repeat_interval\&quot;],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 89,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 135,
+    &quot;prompt_cache_hit_tokens&quot;: 2304,
+    &quot;prompt_cache_miss_tokens&quot;: 173,
+    &quot;prompt_tokens&quot;: 2477,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2304
+    },
+    &quot;total_tokens&quot;: 2612
+  }
+}</pre></details><details class="raw"><summary>模型第 2 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;晾洗衣机里的衣服\&quot;,\&quot;description\&quot;:\&quot;今晚还要穿，别拖到明早\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;minute_interval\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[],\&quot;start_date\&quot;:\&quot;\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;2026-10-08T23:52:18+08:00\&quot;,\&quot;repeat_minutes\&quot;:5,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[\&quot;first_time\&quot;,\&quot;repeat_interval\&quot;],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 101,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 135,
+    &quot;prompt_cache_hit_tokens&quot;: 2944,
+    &quot;prompt_cache_miss_tokens&quot;: 242,
+    &quot;prompt_tokens&quot;: 3186,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2944
+    },
+    &quot;total_tokens&quot;: 3321
+  }
+}</pre></details><details class="raw"><summary>调度候选预览与副作用检查</summary><pre>{
+  &quot;next_candidate&quot;: &quot;2026-10-08T23:52:18+08:00&quot;,
+  &quot;candidate_preview&quot;: [
+    {
+      &quot;At&quot;: &quot;2026-10-08T23:52:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T23:57:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:02:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:07:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:12:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:17:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:22:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:27:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:32:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:37:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:42:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-09T00:47:18+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    }
+  ],
+  &quot;side_effect_counts&quot;: {
+    &quot;completions&quot;: 0,
+    &quot;garden_rewards&quot;: 0,
+    &quot;notifications&quot;: 0,
+    &quot;reminder_plans&quot;: 0,
+    &quot;tasks&quot;: 0
+  },
+  &quot;mail_count&quot;: 0
+}</pre></details></details></div></details><details class="case" id="RC-08" >
+<summary><span class="number">RC-08</span><span class="case-title">显式海外时区、跨日换算、保留会议备注<small>明确时区已保留</small></span><strong class="points">10<small>/10</small></strong></summary>
+<div class="case-body"><p class="finding">保存纽约时区08:15，原始面试09:00与检查摄像头要求保留在备注。</p><blockquote>我人在上海，要参加纽约那边的远程面试。对方写的是2026年10月9日纽约当地时间上午9点，按America/New_York算，提前45分钟提醒我检查摄像头，只通知一次，不用催我确认完成。请把面试原始时间留在备注里，别当成北京时间9点。</blockquote><p class="muted">固定当前时间：2026-10-08T20:00:00+08:00</p>
+<div class="two-columns"><section><h3>优化前 · 8/10</h3><p>纽约08:15正确换算成上海20:15，实际时刻没错；但未按原测试要求保留纽约规则时区。</p><p>2026-10-09 20:15，每周期只提醒一次</p><ul><li>纽约当地10月9日上午9点按America/New_York换算成上海时间是10月9日21:00，提前45分钟就是20:15，我按这个时间只提醒一次。面试原始时间已留在备注里，没有当成北京时间9点；你确认后我再开始提醒。</li></ul><p class="muted">下一候选：2026-10-09T20:15:00+08:00<br>耗时 1.17 秒</p></section>
+<section><h3>优化后 · 10/10</h3><p class="actual-title">远程面试</p><p>2026-10-09 08:15，每周期只提醒一次</p><p>备注：纽约当地时间2026年10月9日上午9点（America/New_York），提前45分钟检查摄像头</p><ul class="feedback"><li>2026-10-09 08:15，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-09 08:15:00（America/New_York）；确认后才会创建。</li></ul><p class="muted">下一候选：2026-10-09T08:15:00-04:00<br>耗时 2.07 秒 · 模型调用 2 次</p></section></div>
+<details class="sub"><summary>原五项标准与得分依据</summary><ol class="checks"><li><span class="tag good">2/2</span> <strong>使用明确指定的America/New_York时区，不以所在地上海覆盖。</strong><p>timezone=America/New_York。</p></li><li><span class="tag good">2/2</span> <strong>从面试09:00减45分钟得到纽约10月9日08:15。</strong><p>start_date=2026-10-09、times=[08:15]。</p></li><li><span class="tag good">2/2</span> <strong>该提醒对应北京时间10月9日20:15，不误当成08:15或21:15。</strong><p>next_candidate=2026-10-09T08:15:00-04:00，即12:15Z、北京时间20:15。</p></li><li><span class="tag good">2/2</span> <strong>once+notify_once，提醒事项为检查摄像头，不自动参加面试或追加催办。</strong><p>once + notify_once，备注写提前45分钟检查摄像头，未安排参加面试或后续催办。</p></li><li><span class="tag good">2/2</span> <strong>备注保留面试原始日期、09:00及纽约时区，说明区分面试时间与提醒时间。</strong><p>备注包含2026年10月9日纽约上午9点与America/New_York；说明中的提醒时间为08:15。</p></li></ol></details>
+<details class="sub"><summary>关键字段对照</summary><p class="muted">原始关键字段预期</p><div class="table-scroll"><table class="rules"><thead><tr><th>字段</th><th>预期</th><th>优化后</th></tr></thead><tbody><tr class=""><th>kind</th><td>once</td><td>once</td></tr><tr class=""><th>mode</th><td>notify_once</td><td>notify_once</td></tr><tr class=""><th>timezone</th><td>America/New_York</td><td>America/New_York</td></tr><tr class=""><th>start_date</th><td>2026-10-09</td><td>2026-10-09</td></tr><tr class=""><th>times</th><td>[&quot;08:15&quot;]</td><td>[&quot;08:15&quot;]</td></tr></tbody></table></div></details>
+<details class="sub"><summary>完整原始响应与模型调用</summary><details class="raw"><summary>后端最终响应 · HTTP 200</summary><pre>{&quot;title&quot;:&quot;远程面试&quot;,&quot;description&quot;:&quot;纽约当地时间2026年10月9日上午9点（America/New_York），提前45分钟检查摄像头&quot;,&quot;rule&quot;:{&quot;kind&quot;:&quot;once&quot;,&quot;mode&quot;:&quot;notify_once&quot;,&quot;timezone&quot;:&quot;America/New_York&quot;,&quot;times&quot;:[&quot;08:15&quot;],&quot;start_date&quot;:&quot;2026-10-09&quot;,&quot;end_date&quot;:&quot;&quot;,&quot;weekdays&quot;:[],&quot;month_start&quot;:0,&quot;month_end&quot;:0,&quot;every_days&quot;:0,&quot;max_reminders&quot;:0},&quot;summary&quot;:&quot;2026-10-09 08:15，每周期只提醒一次&quot;,&quot;warnings&quot;:[&quot;2026-10-09 08:15，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-09 08:15:00（America/New_York）；确认后才会创建。&quot;]}
+</pre></details><details class="raw"><summary>模型第 1 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;远程面试\&quot;,\&quot;description\&quot;:\&quot;纽约当地时间2026年10月9日上午9点（America/New_York），提前45分钟检查摄像头\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;once\&quot;,\&quot;mode\&quot;:\&quot;notify_once\&quot;,\&quot;timezone\&quot;:\&quot;America/New_York\&quot;,\&quot;times\&quot;:[\&quot;08:15\&quot;],\&quot;start_date\&quot;:\&quot;2026-10-09\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 90,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 132,
+    &quot;prompt_cache_hit_tokens&quot;: 2304,
+    &quot;prompt_cache_miss_tokens&quot;: 194,
+    &quot;prompt_tokens&quot;: 2498,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2304
+    },
+    &quot;total_tokens&quot;: 2630
+  }
+}</pre></details><details class="raw"><summary>模型第 2 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;远程面试\&quot;,\&quot;description\&quot;:\&quot;纽约当地时间2026年10月9日上午9点（America/New_York），提前45分钟检查摄像头\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;once\&quot;,\&quot;mode\&quot;:\&quot;notify_once\&quot;,\&quot;timezone\&quot;:\&quot;America/New_York\&quot;,\&quot;times\&quot;:[\&quot;08:15\&quot;],\&quot;start_date\&quot;:\&quot;2026-10-09\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 142,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 132,
+    &quot;prompt_cache_hit_tokens&quot;: 2560,
+    &quot;prompt_cache_miss_tokens&quot;: 633,
+    &quot;prompt_tokens&quot;: 3193,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2560
+    },
+    &quot;total_tokens&quot;: 3325
+  }
+}</pre></details><details class="raw"><summary>调度候选预览与副作用检查</summary><pre>{
+  &quot;next_candidate&quot;: &quot;2026-10-09T08:15:00-04:00&quot;,
+  &quot;candidate_preview&quot;: [
+    {
+      &quot;At&quot;: &quot;2026-10-09T08:15:00-04:00&quot;,
+      &quot;CycleKey&quot;: &quot;once:2026-10-09&quot;
+    }
+  ],
+  &quot;side_effect_counts&quot;: {
+    &quot;completions&quot;: 0,
+    &quot;garden_rewards&quot;: 0,
+    &quot;notifications&quot;: 0,
+    &quot;reminder_plans&quot;: 0,
+    &quot;tasks&quot;: 0
+  },
+  &quot;mail_count&quot;: 0
+}</pre></details></details></div></details><details class="case" id="RC-09" >
+<summary><span class="number">RC-09</span><span class="case-title">每周重复小时窗口无法精确表达时的诚实替代<small>边界处理通过 · 原需求未完整实现</small></span><strong class="points">10<small>/10</small></strong></summary>
+<div class="case-body"><p class="finding">保留今天14—17点每7分钟，明确不会自动产生下一轮；原每周循环仍未实现。</p><blockquote>从今天开始，每周一到周五下午两点到五点，每隔七分钟提醒我起来活动一下。每天活动一次后当天就别催，第二个工作日重新开始，五点以后绝对不要继续。周六周日不要，时间窗也别改成全天。</blockquote><p class="muted">固定当前时间：2026-10-08T13:10:00+08:00</p>
+<div class="two-columns"><section><h3>优化前 · 8/10</h3><p>生成了今天的单次7分钟窗口，并披露不会自动重复；备注仍写每周重复，还出现按天补上的承诺。</p><p>2026-10-08 14:00:00 首次提醒，之后每 7 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）</p><ul><li>我先按最近一个工作日安排：今天（10月8日周四）14:00开始，每7分钟提醒一次，17:00截止，活动一次后今天就不再催。</li><li>不过“每周一到周五自动重复、每天单独重新开始”目前没法原样设置，这次只安排了今天这一个窗口，不会自动延续到明天或下周一，需要你确认后我再按天补上。</li><li>周六周日不提醒、时间窗保持14:00-17:00这两点已按你的要求保留。</li></ul><p class="muted">下一候选：2026-10-08T14:00:00+08:00<br>耗时 1.70 秒</p></section>
+<section><h3>优化后 · 10/10</h3><p class="actual-title">起来活动一下</p><p>2026-10-08 14:00:00 首次提醒，之后每 7 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）</p><ul class="feedback"><li>窗口尚未开始。2026-10-08 14:00:00 首次提醒，之后每 7 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 14:00:00（Asia/Shanghai）；确认后才会创建。</li><li>原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。</li></ul><p class="muted">下一候选：2026-10-08T14:00:00+08:00<br>耗时 1.95 秒 · 模型调用 2 次</p></section></div>
+<details class="sub"><summary>原五项标准与得分依据</summary><ol class="checks"><li><span class="tag good">2/2</span> <strong>明确说明目前不能完整表达每周工作日重复的分钟级小时窗口。</strong><p>说明原自动重复条件不能完整表达，只安排上述这一轮。</p></li><li><span class="tag good">2/2</span> <strong>提供最近一次即今天14:00—17:00的单次窗口草稿。</strong><p>minute_interval，first_at=今天14:00、end_at=今天17:00。</p></li><li><span class="tag good">2/2</span> <strong>保留7分钟间隔和17:00精确截止，没有改成全天每7分钟。</strong><p>repeat_minutes=7，保留精确截止；按14:00+25×7分钟计算，窗口内末个节奏点为16:55，17:00不是节奏点。原始预览仅展示前12项。</p></li><li><span class="tag good">2/2</span> <strong>显著说明此替代不会自动在下一个工作日重新开始，完成后本次永久停止。</strong><p>明确不会自动生成下一轮，完成后不再提醒。</p></li><li><span class="tag good">2/2</span> <strong>原需求与替代差异清楚可审核，不伪称支持完整循环，也不只回复不支持。</strong><p>提供可执行单次草稿并要求核对替代条件；description为空，不再暗含每周重复承诺。</p></li></ol></details>
+<details class="sub"><summary>关键字段对照</summary><p class="muted">原始关键字段预期</p><div class="table-scroll"><table class="rules"><thead><tr><th>字段</th><th>预期</th><th>优化后</th></tr></thead><tbody><tr class=""><th>kind</th><td>minute_interval</td><td>minute_interval</td></tr><tr class=""><th>mode</th><td>until_done</td><td>until_done</td></tr><tr class=""><th>timezone</th><td>Asia/Shanghai</td><td>Asia/Shanghai</td></tr><tr class=""><th>first_at</th><td>2026-10-08T14:00:00+08:00</td><td>2026-10-08T14:00:00+08:00</td></tr><tr class=""><th>repeat_minutes</th><td>7</td><td>7</td></tr><tr class=""><th>end_at</th><td>2026-10-08T17:00:00+08:00</td><td>2026-10-08T17:00:00+08:00</td></tr><tr class=""><th>end_date</th><td>未设置</td><td>未设置</td></tr></tbody></table></div></details>
+<details class="sub"><summary>完整原始响应与模型调用</summary><details class="raw"><summary>后端最终响应 · HTTP 200</summary><pre>{&quot;title&quot;:&quot;起来活动一下&quot;,&quot;description&quot;:&quot;&quot;,&quot;rule&quot;:{&quot;kind&quot;:&quot;minute_interval&quot;,&quot;mode&quot;:&quot;until_done&quot;,&quot;timezone&quot;:&quot;Asia/Shanghai&quot;,&quot;times&quot;:[],&quot;start_date&quot;:&quot;&quot;,&quot;end_date&quot;:&quot;&quot;,&quot;weekdays&quot;:[],&quot;month_start&quot;:0,&quot;month_end&quot;:0,&quot;every_days&quot;:0,&quot;max_reminders&quot;:0,&quot;first_at&quot;:&quot;2026-10-08T14:00:00+08:00&quot;,&quot;end_at&quot;:&quot;2026-10-08T17:00:00+08:00&quot;,&quot;repeat_minutes&quot;:7},&quot;summary&quot;:&quot;2026-10-08 14:00:00 首次提醒，之后每 7 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）&quot;,&quot;warnings&quot;:[&quot;窗口尚未开始。2026-10-08 14:00:00 首次提醒，之后每 7 分钟提醒一次，完成后不再提醒，截止 2026-10-08 17:00:00（含此时刻）。按当前时间计算，下一个规则时间点是 2026-10-08 14:00:00（Asia/Shanghai）；确认后才会创建。&quot;,&quot;原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。&quot;]}
+</pre></details><details class="raw"><summary>模型第 1 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;起来活动一下\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;minute_interval\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[],\&quot;start_date\&quot;:\&quot;\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;2026-10-08T14:00:00+08:00\&quot;,\&quot;repeat_minutes\&quot;:7,\&quot;end_at\&quot;:\&quot;2026-10-08T17:00:00+08:00\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[\&quot;recurrence\&quot;]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 90,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 137,
+    &quot;prompt_cache_hit_tokens&quot;: 2304,
+    &quot;prompt_cache_miss_tokens&quot;: 176,
+    &quot;prompt_tokens&quot;: 2480,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2304
+    },
+    &quot;total_tokens&quot;: 2617
+  }
+}</pre></details><details class="raw"><summary>模型第 2 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;起来活动一下\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;minute_interval\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[],\&quot;start_date\&quot;:\&quot;\&quot;,\&quot;end_date\&quot;:\&quot;\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:0,\&quot;first_at\&quot;:\&quot;2026-10-08T14:00:00+08:00\&quot;,\&quot;repeat_minutes\&quot;:7,\&quot;end_at\&quot;:\&quot;2026-10-08T17:00:00+08:00\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[\&quot;recurrence\&quot;]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 121,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 137,
+    &quot;prompt_cache_hit_tokens&quot;: 3072,
+    &quot;prompt_cache_miss_tokens&quot;: 146,
+    &quot;prompt_tokens&quot;: 3218,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 3072
+    },
+    &quot;total_tokens&quot;: 3355
+  }
+}</pre></details><details class="raw"><summary>调度候选预览与副作用检查</summary><pre>{
+  &quot;next_candidate&quot;: &quot;2026-10-08T14:00:00+08:00&quot;,
+  &quot;candidate_preview&quot;: [
+    {
+      &quot;At&quot;: &quot;2026-10-08T14:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T14:07:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T14:14:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T14:21:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T14:28:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T14:35:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T14:42:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T14:49:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T14:56:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T15:03:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T15:10:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-08T15:17:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;minute_interval&quot;
+    }
+  ],
+  &quot;side_effect_counts&quot;: {
+    &quot;completions&quot;: 0,
+    &quot;garden_rewards&quot;: 0,
+    &quot;notifications&quot;: 0,
+    &quot;reminder_plans&quot;: 0,
+    &quot;tasks&quot;: 0
+  },
+  &quot;mail_count&quot;: 0
+}</pre></details></details></div></details><details class="case" id="RC-10" open>
+<summary><span class="number">RC-10</span><span class="case-title">跨月账期、节假日例外、多重不可表达条件<small>边界处理通过 · 原需求未完整实现</small></span><strong class="points">10<small>/10</small></strong></summary>
+<div class="case-body"><p class="finding">本轮完整保留10月25日至11月5日；自动跨月循环和节假日筛选明确未实现。</p><blockquote>每月25号到下个月5号，每天上午9点提醒我核对这一个账期的票据。这个跨月账期里做完一次就停，下个账期重新来，总共最多四次；但法定节假日不要催，调休上班的周末要催。别把25号到月底、下月1号到5号拆成两件分别完成的任务。</blockquote><p class="muted">固定当前时间：2026-10-24T10:00:00+08:00</p>
+<div class="two-columns"><section><h3>优化前 · 6/10</h3><p>最终仅保留每月25日到月底，丢掉次月1—5日；本可保留完整单次跨月账期。</p><p>每月 25—31 日，每天 09:00，完成后停止本月提醒，每周期最多 4 次</p><ul><li>跨月账期（25号到次月5号）没法原样表达，我先按每月25号到月底这个窗口安排，每天9点提醒，本账期做完一次就停，最多提醒4次；次月1到5号这段暂未包含，需要的话可在草稿里调整。</li><li>法定节假日跳过、调休周末照常催这两点暂时做不到自动判断，先按每天提醒，节假日你可在草稿里手动跳过；确认后我再开始提醒。</li></ul><p class="muted">下一候选：2026-10-25T09:00:00+08:00<br>耗时 2.94 秒</p></section>
+<section><h3>优化后 · 10/10</h3><p class="actual-title">核对账期票据</p><p>2026-10-25 至 2026-11-05，每天 09:00，完成后停止本轮提醒，每周期最多 4 次</p><ul class="feedback"><li>2026-10-25 至 2026-11-05，每天 09:00，完成后停止本轮提醒，每周期最多 4 次。按当前时间计算，下一个规则时间点是 2026-10-25 09:00:00（Asia/Shanghai）；确认后才会创建。</li><li>原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮；本次按上述规则的日期执行，不能自动跳过法定节假日或识别调休。请核对这些替代条件后再确认。</li></ul><p class="muted">下一候选：2026-10-25T09:00:00+08:00<br>耗时 2.09 秒 · 模型调用 2 次</p></section></div>
+<details class="sub"><summary>原五项标准与得分依据</summary><ol class="checks"><li><span class="tag good">2/2</span> <strong>正确理解本轮为10月25日至11月5日且包含末日，属于同一个完成周期。</strong><p>date_range=2026-10-25至2026-11-05，until_done同一完成周期。</p></li><li><span class="tag good">2/2</span> <strong>不拆成两个独立完成周期，也不输出非法month_start=25、month_end=5。</strong><p>仅一份草稿，不使用非法monthly_window范围，也不拆两项任务。</p></li><li><span class="tag good">2/2</span> <strong>明确指出跨月周期自动重复与节假日调休识别这两项限制，不能只说明其中一项。</strong><p>说明不会自动生成下一轮，且不能自动跳过法定节假日或识别调休。</p></li><li><span class="tag good">2/2</span> <strong>不凭空编造法定节假日，不以简单周一到周五冒充法定工作日。</strong><p>保留完整自然日范围，无虚构假日清单或周一至周五过滤。</p></li><li><span class="tag good">2/2</span> <strong>给出可执行、可审核的替代；若使用单次账期，则保留09:00、最多4次及一次完成即停，说明不会自动产生下一账期。</strong><p>09:00、上限4、整轮完成即停均保留；明确请核对替代条件后确认。</p></li></ol></details>
+<details class="sub"><summary>关键字段对照</summary><p class="muted">原题允许的第一种替代（自动循环与节假日仍未实现）</p><div class="table-scroll"><table class="rules"><thead><tr><th>字段</th><th>预期</th><th>优化后</th></tr></thead><tbody><tr class=""><th>kind</th><td>date_range</td><td>date_range</td></tr><tr class=""><th>mode</th><td>until_done</td><td>until_done</td></tr><tr class=""><th>start_date</th><td>2026-10-25</td><td>2026-10-25</td></tr><tr class=""><th>end_date</th><td>2026-11-05</td><td>2026-11-05</td></tr><tr class=""><th>times</th><td>[&quot;09:00&quot;]</td><td>[&quot;09:00&quot;]</td></tr><tr class=""><th>max_reminders</th><td>4</td><td>4</td></tr></tbody></table></div></details>
+<details class="sub"><summary>完整原始响应与模型调用</summary><details class="raw"><summary>后端最终响应 · HTTP 200</summary><pre>{&quot;title&quot;:&quot;核对账期票据&quot;,&quot;description&quot;:&quot;&quot;,&quot;rule&quot;:{&quot;kind&quot;:&quot;date_range&quot;,&quot;mode&quot;:&quot;until_done&quot;,&quot;timezone&quot;:&quot;Asia/Shanghai&quot;,&quot;times&quot;:[&quot;09:00&quot;],&quot;start_date&quot;:&quot;2026-10-25&quot;,&quot;end_date&quot;:&quot;2026-11-05&quot;,&quot;weekdays&quot;:[],&quot;month_start&quot;:0,&quot;month_end&quot;:0,&quot;every_days&quot;:0,&quot;max_reminders&quot;:4},&quot;summary&quot;:&quot;2026-10-25 至 2026-11-05，每天 09:00，完成后停止本轮提醒，每周期最多 4 次&quot;,&quot;warnings&quot;:[&quot;2026-10-25 至 2026-11-05，每天 09:00，完成后停止本轮提醒，每周期最多 4 次。按当前时间计算，下一个规则时间点是 2026-10-25 09:00:00（Asia/Shanghai）；确认后才会创建。&quot;,&quot;原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮；本次按上述规则的日期执行，不能自动跳过法定节假日或识别调休。请核对这些替代条件后再确认。&quot;]}
+</pre></details><details class="raw"><summary>模型第 1 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;核对账期票据\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;date_range\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[\&quot;09:00\&quot;],\&quot;start_date\&quot;:\&quot;2026-10-25\&quot;,\&quot;end_date\&quot;:\&quot;2026-11-05\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:4,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[\&quot;recurrence\&quot;,\&quot;holiday_calendar\&quot;]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 141,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 127,
+    &quot;prompt_cache_hit_tokens&quot;: 2304,
+    &quot;prompt_cache_miss_tokens&quot;: 204,
+    &quot;prompt_tokens&quot;: 2508,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 2304
+    },
+    &quot;total_tokens&quot;: 2635
+  }
+}</pre></details><details class="raw"><summary>模型第 2 次原始响应 · deepseek-flash</summary><pre>{
+  &quot;choices&quot;: [
+    {
+      &quot;finish_reason&quot;: &quot;stop&quot;,
+      &quot;index&quot;: 0,
+      &quot;logprobs&quot;: null,
+      &quot;message&quot;: {
+        &quot;content&quot;: &quot;{\&quot;title\&quot;:\&quot;核对账期票据\&quot;,\&quot;description\&quot;:\&quot;\&quot;,\&quot;rule\&quot;:{\&quot;kind\&quot;:\&quot;date_range\&quot;,\&quot;mode\&quot;:\&quot;until_done\&quot;,\&quot;timezone\&quot;:\&quot;Asia/Shanghai\&quot;,\&quot;times\&quot;:[\&quot;09:00\&quot;],\&quot;start_date\&quot;:\&quot;2026-10-25\&quot;,\&quot;end_date\&quot;:\&quot;2026-11-05\&quot;,\&quot;weekdays\&quot;:[],\&quot;month_start\&quot;:0,\&quot;month_end\&quot;:0,\&quot;every_days\&quot;:0,\&quot;max_reminders\&quot;:4,\&quot;first_at\&quot;:\&quot;\&quot;,\&quot;repeat_minutes\&quot;:0,\&quot;end_at\&quot;:\&quot;\&quot;},\&quot;explanation\&quot;:{\&quot;assumptions\&quot;:[],\&quot;limitations\&quot;:[\&quot;recurrence\&quot;,\&quot;holiday_calendar\&quot;]}}&quot;,
+        &quot;role&quot;: &quot;assistant&quot;
+      }
+    }
+  ],
+  &quot;elapsed_ms&quot;: 91,
+  &quot;model&quot;: &quot;deepseek-flash&quot;,
+  &quot;status&quot;: 200,
+  &quot;usage&quot;: {
+    &quot;completion_tokens&quot;: 127,
+    &quot;prompt_cache_hit_tokens&quot;: 3072,
+    &quot;prompt_cache_miss_tokens&quot;: 143,
+    &quot;prompt_tokens&quot;: 3215,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 3072
+    },
+    &quot;total_tokens&quot;: 3342
+  }
+}</pre></details><details class="raw"><summary>调度候选预览与副作用检查</summary><pre>{
+  &quot;next_candidate&quot;: &quot;2026-10-25T09:00:00+08:00&quot;,
+  &quot;candidate_preview&quot;: [
+    {
+      &quot;At&quot;: &quot;2026-10-25T09:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;range:2026-10-25:2026-11-05&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-26T09:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;range:2026-10-25:2026-11-05&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-27T09:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;range:2026-10-25:2026-11-05&quot;
+    },
+    {
+      &quot;At&quot;: &quot;2026-10-28T09:00:00+08:00&quot;,
+      &quot;CycleKey&quot;: &quot;range:2026-10-25:2026-11-05&quot;
+    }
+  ],
+  &quot;side_effect_counts&quot;: {
+    &quot;completions&quot;: 0,
+    &quot;garden_rewards&quot;: 0,
+    &quot;notifications&quot;: 0,
+    &quot;reminder_plans&quot;: 0,
+    &quot;tasks&quot;: 0
+  },
+  &quot;mail_count&quot;: 0
+}</pre></details></details></div></details>
+<section class="method"><h2>证据与验证边界</h2><ul>
+<li><strong>本轮后端实测：</strong>真实 /api/v1/ai/parse Handler + deepseek-flash，每题注入原固定时间，独立临时数据库和测试邮件器；10题均连续保存原始输出、模型调用和候选预览。开始 2026-10-08T16:49:04.7751407+08:00，结束 2026-10-08T16:49:24.7549547+08:00。</li>
+<li><strong>评分口径：</strong>逐项审阅原始规则、summary、warnings、description与候选时间，沿用原10题每题5项、每项2分标准；不是模型自评。RC-05仍按整份草稿中的明确年份判断，与基线口径一致。 RC-09/10的边界通过不等于完整支持原需求。</li>
+<li><strong>调优过程：</strong>调优不只一轮：提示约束及复核曾仍产生旧候选解释、跨月模式/当前账期和短月混淆，发现后继续修复。最终报告为提交83363b6之后完整连续采集的10题，每题保留两次模型输出，没有对报告中的失败题单独重跑择优。</li>
+<li><strong>额外回归：</strong>进行中10:00—11:30每13分钟，下一候选10:26；当前账期9月26日—10月4日，整轮一次完成；12月27日—次年1月6日跨年账期；明确Europe/London，14:00提前20分钟；当前跨月账期每天分别完成，每天上限2次；跨月账期只通知一次、不需完成。TestLiveReminderFidelityVariations真实模型测试通过；测试源码保存输入与断言，未冒充手机送达验证。</li>
+<li><strong>运行进程验证边界：</strong>Windows amd64与Linux amd64程序已构建，Windows构建信息为上述干净提交。自动审批拒绝启动临时新后端的命令，原因仅为blocked by policy；因此没有新版进程HTTP实测，不等同部署验收。原有2.6.0服务未替换。 上一轮已有后端HTTP测试地址是 http://127.0.0.1:56507/api/v1/ai/parse，其结果保留在旧报告，不当作新版实测。</li>
+<li><strong>无业务副作用：</strong>本轮各题任务、通知、完成、提醒计划、花园奖励均为0，测试邮件为0。未确认保存任务、未启动调度器，没有验证手机通知、闹钟、日历和邮件送达。候选时间不等于实际送达承诺。</li>
+<li><strong>源码与检查：</strong>83363b69a3b2c34bdba06559966053421c2dd426；Go全量测试、静态检查通过，复核取消时不返回初稿。Windows和Linux amd64已构建；这不代表Linux运行或部署验收。</li></ul>
+<div class="downloads"><a href="../2026-10-08/index.html">查看优化前完整报告</a><a href="fixed-results.json" download>本轮原始返回</a><a href="review.json" download>评分依据</a><a href="../../reminder-creation-v1.json" download>原始10题</a></div></section>
+<footer>离线报告，不加载外部脚本或统计服务。两次单轮采样与定向回归不能推算长期稳定性；确认后的任务执行链仍需实际使用验证。</footer></main><script>const cases=[...document.querySelectorAll('.case')];document.querySelector('#expand').onclick=()=>cases.forEach(c=>c.open=true);document.querySelector('#collapse').onclick=()=>cases.forEach(c=>c.open=false);document.querySelectorAll('a[href^="#RC-"]').forEach(a=>a.onclick=()=>{document.querySelector(a.getAttribute('href')).open=true});</script></body></html>

@@ -1,0 +1,130 @@
+{
+  "review_method": "逐项审阅原始规则、summary、warnings、description与候选时间，沿用原10题每题5项、每项2分标准；不是模型自评。RC-05仍按整份草稿中的明确年份判断，与基线口径一致。",
+  "scope": "本轮评分来自固定时间的真实后端HTTP Handler与真实模型。原10题输入、now与评分标准均未改变；调优中用过这些题，属于回归结果而非盲测准确率。",
+  "source_commit": "83363b69a3b2c34bdba06559966053421c2dd426",
+  "binary_provenance": {
+    "version": "2.6.1",
+    "vcs_revision": "83363b69a3b2c34bdba06559966053421c2dd426",
+    "vcs_modified": false,
+    "note": "Windows amd64与Linux amd64程序已构建，Windows构建信息为上述干净提交。自动审批拒绝启动临时新后端的命令，原因仅为blocked by policy；因此没有新版进程HTTP实测，不等同部署验收。原有2.6.0服务未替换。"
+  },
+  "development_history": "调优不只一轮：提示约束及复核曾仍产生旧候选解释、跨月模式/当前账期和短月混淆，发现后继续修复。最终报告为提交83363b6之后完整连续采集的10题，每题保留两次模型输出，没有对报告中的失败题单独重跑择优。",
+  "additional_regression": {
+    "passed": 6,
+    "total": 6,
+    "cases": ["进行中10:00—11:30每13分钟，下一候选10:26", "当前账期9月26日—10月4日，整轮一次完成", "12月27日—次年1月6日跨年账期", "明确Europe/London，14:00提前20分钟", "当前跨月账期每天分别完成，每天上限2次", "跨月账期只通知一次、不需完成"],
+    "method": "TestLiveReminderFidelityVariations真实模型测试通过；测试源码保存输入与断言，未冒充手机送达验证。"
+  },
+  "cases": [
+    {
+      "id": "RC-01", "verdict": "符合预期", "category": "pass", "exact_request_satisfied": true,
+      "headline": "跨午夜与秒数正确，首次10分钟和之后2分钟保持分离。",
+      "checks": [
+        {"pass":true,"evidence":"first_at=2026-10-09T00:08:47+08:00，保留47秒。"},
+        {"pass":true,"evidence":"repeat_minutes=2，与首次延迟10分钟不同。"},
+        {"pass":true,"evidence":"minute_interval + until_done。"},
+        {"pass":true,"evidence":"没有截止，max_reminders=0，未顺延到早晨。"},
+        {"pass":true,"evidence":"说明写明首次、之后每2分钟、完成后不再提醒及确认后才创建。"}
+      ]
+    },
+    {
+      "id":"RC-02", "verdict":"原始节奏已保留", "category":"pass", "exact_request_satisfied":true,
+      "headline":"保留14:00起点，14:37:20之后的下一候选恢复为14:40。",
+      "checks":[
+        {"pass":true,"evidence":"first_at=2026-10-08T14:00:00+08:00，早于now仍保留。"},
+        {"pass":true,"evidence":"end_at=当日17:00:00，无日期顺延。"},
+        {"pass":true,"evidence":"repeat_minutes=20、max_reminders=6，同一任务周期。"},
+        {"pass":true,"evidence":"minute_interval + until_done，完成永久停止。"},
+        {"pass":true,"evidence":"说明窗口已开始、只安排余下、保留原节奏、不补发全部历史；下一候选14:40。"}
+      ]
+    },
+    {
+      "id":"RC-03", "verdict":"符合预期", "category":"pass", "exact_request_satisfied":true,
+      "headline":"最终改口生效，10月10日16:30仅通知一次，备注保留。",
+      "checks":[
+        {"pass":true,"evidence":"start_date=2026-10-10、times=[16:30]。"},
+        {"pass":true,"evidence":"once + notify_once。"},
+        {"pass":true,"evidence":"无first_at和repeat_minutes，不保留已撤销的催办。"},
+        {"pass":true,"evidence":"description为北门快递柜，带取件码；标题仅取快递。"},
+        {"pass":true,"evidence":"明确确认后才创建，五张业务表和邮件计数均为0。"}
+      ]
+    },
+    {
+      "id":"RC-04", "verdict":"符合预期", "category":"pass", "exact_request_satisfied":true,
+      "headline":"同月28—31日保留月度循环；短月截断明确说明。",
+      "checks":[
+        {"pass":true,"evidence":"monthly_window，month_start=28、month_end=31。"},
+        {"pass":true,"evidence":"times=[09:00,20:00]。"},
+        {"pass":true,"evidence":"until_done，说明完成后停止本月提醒。"},
+        {"pass":true,"evidence":"max_reminders=3，周期为月度窗口，不是每天。"},
+        {"pass":true,"evidence":"明确短月截到月末、不顺延；候选预览2月仅28日09:00和20:00。"}
+      ]
+    },
+    {
+      "id":"RC-05", "verdict":"符合预期", "category":"pass", "exact_request_satisfied":true,
+      "headline":"跨年范围完整，每天分别完成，次日继续。",
+      "checks":[
+        {"pass":true,"evidence":"start_date=2026-12-31，end_date=2027-01-03。"},
+        {"pass":true,"evidence":"日期范围包含末日，候选预览覆盖12月31日至1月3日四天。"},
+        {"pass":true,"evidence":"every_day，完成后停止当天提醒、下一提醒日重新开始。"},
+        {"pass":true,"evidence":"times=[08:00,20:30]、max_reminders=2，按天完成周期。"},
+        {"pass":true,"evidence":"summary和warnings均明确2027-01-03；表达完成当天即停，没有要求每天做两次。沿用基线对整份草稿年份的判定口径。"}
+      ]
+    },
+    {
+      "id":"RC-06", "verdict":"符合预期", "category":"pass", "exact_request_satisfied":true,
+      "headline":"同一台相机只归还一次，日常催办不变成每天重复完成。",
+      "checks":[
+        {"pass":true,"evidence":"kind=ongoing，mode=until_done。"},
+        {"pass":true,"evidence":"start_date=2026-10-08，times=[12:20,19:40]。"},
+        {"pass":true,"evidence":"完成后不再提醒，整个ongoing任务共用一个完成周期。"},
+        {"pass":true,"evidence":"end_date为空、max_reminders=0。"},
+        {"pass":true,"evidence":"标题归还借来的相机，说明围绕同一待办；下一候选按11:20算为当天12:20。"}
+      ]
+    },
+    {
+      "id":"RC-07", "verdict":"默认建议已说明", "category":"pass", "exact_request_satisfied":true,
+      "headline":"建议10分钟后首次、之后每5分钟，明确是可调整的暂定安排。",
+      "checks":[
+        {"pass":true,"evidence":"first_at=23:52:18，在5—15分钟范围内，保留18秒。"},
+        {"pass":true,"evidence":"首次仍在10月8日今晚，没有推迟到明早。"},
+        {"pass":true,"evidence":"repeat_minutes=5，说明首次时间和重复间隔为暂定建议，可在草稿中调整。"},
+        {"pass":true,"evidence":"until_done，没有end_date或end_at。"},
+        {"pass":true,"evidence":"说明首次时间、默认跟进、完成后不再提醒及确认后才创建。"}
+      ]
+    },
+    {
+      "id":"RC-08", "verdict":"明确时区已保留", "category":"pass", "exact_request_satisfied":true,
+      "headline":"保存纽约时区08:15，原始面试09:00与检查摄像头要求保留在备注。",
+      "checks":[
+        {"pass":true,"evidence":"timezone=America/New_York。"},
+        {"pass":true,"evidence":"start_date=2026-10-09、times=[08:15]。"},
+        {"pass":true,"evidence":"next_candidate=2026-10-09T08:15:00-04:00，即12:15Z、北京时间20:15。"},
+        {"pass":true,"evidence":"once + notify_once，备注写提前45分钟检查摄像头，未安排参加面试或后续催办。"},
+        {"pass":true,"evidence":"备注包含2026年10月9日纽约上午9点与America/New_York；说明中的提醒时间为08:15。"}
+      ]
+    },
+    {
+      "id":"RC-09", "verdict":"边界处理通过", "category":"boundary", "exact_request_satisfied":false,
+      "headline":"保留今天14—17点每7分钟，明确不会自动产生下一轮；原每周循环仍未实现。",
+      "checks":[
+        {"pass":true,"evidence":"说明原自动重复条件不能完整表达，只安排上述这一轮。"},
+        {"pass":true,"evidence":"minute_interval，first_at=今天14:00、end_at=今天17:00。"},
+        {"pass":true,"evidence":"repeat_minutes=7，保留精确截止；按14:00+25×7分钟计算，窗口内末个节奏点为16:55，17:00不是节奏点。原始预览仅展示前12项。"},
+        {"pass":true,"evidence":"明确不会自动生成下一轮，完成后不再提醒。"},
+        {"pass":true,"evidence":"提供可执行单次草稿并要求核对替代条件；description为空，不再暗含每周重复承诺。"}
+      ]
+    },
+    {
+      "id":"RC-10", "verdict":"边界处理通过", "category":"boundary", "exact_request_satisfied":false,
+      "headline":"本轮完整保留10月25日至11月5日；自动跨月循环和节假日筛选明确未实现。",
+      "checks":[
+        {"pass":true,"evidence":"date_range=2026-10-25至2026-11-05，until_done同一完成周期。"},
+        {"pass":true,"evidence":"仅一份草稿，不使用非法monthly_window范围，也不拆两项任务。"},
+        {"pass":true,"evidence":"说明不会自动生成下一轮，且不能自动跳过法定节假日或识别调休。"},
+        {"pass":true,"evidence":"保留完整自然日范围，无虚构假日清单或周一至周五过滤。"},
+        {"pass":true,"evidence":"09:00、上限4、整轮完成即停均保留；明确请核对替代条件后确认。"}
+      ]
+    }
+  ]
+}
