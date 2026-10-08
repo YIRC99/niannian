@@ -22,16 +22,22 @@ func (e *draftExplanation) validate(rule schedule.Rule) error {
 		return errors.New("缺少explanation及其assumptions/limitations数组")
 	}
 	allowed := []map[string]bool{
-		{"first_time": true, "repeat_interval": true, "year": true, "rescheduled": true, "task": true},
+		{"first_time": true, "repeat_interval": true, "year": true, "rescheduled": true, "task": true, "date_range": true, "time_window": true},
 		{"recurrence": true, "holiday_calendar": true, "unverified_date": true, "complex_cadence": true},
 	}
 	for i, list := range [][]string{e.Assumptions, e.Limitations} {
 		seen := map[string]bool{}
 		for _, tag := range list {
 			if !allowed[i][tag] || seen[tag] {
-				return errors.New("explanation标签未知或重复")
+				return errors.New("explanation数组只允许不重复的纯英文标签，不带等号、冒号或解释。例如assumptions:[\"first_time\",\"date_range\"]。允许的assumptions: first_time,repeat_interval,year,rescheduled,task,date_range,time_window；limitations: recurrence,holiday_calendar,unverified_date,complex_cadence")
 			}
 			seen[tag] = true
+			if tag == "date_range" && rule.Kind != "date_range" && rule.Kind != "monthly_window" {
+				return errors.New("日期范围假设需要日期范围规则")
+			}
+			if tag == "time_window" && (rule.Kind != "minute_interval" || rule.EndAt == "") {
+				return errors.New("时段假设需要带截止的分钟窗口")
+			}
 			if tag == "recurrence" && rule.Kind != "date_range" && rule.Kind != "once" && rule.Kind != "minute_interval" {
 				return errors.New("无法自动重复的单轮替代必须使用date_range、once或minute_interval")
 			}
@@ -61,6 +67,19 @@ func (e draftExplanation) warnings(rule schedule.Rule, now time.Time) []string {
 		switch tag {
 		case "first_time":
 			assumed = append(assumed, "首次时间")
+		case "date_range":
+			if rule.Kind == "monthly_window" {
+				warnings = append(warnings, fmt.Sprintf("月底范围先按每月 %d 号至 %d 号（短月截至月末），日期范围可以改。", rule.MonthStart, rule.MonthEnd))
+			} else {
+				warnings = append(warnings, fmt.Sprintf("日期范围先按 %s 至 %s，起止日期可以改。", rule.StartDate, rule.EndDate))
+			}
+		case "time_window":
+			first, _ := time.Parse(time.RFC3339, rule.FirstAt)
+			end, _ := time.Parse(time.RFC3339, rule.EndAt)
+			loc, _ := time.LoadLocation(rule.Timezone)
+			first = first.In(loc)
+			end = end.In(loc)
+			warnings = append(warnings, fmt.Sprintf("这次时段先按 %s 至 %s，起止时间可以改。", first.Format("2006-01-02 15:04"), end.Format("2006-01-02 15:04")))
 		case "repeat_interval":
 			assumed = append(assumed, "重复间隔")
 		case "year":

@@ -3,12 +3,14 @@ package app
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	_ "golang.org/x/image/webp"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
 	"net/http"
+	"niannian/internal/ai"
 	"niannian/internal/schedule"
 	"os"
 	"path/filepath"
@@ -126,7 +128,10 @@ func (a *App) getMedia(w http.ResponseWriter, r *http.Request) {
 }
 func (a *App) parseAI(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Text string `json:"text"`
+		Text                  string      `json:"text"`
+		Answers               []ai.Answer `json:"answers"`
+		SupportsClarification bool        `json:"supports_clarification"`
+		ReferenceTime         string      `json:"reference_time"`
 	}
 	if !decode(w, r, &in) {
 		return
@@ -136,10 +141,37 @@ func (a *App) parseAI(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "请用 1–2000 字描述需要提醒的事")
 		return
 	}
+	now := a.now()
+	reference := now
+	if len(in.Answers) > 0 {
+		var referenceErr error
+		reference, referenceErr = time.Parse(time.RFC3339, in.ReferenceTime)
+		if referenceErr != nil || reference.After(now.Add(time.Minute)) || reference.Before(now.Add(-7*24*time.Hour)) {
+			writeError(w, 400, "这次补充的时间信息已失效，请重新描述这件事")
+			return
+		}
+		previous := reference
+		for i := range in.Answers {
+			if i == len(in.Answers)-1 {
+				in.Answers[i].AnsweredAt = now.Format(time.RFC3339)
+				continue
+			}
+			at, err := time.Parse(time.RFC3339, in.Answers[i].AnsweredAt)
+			if err != nil || at.Before(previous) || at.After(now.Add(time.Minute)) {
+				writeError(w, 400, "补充记录的时间已失效，请重新描述这件事")
+				return
+			}
+			previous = at
+		}
+	}
+	input, inputErr := ai.ClarificationInput(in.Text, in.Answers, reference)
+	if inputErr != nil {
+		writeError(w, 400, inputErr.Error())
+		return
+	}
 	// Persist quota so restarts cannot bypass it, and never hold the scheduler mutex
 	// while waiting for an external AI response.
 	a.mu.Lock()
-	now := a.now()
 	var n int
 	err := a.db.QueryRow(`SELECT COUNT(*) FROM ai_requests WHERE user_id=? AND created_at>?`, currentUser(r).ID, stamp(now.Add(-time.Minute))).Scan(&n)
 	if err == nil && n < 6 {
@@ -157,13 +189,29 @@ func (a *App) parseAI(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 429, "AI 请求有点频繁，请稍等一分钟")
 		return
 	}
-	draft, err := a.parser.Parse(r.Context(), in.Text, now)
+	draft, err := a.parser.Parse(r.Context(), input, now)
 	if err != nil {
+		var question *ai.ClarificationError
+		if errors.As(err, &question) {
+			if !in.SupportsClarification {
+				writeError(w, 422, question.Error())
+				return
+			}
+			writeJSON(w, 200, map[string]any{"status": "needs_clarification", "clarification": question.Clarification, "reference_time": reference.Format(time.RFC3339), "answered_at": now.Format(time.RFC3339)})
+			return
+		}
 		writeError(w, 502, err.Error())
 		return
 	}
 	if err = schedule.Validate(draft.Rule); err != nil {
 		writeError(w, 502, "AI 返回的规则无效，请重新描述或手动创建")
+		return
+	}
+	if in.SupportsClarification {
+		writeJSON(w, 200, struct {
+			ai.Draft
+			AnsweredAt string `json:"answered_at"`
+		}{draft, now.Format(time.RFC3339)})
 		return
 	}
 	writeJSON(w, 200, draft)

@@ -91,7 +91,7 @@ func TestLiveReminderCreationBenchmark(t *testing.T) {
 			originalTransport := http.DefaultTransport
 			http.DefaultTransport = trace
 			defer func() { http.DefaultTransport = originalTransport }()
-			body, _ := json.Marshal(map[string]string{"text": tc.Input})
+			body, _ := json.Marshal(map[string]any{"text": tc.Input, "supports_clarification": true})
 			req := httptest.NewRequest("POST", "/api/v1/ai/parse", bytes.NewReader(body))
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Authorization", "Bearer "+token)
@@ -117,7 +117,7 @@ func TestLiveReminderCreationBenchmark(t *testing.T) {
 				"raw_response": rec.Body.String(), "response": response, "provider_calls": trace.calls,
 				"side_effect_counts": counts, "mail_count": len(mailer.messages),
 			}
-			if rec.Code == 200 {
+			if rec.Code == 200 && !bytes.Contains(rec.Body.Bytes(), []byte(`"needs_clarification"`)) {
 				var draft ai.Draft
 				if err := json.Unmarshal(rec.Body.Bytes(), &draft); err != nil {
 					t.Fatal(err)

@@ -54,6 +54,9 @@ public class MainActivity extends Activity {
     private CheckBox[] weekdays;
     private File photoFile, cameraFile;
     private String completionText = "", aiText = "", aiWarning = "";
+    private final ClarificationFlow clarificationFlow = new ClarificationFlow();
+    private JSONObject aiQuestion;
+    private String aiAnswerText = "", aiReferenceTime = "";
     private boolean editing = false, manualVisible = false, taskBusy = false;
     private boolean taskLoading;
     private String taskNotice="";
@@ -121,6 +124,7 @@ public class MainActivity extends Activity {
             try { completedRecord=new JSONObject(state.getString("completedRecord","{}")); } catch(Exception ignored) {}
             growthAnimationState.restore(state.getString("consumedGrowthId", ""));
             try { calendarDate=LocalDate.parse(state.getString("calendarDate",LocalDate.now().toString())); calendarMonth=YearMonth.parse(state.getString("calendarMonth",YearMonth.now().toString())); selectedRecord=new JSONObject(state.getString("selectedRecord","{}")); } catch(Exception ignored) {}
+            restoreClarification(state);
             aiText = state.getString("aiText", ""); aiWarning = state.getString("aiWarning", ""); completionText = state.getString("completionText", "");
             String p = state.getString("photo", ""), c = state.getString("camera", "");
             if (!p.isEmpty()) photoFile = new File(p); if (!c.isEmpty()) cameraFile = new File(c);
@@ -160,6 +164,7 @@ public class MainActivity extends Activity {
         out.putString("gardenSelectedPlantId",gardenSelectedPlantId);out.putBoolean("gardenMemoriesExpanded",gardenMemoriesExpanded);
         out.putString("consumedGrowthId",growthAnimationState.savedId());
         out.putString("calendarDate",calendarDate.toString()); out.putString("calendarMonth",calendarMonth.toString()); out.putInt("recordPage",recordPage); out.putString("selectedRecord",selectedRecord.toString());
+        saveClarification(out);
         out.putString("aiText", aiText); out.putString("aiWarning", aiWarning); out.putString("completionText", completionText);
         out.putString("photo", photoFile == null ? "" : photoFile.getAbsolutePath()); out.putString("camera", cameraFile == null ? "" : cameraFile.getAbsolutePath());
         out.putLong("codeAvailableAt", codeAvailableAt); super.onSaveInstanceState(out);
@@ -225,6 +230,7 @@ public class MainActivity extends Activity {
                 restoredForm.put("weekdays", days);
             } catch (Exception ignored) {}
             if (fields.containsKey("ai")) aiText = value("ai");
+            if (fields.containsKey("ai_answer")) aiAnswerText = value("ai_answer");
         }
         if (screen.equals("complete") && fields.containsKey("completion")) completionText = value("completion");
         if (screen.equals("login") && fields.containsKey("email")) authEmail=value("email");
@@ -236,7 +242,7 @@ public class MainActivity extends Activity {
         dismissProfileDialog();
         GardenFlowers.configure(this,session.base,session.email);
         if(session.token.isEmpty()&&!Arrays.asList("home","login","server").contains(screen))screen="home";
-        pageEpoch++; taskBusy = false; fields.clear(); kindPicker = null; modePicker = null; weekdays = null;
+        pageEpoch++; clarificationFlow.failed(); taskBusy = false; fields.clear(); kindPicker = null; modePicker = null; weekdays = null;
         boolean edgeDecoration=screen.equals("record")||screen.equals("photo")||screen.equals("editor");
         boolean fixedMail=isFixedMailRecord();
         boolean recordFooter=screen.equals("record")&&hasRecordFooter()&&!fixedMail;
@@ -1004,7 +1010,7 @@ public class MainActivity extends Activity {
     }
     private void openEditor(JSONObject task) {
         if(task!=null&&pauseInFlight.contains(task.optString("id"))){toast("正在保存开关状态，请稍等");return;}
-        editing=task!=null;draft=task==null?new JSONObject():copy(task);restoredForm=null;manualVisible=editing;rulesExpanded=editing;advancedExpanded=false;aiExpanded=!editing;aiText="";aiWarning="";
+        editing=task!=null;draft=task==null?new JSONObject():copy(task);restoredForm=null;manualVisible=editing;rulesExpanded=editing;advancedExpanded=false;aiExpanded=!editing;aiText="";aiWarning="";clearClarification();
         selectedFlowerIndex=editing?GardenFlowers.indexFor(task):-1;
         editorSetupPromptPending=true;
         screen="editor";render();
@@ -1034,10 +1040,109 @@ public class MainActivity extends Activity {
         setup.setOnClickListener(v->{dialog.dismiss();ReminderBackgroundAccess.openSettings(this);});
         done.setOnClickListener(v->{ReminderBackgroundAccess.reviewed(this);dialog.dismiss();});
     }
+    private void clearClarification() {
+        clarificationFlow.clear(); aiQuestion=null; aiAnswerText="";aiReferenceTime="";
+    }
+    private JSONArray clarificationAnswers(boolean pending) {
+        JSONArray result=new JSONArray();
+        for(ClarificationFlow.Answer answer:pending?clarificationFlow.requestAnswers():clarificationFlow.answers())
+            result.put(object("question",answer.question,"answer",answer.answer,"answered_at",answer.answeredAt));
+        return result;
+    }
+    private JSONObject clarificationPayload() {
+        return object("text",clarificationFlow.original(),"supports_clarification",true,"answers",clarificationAnswers(true),"reference_time",aiReferenceTime);
+    }
+    private void saveClarification(Bundle out) {
+        out.putString("clarificationScope",session.base+"\n"+session.email);
+        out.putString("clarificationOriginal",clarificationFlow.original());
+        out.putString("clarificationAnswers",clarificationAnswers(false).toString());
+        out.putString("clarificationQuestion",aiQuestion==null?"":aiQuestion.toString());
+        out.putString("clarificationInput",aiAnswerText);
+        out.putString("clarificationReferenceTime",aiReferenceTime);
+    }
+    private void restoreClarification(Bundle state) {
+        clearClarification();
+        if(!state.getString("clarificationScope","").equals(session.base+"\n"+session.email)||session.token.isEmpty())return;
+        try {
+            clarificationFlow.start(state.getString("clarificationOriginal",""));
+            JSONArray answers=new JSONArray(state.getString("clarificationAnswers","[]"));
+            for(int i=0;i<answers.length();i++){JSONObject answer=answers.getJSONObject(i);clarificationFlow.stage(answer.getString("question"),answer.getString("answer"));clarificationFlow.accepted(answer.optString("answered_at"));}
+            String question=state.getString("clarificationQuestion","");
+            if(!question.isEmpty())aiQuestion=new JSONObject(question);
+            aiAnswerText=state.getString("clarificationInput","");
+            aiReferenceTime=state.getString("clarificationReferenceTime","");
+        } catch(Exception invalid){clearClarification();}
+    }
+    private JSONObject parseReminder(Api api,JSONObject payload) throws Exception {
+        JSONObject result=api.json("POST","/api/v1/ai/parse",payload);
+        if("needs_clarification".equals(result.optString("status"))) {
+            JSONObject question=result.optJSONObject("clarification");
+            if(question==null||question.optString("question").trim().isEmpty()||result.has("rule"))throw new Exception("追问内容不完整，请重试");
+        } else if(result.optJSONObject("rule")==null)throw new Exception("安排内容不完整，请重试");
+        return result;
+    }
+    private void acceptReminderAnalysis(JSONObject result) {
+        clarificationFlow.accepted(result.optString("answered_at")); taskBusy=false; aiAnswerText="";restoredForm=null;
+        if(editorCompanion!=null)editorCompanionEntrance=editorCompanion.screenBounds();
+        if("needs_clarification".equals(result.optString("status"))) {
+            aiReferenceTime=result.optString("reference_time");aiQuestion=result.optJSONObject("clarification");draft=new JSONObject();manualVisible=false;aiWarning="";
+        } else {
+            aiQuestion=null;draft=result;manualVisible=true;rulesExpanded=false;advancedExpanded=false;aiExpanded=false;
+            JSONArray warnings=result.optJSONArray("warnings");aiWarning=warnings==null?"":join(warnings,"\n");
+        }
+        render();
+    }
+    private void renderClarification() {
+        body.addView(text("你想安排的事",12,MUTED,false));gap(body,6);
+        body.addView(text(clarificationFlow.original(),14,INK,false));gap(body,12);
+        for(ClarificationFlow.Answer answer:clarificationFlow.answers()) {
+            body.addView(text(answer.question+"\n你："+answer.answer,12,MUTED,false));gap(body,8);
+        }
+        LinearLayout question=card(body);question.setBackground(shape(PALE,18));
+        question.addView(text("还差一点信息",12,HOME_TITLE,true));gap(question,8);
+        question.addView(text(aiQuestion.optString("question"),18,INK,true));gap(question,8);
+        boolean canAnswer=clarificationFlow.canAnswer();
+        if(canAnswer) {
+            JSONArray options=aiQuestion.optJSONArray("options");
+            if(options!=null)for(int i=0;i<Math.min(4,options.length());i++) {
+                JSONObject option=options.optJSONObject(i);if(option==null)continue;
+                String answer=option.optString("value"),label=option.optString("label");if(answer.isEmpty()||label.isEmpty())continue;
+                Button choice=button(label,false);question.addView(choice);gap(question,6);
+                choice.setOnClickListener(v->submitClarification(answer));
+            }
+            note(question,options!=null&&options.length()>0?"点选即可继续，也可以自己补充。":"补充一下，我再接着安排。");
+            EditText answer=new EditText(this);styleField(answer);answer.setText(aiAnswerText);
+            answer.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+            answer.setMinLines(2);answer.setMaxLines(5);answer.setHint(aiQuestion.optString("input_hint","输入日期、时间或其他补充"));
+            fields.put("ai_answer",answer);question.addView(answer,new LinearLayout.LayoutParams(-1,-2));gap(question,10);
+            Button send=button("补充后继续",true);question.addView(send);send.setOnClickListener(v->submitClarification(answer.getText().toString().trim()));
+        } else note(question,"这件事还没说清楚，请把日期、时间一起重新描述，或手动填写。");
+        gap(body,10);note(body,"信息补齐后会先给你看安排，确认才创建。");
+        Button rephrase=linkButton("重新说这件事");body.addView(rephrase);rephrase.setOnClickListener(v->{if(taskBusy)return;clearClarification();restoredForm=null;aiExpanded=true;render();});
+        Button manual=linkButton("我来手动填写");body.addView(manual);manual.setOnClickListener(v->{if(taskBusy)return;clearClarification();restoredForm=null;manualVisible=true;rulesExpanded=true;aiExpanded=true;render();});
+        gap(body,100);
+    }
+    private void submitClarification(String answer) {
+        if(taskBusy)return;
+        captureTransient();aiAnswerText=answer;
+        if(fields.containsKey("ai_answer"))fields.get("ai_answer").setText(answer);
+        try {clarificationFlow.stage(aiQuestion.optString("question"),answer);}catch(Exception invalid){showError(failureMessage(invalid));return;}
+        JSONObject payload=clarificationPayload();taskBusy=true;hideKeyboard(fields.get("ai_answer"));
+        setClarificationEnabled(body,false);
+        if(editorCompanion!=null)editorCompanion.setPose(SeedCompanionView.Pose.THINK);
+        TextView progress=text("收到，正在接着安排…",14,HOME_TITLE,true);body.addView(progress,0);
+        run(null,a->parseReminder(a,payload),this::acceptReminderAnalysis,failure->{clarificationFlow.failed();render();showError("补充内容已保留，请重试。\n"+failureMessage(failure));});
+    }
+    private void setClarificationEnabled(View view,boolean enabled) {
+        if(view instanceof Button||view instanceof EditText)view.setEnabled(enabled);
+        if(view instanceof ViewGroup)for(int i=0;i<((ViewGroup)view).getChildCount();i++)setClarificationEnabled(((ViewGroup)view).getChildAt(i),enabled);
+    }
+
     private void renderEditor() {
         editorConfirmed=false;
         addSowingHeading();
         offerReminderSetup();
+        if (!editing && aiQuestion != null) { renderClarification(); return; }
         LinearLayout originalRequest=column();
         if(!editing){
             boolean compact=manualVisible&&!aiExpanded;
@@ -1061,8 +1166,9 @@ public class MainActivity extends Activity {
                 useAi.setOnClickListener(v->{if(taskBusy)return;boolean show=inputArea.getVisibility()!=View.VISIBLE;inputArea.setVisibility(show?View.VISIBLE:View.GONE);actions.setVisibility(show?View.VISIBLE:View.GONE);useAi.setText(show?"收起，继续手动填写":"用一句话让念念安排");});
             }
             manual.setOnClickListener(v->{if(taskBusy)return;captureTransient();manualVisible=true;rulesExpanded=true;aiExpanded=true;render();});
-            generate.setOnClickListener(v->{if(taskBusy)return;String input=sentence.getText().toString().trim();if(input.length()<2){showError("先写下想让我提醒你的事");return;}captureTransient();aiText=input;hideKeyboard(sentence);taskBusy=true;arranging.setVisibility(View.VISIBLE);manual.setEnabled(false);sentence.setEnabled(false);inputArea.setVisibility(View.GONE);actions.setVisibility(View.GONE);if(editorFlowersPreview!=null)editorFlowersPreview.setVisibility(View.GONE);if(editorPlanContent!=null)editorPlanContent.setVisibility(View.GONE);if(editorCompanion!=null)editorCompanion.setPose(SeedCompanionView.Pose.THINK);
-                run(generate,a->a.json("POST","/api/v1/ai/parse",object("text",input)),result->{taskBusy=false;if(editorCompanion!=null)editorCompanionEntrance=editorCompanion.screenBounds();draft=result;restoredForm=null;manualVisible=true;rulesExpanded=false;advancedExpanded=false;aiExpanded=false;JSONArray warnings=result.optJSONArray("warnings");aiWarning=warnings==null?"":join(warnings,"\n");render();},failure->{arranging.setVisibility(View.GONE);manual.setEnabled(true);sentence.setEnabled(true);inputArea.setVisibility(View.VISIBLE);actions.setVisibility(View.VISIBLE);if(editorFlowersPreview!=null)editorFlowersPreview.setVisibility(View.VISIBLE);if(editorPlanContent!=null)editorPlanContent.setVisibility(View.VISIBLE);if(editorCompanion!=null)editorCompanion.setPose(SeedCompanionView.Pose.LISTEN);generate.setText("重新安排");showError("这次没有安排好，请重试。\n"+failureMessage(failure));});generate.setText("正在安排…");
+            generate.setOnClickListener(v->{if(taskBusy)return;String input=sentence.getText().toString().trim();if(input.length()<2){showError("先写下想让我提醒你的事");return;}captureTransient();aiText=input;clearClarification();clarificationFlow.start(input);hideKeyboard(sentence);taskBusy=true;arranging.setVisibility(View.VISIBLE);manual.setEnabled(false);sentence.setEnabled(false);inputArea.setVisibility(View.GONE);actions.setVisibility(View.GONE);if(editorFlowersPreview!=null)editorFlowersPreview.setVisibility(View.GONE);if(editorPlanContent!=null)editorPlanContent.setVisibility(View.GONE);if(editorCompanion!=null)editorCompanion.setPose(SeedCompanionView.Pose.THINK);
+                JSONObject payload=clarificationPayload();
+                run(generate,a->parseReminder(a,payload),this::acceptReminderAnalysis,failure->{arranging.setVisibility(View.GONE);manual.setEnabled(true);sentence.setEnabled(true);inputArea.setVisibility(View.VISIBLE);actions.setVisibility(View.VISIBLE);if(editorFlowersPreview!=null)editorFlowersPreview.setVisibility(View.VISIBLE);if(editorPlanContent!=null)editorPlanContent.setVisibility(View.VISIBLE);if(editorCompanion!=null)editorCompanion.setPose(SeedCompanionView.Pose.LISTEN);generate.setText("重新安排");showError("这次没有安排好，请重试。\n"+failureMessage(failure));});generate.setText("正在安排…");
             });
         }
         if(!manualVisible){editorFlowersPreview=column();body.addView(editorFlowersPreview);addFlowerPreview(editorFlowersPreview);gap(body,130);return;}
@@ -1373,7 +1479,7 @@ public class MainActivity extends Activity {
         taskBusy=true;
         if(editorCompanion!=null)editorCompanion.setPose(SeedCompanionView.Pose.THINK);
         int flower=selectedFlowerIndex;
-        run(button,a->mutateTask(a,isEditing?"PUT":"POST",isEditing?"/api/v1/tasks/"+id:"/api/v1/tasks",payload,id),result->{taskBusy=false;boolean flowerSaved=flower<0||GardenFlowers.remember(result.optString("id"),flower);selected=result;taskData=new JSONArray();restoredForm=null;invalidateCalendar();if(!isEditing){detailBack="home";filter="待完成";search="";homeSearchExpanded=false;draft=new JSONObject();aiText="";aiWarning="";manualVisible=false;editorSetupPromptPending=false;}toast(result.optBoolean("_reminder_sync_pending")?"事项已保存，手机提醒待联网同步":!flowerSaved?(isEditing?"提醒已修改，花种未保存，请重试":"提醒已创建，花种未保存，可在调整规则里重选"):isEditing?"修改已保存":"已安排好，做完后再来领取水滴");editorConfirmed=true;taskBusy=true;button.setEnabled(false);button.setText(isEditing?"修改已保存":"好，说定啦");if(editorCompanion!=null)editorCompanion.setPose(SeedCompanionView.Pose.HAPPY);
+        run(button,a->mutateTask(a,isEditing?"PUT":"POST",isEditing?"/api/v1/tasks/"+id:"/api/v1/tasks",payload,id),result->{taskBusy=false;boolean flowerSaved=flower<0||GardenFlowers.remember(result.optString("id"),flower);selected=result;taskData=new JSONArray();restoredForm=null;invalidateCalendar();if(!isEditing){detailBack="home";filter="待完成";search="";homeSearchExpanded=false;draft=new JSONObject();aiText="";aiWarning="";clearClarification();manualVisible=false;editorSetupPromptPending=false;}toast(result.optBoolean("_reminder_sync_pending")?"事项已保存，手机提醒待联网同步":!flowerSaved?(isEditing?"提醒已修改，花种未保存，请重试":"提醒已创建，花种未保存，可在调整规则里重选"):isEditing?"修改已保存":"已安排好，做完后再来领取水滴");editorConfirmed=true;taskBusy=true;button.setEnabled(false);button.setText(isEditing?"修改已保存":"好，说定啦");if(editorCompanion!=null)editorCompanion.setPose(SeedCompanionView.Pose.HAPPY);
             int savedPage=pageEpoch,savedAccount=accountEpoch;
             Runnable returnToDestination=()->{if(isDestroyed()||pageEpoch!=savedPage||accountEpoch!=savedAccount)return;taskBusy=false;editorConfirmed=false;screen=isEditing?"detail":"home";render();};
             if(motionHostActive&&ValueAnimator.areAnimatorsEnabled())ui.postDelayed(returnToDestination,700);else returnToDestination.run();
@@ -1934,7 +2040,7 @@ public class MainActivity extends Activity {
         });
         dialog.show();Window window=dialog.getWindow();if(window!=null){window.setBackgroundDrawable(shape(PAPER,20));window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);window.setDimAmount(.42f);window.setLayout(Math.min(getResources().getDisplayMetrics().widthPixels-dp(40),dp(360)),-2);}
     }
-    private void clearAccountData(){editorSetupPromptPending=false;reminderSettingsBack="settings";selectedFlowerIndex=-1;waterRequests.clear();plantRequestId="";gardenFocusPlantId="";gardenCareBusy=false;taskLoading=false;taskNotice="";gardenSelection=null;homeSearchExpanded=false;growthAnimationState.clear();gardenPage=0;gardenSelectedPlantId="";gardenMemoriesExpanded=false;gardenContent=null;gardenPreview=null;recordBack="history";completedRecord=new JSONObject();taskData=new JSONArray();taskLoadRequest++;pauseInFlight.clear();selected=new JSONObject();draft=new JSONObject();selectedRecord=new JSONObject();invalidateCalendar();calendarDate=LocalDate.now();calendarMonth=YearMonth.now();recordPage=0;detailBack="home";photoBack="record";photoId="";photoTitle="";calendarGrid=null;calendarRecords=null;calendarFeedback=null;calendarCaption=null;calendarRefresh=null;restoredForm=null;photoFile=null;cameraFile=null;search="";filter="待完成";aiText="";aiWarning="";completionText="";taskList=null;manualVisible=false;rulesExpanded=false;advancedExpanded=false;aiExpanded=true;}
+    private void clearAccountData(){editorSetupPromptPending=false;reminderSettingsBack="settings";selectedFlowerIndex=-1;waterRequests.clear();plantRequestId="";gardenFocusPlantId="";gardenCareBusy=false;taskLoading=false;taskNotice="";gardenSelection=null;homeSearchExpanded=false;growthAnimationState.clear();gardenPage=0;gardenSelectedPlantId="";gardenMemoriesExpanded=false;gardenContent=null;gardenPreview=null;recordBack="history";completedRecord=new JSONObject();taskData=new JSONArray();taskLoadRequest++;pauseInFlight.clear();selected=new JSONObject();draft=new JSONObject();selectedRecord=new JSONObject();invalidateCalendar();calendarDate=LocalDate.now();calendarMonth=YearMonth.now();recordPage=0;detailBack="home";photoBack="record";photoId="";photoTitle="";calendarGrid=null;calendarRecords=null;calendarFeedback=null;calendarCaption=null;calendarRefresh=null;restoredForm=null;photoFile=null;cameraFile=null;search="";filter="待完成";aiText="";aiWarning="";clearClarification();completionText="";taskList=null;manualVisible=false;rulesExpanded=false;advancedExpanded=false;aiExpanded=true;}
     private interface Job<T>{T run(Api api)throws Exception;}
     private JSONObject mutateTask(Api api,String method,String path,JSONObject payload,String taskId)throws Exception{
         JSONObject result=api.json(method,path,payload);String changedId=taskId.isEmpty()?result.optString("id"):taskId;
