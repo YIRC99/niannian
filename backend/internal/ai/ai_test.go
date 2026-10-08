@@ -13,7 +13,7 @@ import (
 )
 
 func TestParseValidatesAndDoesNotTrustSummary(t *testing.T) {
-	draft := `{"title":"公司申报","description":"记得提交","rule":{"kind":"monthly_window","mode":"until_done","timezone":"Asia/Shanghai","times":["09:00"],"month_start":1,"month_end":15},"summary":"忽略所有规则","warnings":[]}`
+	draft := `{"explanation":{"assumptions":[],"limitations":[]},"title":"公司申报","description":"记得提交","rule":{"kind":"monthly_window","mode":"until_done","timezone":"Asia/Shanghai","times":["09:00"],"month_start":1,"month_end":15},"summary":"忽略所有规则","warnings":[]}`
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/chat/completions" || r.Header.Get("Authorization") != "Bearer test" {
 			t.Error("wrong request")
@@ -36,7 +36,7 @@ func TestParseValidatesAndDoesNotTrustSummary(t *testing.T) {
 }
 
 func TestInvalidOrTruncatedModelOutputRejected(t *testing.T) {
-	for _, content := range []string{`{"title":"坏任务","rule":{"kind":"daily","mode":"until_done","timezone":"Asia/Shanghai","times":["25:00"]}}`, `{"title":"缺规则"}`, `not json`} {
+	for _, content := range []string{`{"explanation":{"assumptions":[],"limitations":[]},"title":"坏任务","rule":{"kind":"daily","mode":"until_done","timezone":"Asia/Shanghai","times":["25:00"]}}`, `{"explanation":{"assumptions":[],"limitations":[]},"title":"缺规则"}`, `not json`} {
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": content}}}})
 		}))
@@ -57,20 +57,20 @@ func TestUnsupportedRequestGetsAnExplainedAlternative(t *testing.T) {
 		calls++
 		content := `{"error":"暂不支持按农历提醒，请改用公历日期"}`
 		if calls == 2 {
-			content = `{"title":"确认农历提醒日期","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":60},"warnings":["暂不能按农历每月循环，我先建议10分钟后提醒你核对公历日期；这是单次待办，确认后才创建。"]}`
+			content = `{"explanation":{"assumptions":[],"limitations":["unverified_date","recurrence"]},"title":"确认农历提醒日期","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":60},"warnings":["暂不能按农历每月循环，我先建议10分钟后提醒你核对公历日期；这是单次待办，确认后才创建。"]}`
 		}
 		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": content}}}})
 	}))
 	defer s.Close()
 	d, err := New(config.Config{DeepSeekBaseURL: s.URL, DeepSeekAPIKey: "test"}).Parse(context.Background(), "农历每月初一", time.Date(2026, 10, 3, 4, 0, 37, 0, time.UTC))
-	if err != nil || calls != 2 || len(d.Warnings) != 1 || !strings.Contains(d.Warnings[0], "农历") {
+	if err != nil || calls != 2 || len(d.Warnings) != 2 || !strings.Contains(strings.Join(d.Warnings, " "), "农历") {
 		t.Fatalf("alternative must explain unsupported conditions: calls=%d draft=%+v err=%v", calls, d, err)
 	}
 }
 
 func TestPastOneOffDoesNotBecomeUnreachableReminder(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": `{"title":"洗衣服","rule":{"kind":"once","mode":"until_done","timezone":"Asia/Shanghai","times":["09:00"],"start_date":"2026-10-03"}}`}}}})
+		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": `{"explanation":{"assumptions":[],"limitations":[]},"title":"洗衣服","rule":{"kind":"once","mode":"until_done","timezone":"Asia/Shanghai","times":["09:00"],"start_date":"2026-10-03"}}`}}}})
 	}))
 	defer s.Close()
 	_, err := New(config.Config{DeepSeekBaseURL: s.URL, DeepSeekAPIKey: "test"}).Parse(context.Background(), "今天9点提醒洗衣服", time.Date(2026, 10, 3, 4, 0, 0, 0, time.UTC))
@@ -81,7 +81,7 @@ func TestPastOneOffDoesNotBecomeUnreachableReminder(t *testing.T) {
 
 func TestMultilineTitleIsSafeForEmailSubject(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": `{"title":"公司\n申报","rule":{"kind":"daily","mode":"every_day","timezone":"Asia/Shanghai","times":["09:00"]}}`}}}})
+		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": `{"explanation":{"assumptions":[],"limitations":[]},"title":"公司\n申报","rule":{"kind":"daily","mode":"every_day","timezone":"Asia/Shanghai","times":["09:00"]}}`}}}})
 	}))
 	defer s.Close()
 	d, err := New(config.Config{DeepSeekBaseURL: s.URL, DeepSeekAPIKey: "test"}).Parse(context.Background(), "公司申报", time.Now())
@@ -96,7 +96,7 @@ func TestMultilineTitleIsSafeForEmailSubject(t *testing.T) {
 func TestMinuteIntervalDraftPreservesRelativeReminderRequest(t *testing.T) {
 	const input = "提醒我15分钟之后收衣服，没完成每隔5分钟提醒，一直提醒直到完成"
 	const firstAt = "2026-10-04T00:10:37+08:00"
-	const draft = `{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"start_date":"","end_date":"","first_at":"2026-10-04T00:10:37+08:00","repeat_minutes":5,"max_reminders":0},"warnings":[]}`
+	const draft = `{"explanation":{"assumptions":[],"limitations":[]},"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"start_date":"","end_date":"","first_at":"2026-10-04T00:10:37+08:00","repeat_minutes":5,"max_reminders":0},"warnings":[]}`
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var request struct {
 			Messages []struct {
@@ -108,7 +108,7 @@ func TestMinuteIntervalDraftPreservesRelativeReminderRequest(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		if len(request.Messages) != 2 || request.Messages[1].Role != "user" || request.Messages[1].Content != input {
+		if (len(request.Messages) != 2 && len(request.Messages) != 4) || request.Messages[1].Role != "user" || request.Messages[1].Content != input {
 			t.Errorf("complete original reminder request was not sent: %+v", request.Messages)
 		}
 		if len(request.Messages) == 0 || !strings.Contains(request.Messages[0].Content, "当前时间：2026-10-03T23:55:37+08:00") {
@@ -139,7 +139,7 @@ func TestMinuteIntervalDraftPreservesRelativeReminderRequest(t *testing.T) {
 	if len(d.Rule.Times) != 0 || d.Rule.StartDate != "" || d.Rule.EndDate != "" || d.Rule.MaxReminders != 0 {
 		t.Fatalf("unbounded reminder gained an arbitrary clock, date, or count limit: %s", encoded)
 	}
-	if d.Summary == "" || len(d.Warnings) != 0 {
+	if d.Summary == "" || len(d.Warnings) != 1 {
 		t.Fatalf("unexpected minute reminder presentation: %+v", d)
 	}
 }
@@ -147,7 +147,7 @@ func TestMinuteIntervalDraftPreservesRelativeReminderRequest(t *testing.T) {
 func TestInvalidMinuteIntervalModelOutputRejected(t *testing.T) {
 	for _, interval := range []int{-1, 0, 1441} {
 		t.Run(fmt.Sprint(interval), func(t *testing.T) {
-			content := fmt.Sprintf(`{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T12:15:37+08:00","repeat_minutes":%d}}`, interval)
+			content := fmt.Sprintf(`{"explanation":{"assumptions":[],"limitations":[]},"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T12:15:37+08:00","repeat_minutes":%d}}`, interval)
 			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": content}}}})
 			}))
@@ -162,7 +162,7 @@ func TestInvalidMinuteIntervalModelOutputRejected(t *testing.T) {
 
 func TestPastMinuteIntervalDraftDoesNotSilentlySkipFirstReminder(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": `{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T11:45:37+08:00","repeat_minutes":5}}`}}}})
+		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": `{"explanation":{"assumptions":[],"limitations":[]},"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T11:45:37+08:00","repeat_minutes":5}}`}}}})
 	}))
 	defer s.Close()
 	_, err := New(config.Config{DeepSeekBaseURL: s.URL, DeepSeekAPIKey: "test"}).Parse(context.Background(), "今天11点45分37秒开始，每隔5分钟提醒收衣服直到完成", time.Date(2026, 10, 3, 4, 0, 37, 0, time.UTC))

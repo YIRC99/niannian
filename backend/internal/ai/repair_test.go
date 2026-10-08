@@ -12,12 +12,12 @@ import (
 )
 
 const repairInput = "十分钟之后提醒我收衣服"
-const validRepairedDraft = `{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":7},"warnings":["未指定间隔，安排每7分钟提醒直到完成，可在草稿中调整。"]}`
+const validRepairedDraft = `{"explanation":{"assumptions":[],"limitations":[]},"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":7},"warnings":["未指定间隔，安排每7分钟提醒直到完成，可在草稿中调整。"]}`
 
 func TestModelClarificationGetsOneChanceToProposeDraft(t *testing.T) {
 	const input = "等会儿提醒我搞卫生"
 	const refused = `{"error":"请补充具体提醒时间，例如10分钟后提醒我搞卫生"}`
-	const proposed = `{"title":"搞卫生","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T20:35:37+08:00","repeat_minutes":15},"warnings":["我先把等会儿安排为10分钟后，之后每15分钟提醒，做完就停；你看一下，确认后才会创建。"]}`
+	const proposed = `{"explanation":{"assumptions":[],"limitations":[]},"title":"搞卫生","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T20:35:37+08:00","repeat_minutes":15},"warnings":["我先把等会儿安排为10分钟后，之后每15分钟提醒，做完就停；你看一下，确认后才会创建。"]}`
 	calls := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls++
@@ -59,9 +59,9 @@ func TestRepeatedModelRefusalIsBounded(t *testing.T) {
 
 func TestInvalidDraftIsRepairedByFlashWithOriginalContext(t *testing.T) {
 	for _, invalid := range []string{
-		`{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":0}}`,
-		`{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":"五"}}`,
-		`{"title":"收衣服","rule":`,
+		`{"explanation":{"assumptions":[],"limitations":[]},"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":0}}`,
+		`{"explanation":{"assumptions":[],"limitations":[]},"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","first_at":"2026-10-03T12:10:37+08:00","repeat_minutes":"五"}}`,
+		`{"explanation":{"assumptions":[],"limitations":[]},"title":"收衣服","rule":`,
 	} {
 		t.Run(invalid, func(t *testing.T) {
 			calls := 0
@@ -105,7 +105,7 @@ func TestInvalidDraftRepairIsBounded(t *testing.T) {
 	calls := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		calls++
-		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": `{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","repeat_minutes":0}}`}}}})
+		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": `{"explanation":{"assumptions":[],"limitations":[]},"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","repeat_minutes":0}}`}}}})
 	}))
 	defer server.Close()
 	_, err := New(config.Config{DeepSeekAPIKey: "test", DeepSeekBaseURL: server.URL}).Parse(context.Background(), repairInput, time.Now())
@@ -129,7 +129,7 @@ func TestProviderFailureDoesNotRetryOrInventDraft(t *testing.T) {
 }
 
 func TestActiveWindowDraftKeepsItsOriginalWindow(t *testing.T) {
-	const output = `{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T14:00:00+08:00","end_at":"2026-10-03T17:00:00+08:00","repeat_minutes":30},"warnings":["窗口已开始，只安排余下时间。"]}`
+	const output = `{"explanation":{"assumptions":[],"limitations":[]},"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T14:00:00+08:00","end_at":"2026-10-03T17:00:00+08:00","repeat_minutes":30},"warnings":["窗口已开始，只安排余下时间。"]}`
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": output}}}})
 	}))
@@ -141,7 +141,7 @@ func TestActiveWindowDraftKeepsItsOriginalWindow(t *testing.T) {
 }
 
 func TestCurrentSecondIsConsistentWithModelClock(t *testing.T) {
-	const output = `{"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T12:00:37+08:00","repeat_minutes":5}}`
+	const output = `{"explanation":{"assumptions":[],"limitations":[]},"title":"收衣服","rule":{"kind":"minute_interval","mode":"until_done","timezone":"Asia/Shanghai","times":[],"first_at":"2026-10-03T12:00:37+08:00","repeat_minutes":5}}`
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": output}}}})
 	}))
