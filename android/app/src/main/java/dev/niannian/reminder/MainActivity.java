@@ -60,7 +60,7 @@ public class MainActivity extends Activity {
     private boolean editorSetupPromptPending;
     private SeedCompanionView editorCompanion;
     private Rect editorCompanionEntrance;
-    private LinearLayout editorFlowersPreview,editorPlanContent;
+    private LinearLayout editorFlowersPreview,editorPlanContent,editorConfirmBar;
     private Runnable editorDialogueTick;
     private boolean editorConfirmed;
     private String reminderSettingsBack = "settings";
@@ -185,7 +185,7 @@ public class MainActivity extends Activity {
     }
     private void stopPageMotion() {
         if(editorCompanion!=null){editorCompanion.setHostActive(false);editorCompanion=null;}
-        editorFlowersPreview=null;editorPlanContent=null;
+        editorFlowersPreview=null;editorPlanContent=null;editorConfirmBar=null;
         if(editorDialogueTick!=null){ui.removeCallbacks(editorDialogueTick);editorDialogueTick=null;}
         if(growthView!=null){growthView.setOnPhaseChangedListener(null);growthView.setHostActive(false);growthView=null;}
         if(gardenScene!=null){gardenScene.setHostActive(false);gardenScene=null;}
@@ -238,6 +238,7 @@ public class MainActivity extends Activity {
         boolean edgeDecoration=screen.equals("record")||screen.equals("photo")||screen.equals("editor");
         boolean fixedMail=isFixedMailRecord();
         boolean recordFooter=screen.equals("record")&&hasRecordFooter()&&!fixedMail;
+        boolean sowingConfirmation=screen.equals("editor")&&manualVisible;
         // Only decoration enters system-bar space; interactive content keeps its safe insets.
         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(),!edgeDecoration&&Build.VERSION.SDK_INT<35);
         getWindow().setStatusBarColor(edgeDecoration?Color.TRANSPARENT:BG);
@@ -246,7 +247,7 @@ public class MainActivity extends Activity {
         root = column();root.setBackgroundColor(edgeDecoration?Color.TRANSPARENT:BG);
         if(edgeDecoration){
             FrameLayout page=new FrameLayout(this);page.setBackgroundColor(BG);
-            if(fixedMail||screen.equals("editor")){
+            if(fixedMail||screen.equals("editor")&&!sowingConfirmation){
                 ImageView grass=new ImageView(this);
                 grass.setImageBitmap(GardenArtCache.backdrop(getResources(),R.drawable.sowing_footer_foliage));
                 // Scale against the viewport width, not the drawable's wrap-content height.
@@ -272,16 +273,20 @@ public class MainActivity extends Activity {
         root.setOnApplyWindowInsetsListener((v, insets) -> {
             if(Build.VERSION.SDK_INT>=30&&(edgeDecoration||Build.VERSION.SDK_INT>=35)){
                 android.graphics.Insets i=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout()|WindowInsets.Type.ime());
-                v.setPadding(i.left,i.top,i.right,recordFooter&&!insets.isVisible(WindowInsets.Type.ime())?0:i.bottom);
+                boolean keyboard=insets.isVisible(WindowInsets.Type.ime());
+                v.setPadding(i.left,i.top,i.right,(recordFooter||sowingConfirmation)&&!keyboard?0:i.bottom);
+                if(sowingConfirmation&&editorConfirmBar!=null)editorConfirmBar.setPadding(dp(16),dp(12),dp(16),dp(10)+(keyboard?0:i.bottom));
             }else if(edgeDecoration){
                 int bottom=insets.getSystemWindowInsetBottom();
-                v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),recordFooter&&bottom<dp(100)?0:bottom);
+                v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),(recordFooter||sowingConfirmation)&&bottom<dp(100)?0:bottom);
+                if(sowingConfirmation&&editorConfirmBar!=null)editorConfirmBar.setPadding(dp(16),dp(12),dp(16),dp(10)+(bottom<dp(100)?bottom:0));
             }
             return insets;
         });
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); scroll.setClipToPadding(false); scroll.setVerticalScrollBarEnabled(false);
         if(!fixedMail&&!screen.equals("garden"))root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         body = column(); body.setPadding(dp(16), dp(12), dp(16), dp(20));body.setClipChildren(false);body.setClipToPadding(false);
+        if(sowingConfirmation){body.setFocusableInTouchMode(true);body.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);body.requestFocus();}
         if(recordFooter){body.setPadding(dp(16),dp(12),dp(16),0);body.setClipToPadding(false);}
         if(screen.equals("editor"))body.setPadding(dp(16),dp(4),dp(16),0);
         if((screen.equals("home")&&!session.token.isEmpty())||screen.equals("garden")||screen.equals("history")||screen.equals("settings"))body.setPadding(0,0,0,0);
@@ -290,7 +295,8 @@ public class MainActivity extends Activity {
         gardenContent=null; gardenPreview=null; gardenSelection=null; gardenDrawer=null;
         if (!Arrays.asList("home", "garden", "history", "settings", "login", "server").contains(screen)) {
             if(screen.equals("editor")||screen.equals("record")||screen.equals("photo")||screen.equals("grown")){
-                LinearLayout back=row();back.setMinimumHeight(dp(48));back.addView(new GardenIconView(this,"back",INK),new LinearLayout.LayoutParams(dp(20),dp(20)));gapHorizontal(back,5);back.addView(text("返回",14,INK,false));back.setContentDescription("返回");back.setFocusable(true);back.setOnClickListener(v->onBackPressed());body.addView(back,new LinearLayout.LayoutParams(dp(80),dp(48)));
+                LinearLayout back=row();back.setMinimumHeight(dp(48));back.addView(new GardenIconView(this,"back",INK),new LinearLayout.LayoutParams(dp(20),dp(20)));gapHorizontal(back,5);back.addView(text("返回",14,INK,false));back.setContentDescription("返回");back.setFocusable(true);back.setOnClickListener(v->onBackPressed());
+                if(sowingConfirmation){back.setPadding(dp(16),0,0,0);root.addView(back,0,new LinearLayout.LayoutParams(dp(96),dp(48)));}else body.addView(back,new LinearLayout.LayoutParams(dp(80),dp(48)));
             }else if(!screen.equals("detail")&&!screen.equals("complete")){
                 TextView back = text("‹  返回", 15, BLUE, true); back.setMinHeight(dp(48)); back.setGravity(Gravity.CENTER_VERTICAL); back.setOnClickListener(v -> onBackPressed()); body.addView(back);
             }
@@ -1041,8 +1047,9 @@ public class MainActivity extends Activity {
             Button manual=smallButton("手动填写");manual.setBackground(shape(Color.TRANSPARENT,10));manual.setTextColor(INK);manual.setTextSize(manualVisible?12:14);actions.addView(manual);body.addView(actions);gap(body,manualVisible?2:16);
             if(manualVisible&&draft.optJSONObject("rule")!=null&&!aiExpanded&&!aiText.trim().isEmpty()){
                 inputArea.setVisibility(View.GONE);actions.setVisibility(View.GONE);
-                LinearLayout original=row();TextView request=text("你说："+aiText.trim(),12,MUTED,false);request.setMaxLines(2);request.setEllipsize(TextUtils.TruncateAt.END);original.addView(request,new LinearLayout.LayoutParams(0,-2,1));
-                Button rethink=linkButton("改一句");original.addView(rethink);originalRequest.addView(original);
+                LinearLayout original=column(),originalHeader=row();original.setPadding(dp(14),dp(8),dp(14),dp(12));GradientDrawable requestSurface=shape(PAPER,14);requestSurface.setStroke(dp(1),LINE);original.setBackground(requestSurface);
+                originalHeader.addView(text("你的原话",13,INK,true),new LinearLayout.LayoutParams(0,-2,1));Button rethink=linkButton("改一句");originalHeader.addView(rethink);original.addView(originalHeader);
+                TextView request=text(aiText.trim(),13,MUTED,false);request.setMaxLines(3);request.setEllipsize(TextUtils.TruncateAt.END);original.addView(request);originalRequest.addView(original);
                 rethink.setOnClickListener(v->{if(taskBusy||editorConfirmed)return;aiExpanded=true;original.setVisibility(View.GONE);inputArea.setVisibility(View.VISIBLE);actions.setVisibility(View.VISIBLE);if(editorCompanion!=null)editorCompanion.setPose(SeedCompanionView.Pose.LISTEN);sentence.requestFocus();sentence.post(()->sentence.requestRectangleOnScreen(new Rect(0,0,sentence.getWidth(),sentence.getHeight()),false));});
             }
             LinearLayout arranging=row();arranging.setGravity(Gravity.CENTER);arranging.addView(text("嗯，我想想怎么安排…",16,INK,false),new LinearLayout.LayoutParams(-2,-2));arranging.setPadding(dp(6),dp(8),dp(6),dp(14));arranging.setVisibility(View.GONE);body.addView(arranging);moveErrorHere(body);
@@ -1059,11 +1066,11 @@ public class MainActivity extends Activity {
         if(!manualVisible){editorFlowersPreview=column();body.addView(editorFlowersPreview);addFlowerPreview(editorFlowersPreview);gap(body,130);return;}
         JSONObject rule=draft.optJSONObject("rule");if(rule==null)rule=new JSONObject();
         LinearLayout planBody=column();editorPlanContent=planBody;body.addView(planBody);
-        LinearLayout draftPanel=column();planBody.addView(draftPanel);
-        TextView dialogueLead=text("",24,HOME_TITLE,true);dialogueLead.setGravity(Gravity.CENTER);dialogueLead.setLineSpacing(dp(5),1f);dialogueLead.setPadding(dp(4),dp(2),dp(4),dp(4));dialogueLead.setMinHeight(dp(48));draftPanel.addView(dialogueLead);
-        TextView dialogueFollow=text("",14,MUTED,false);dialogueFollow.setGravity(Gravity.CENTER);dialogueFollow.setLineSpacing(dp(4),1f);gap(draftPanel,8);draftPanel.addView(dialogueFollow);
-        TextView dialogueBounds=text("",11,MUTED,false);dialogueBounds.setGravity(Gravity.CENTER);dialogueBounds.setLineSpacing(dp(3),1f);gap(draftPanel,8);draftPanel.addView(dialogueBounds);
-        gap(draftPanel,12);draftPanel.addView(originalRequest);
+        LinearLayout draftPanel=card(planBody);draftPanel.setPadding(dp(18),dp(16),dp(18),dp(8));GradientDrawable dialogueSurface=shape(PALE,18);dialogueSurface.setStroke(dp(1),0xffcfddc5);draftPanel.setBackground(dialogueSurface);
+        LinearLayout dialogueCaption=row();dialogueCaption.addView(text("念念的安排",14,HOME_TITLE,true),new LinearLayout.LayoutParams(0,-2,1));dialogueCaption.addView(text("等你确认",11,BLUE,false));draftPanel.addView(dialogueCaption);gap(draftPanel,12);
+        TextView dialogueLead=text("",23,HOME_TITLE,true);dialogueLead.setGravity(Gravity.START);dialogueLead.setLineSpacing(dp(4),1f);dialogueLead.setPadding(0,0,0,dp(4));dialogueLead.setMinHeight(dp(48));draftPanel.addView(dialogueLead);
+        TextView dialogueFollow=text("",14,INK,false);dialogueFollow.setLineSpacing(dp(3),1f);gap(draftPanel,8);draftPanel.addView(dialogueFollow);
+        TextView dialogueBounds=text("",12,MUTED,false);dialogueBounds.setLineSpacing(dp(3),1f);gap(draftPanel,6);draftPanel.addView(dialogueBounds);
         LinearLayout titleEditor=column();
         EditText title=editorRowField(titleEditor,"title","小事名称",formValue("title",draft.optString("title")),"例如：收衣服",null);title.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));
         LinearLayout detailContents=column();detailContents.setVisibility(rulesExpanded?View.VISIBLE:View.GONE);
@@ -1083,7 +1090,8 @@ public class MainActivity extends Activity {
         LinearLayout deliveryHeading=row();deliveryHeading.addView(text("怎样提醒你",12,MUTED,false),new LinearLayout.LayoutParams(0,-2,1));Button channels=linkButton("设置");deliveryHeading.addView(channels);summaryBlock.addView(deliveryHeading);
         summaryBlock.addView(text(ReminderCoordinator.availableChannelsSummary(this,session),13,INK,false));channels.setOnClickListener(v->{if(!taskBusy)navigate("reminders");});
         TextView followUp=text("",12,MUTED,false);gap(summaryBlock,8);summaryBlock.addView(followUp);gap(draftPanel,4);
-        LinearLayout adjustRow=row();adjustRow.setGravity(Gravity.CENTER);Button adjust=smallButton(rulesExpanded?"收起提醒细节":"查看提醒细节");adjust.setTextColor(MUTED);adjust.setTextSize(12);adjust.setBackground(shape(Color.TRANSPARENT,10));adjustRow.addView(adjust);GardenIconView adjustArrow=new GardenIconView(this,"chevron_down",MUTED);adjustArrow.setRotation(rulesExpanded?180:0);adjustRow.addView(adjustArrow,new LinearLayout.LayoutParams(dp(14),dp(14)));draftPanel.addView(adjustRow);
+        gap(draftPanel,10);View dialogueDivider=new View(this);dialogueDivider.setBackgroundColor(0xffcfddc5);draftPanel.addView(dialogueDivider,new LinearLayout.LayoutParams(-1,dp(1)));
+        LinearLayout adjustRow=row();Button adjust=smallButton(rulesExpanded?"收起提醒细节":"查看提醒细节");adjust.setTextColor(BLUE);adjust.setTextSize(13);adjust.setGravity(Gravity.START|Gravity.CENTER_VERTICAL);adjust.setBackground(shape(Color.TRANSPARENT,10));adjustRow.addView(adjust,new LinearLayout.LayoutParams(0,dp(48),1));GardenIconView adjustArrow=new GardenIconView(this,"chevron_down",BLUE);adjustArrow.setRotation(rulesExpanded?180:0);adjustRow.addView(adjustArrow,new LinearLayout.LayoutParams(dp(16),dp(16)));draftPanel.addView(adjustRow);
         planBody.addView(detailContents);
         LinearLayout rules=column();rules.setPadding(dp(10),dp(4),dp(10),dp(8));GradientDrawable ruleSurface=shape(PAPER,12);ruleSurface.setStroke(dp(1),LINE);rules.setBackground(ruleSurface);LinearLayout.LayoutParams rulesLp=new LinearLayout.LayoutParams(-1,-2);rulesLp.topMargin=dp(8);detailContents.addView(rules,rulesLp);rules.addView(titleEditor);
         Runnable refreshDetails=()->{detailContents.setVisibility(rulesExpanded?View.VISIBLE:View.GONE);adjust.setText(rulesExpanded?"收起提醒细节":"查看提醒细节");adjustArrow.setRotation(rulesExpanded?180:0);adjust.setContentDescription(rulesExpanded?"收起提醒细节，已展开":"查看提醒细节，已收起");};
@@ -1091,7 +1099,8 @@ public class MainActivity extends Activity {
         View.OnClickListener openRules=v->{if(taskBusy||editorConfirmed)return;rulesExpanded=true;refreshDetails.run();rules.post(()->rules.requestRectangleOnScreen(new Rect(0,0,rules.getWidth(),dp(180)),false));};
         dialogueLead.setFocusable(true);dialogueLead.setBackground(new RippleDrawable(ColorStateList.valueOf(0x18527a58),shape(Color.TRANSPARENT,10),null));dialogueLead.setOnClickListener(openRules);
         for(LinearLayout summaryRow:summaryRows){summaryRow.setFocusable(true);summaryRow.setOnClickListener(openRules);}
-        if(!aiWarning.isEmpty())addArrangementNotes(draftPanel);
+        planBody.addView(originalRequest);if(originalRequest.getChildCount()>0)gap(planBody,12);
+        if(!aiWarning.isEmpty())addArrangementNotes(planBody);
 
         int initialKind=Arrays.asList(KINDS).indexOf(rule.optString("kind","monthly_window"));if(initialKind<0)initialKind=KINDS.length-1;
         int restoredKind=restoredForm!=null?restoredForm.optInt("kind_index",initialKind):initialKind;if(restoredKind<0||restoredKind>=KINDS.length)restoredKind=KINDS.length-1;
@@ -1166,7 +1175,7 @@ public class MainActivity extends Activity {
         editorDialogueTick=new Runnable(){@Override public void run(){if(dialoguePage!=pageEpoch||!screen.equals("editor")||isDestroyed()||editorConfirmed)return;updatePreview.run();if(motionHostActive)ui.postDelayed(this,15000);}};
         if(motionHostActive)ui.postDelayed(editorDialogueTick,15000);
         addCompactFlowerChoice(planBody);
-        gap(planBody,34);LinearLayout confirmBar=column();confirmBar.setPadding(dp(16),dp(10),dp(16),dp(10));confirmBar.setBackground(shape(0xf5fffdf8,18));root.addView(confirmBar,new LinearLayout.LayoutParams(-1,-2));
+        gap(planBody,20);LinearLayout confirmBar=column();editorConfirmBar=confirmBar;confirmBar.setPadding(dp(16),dp(12),dp(16),dp(10));confirmBar.setBackgroundColor(PAPER);root.addView(confirmBar,new LinearLayout.LayoutParams(-1,-2));root.requestApplyInsets();
         Button save=button(editing?"保存修改":"好，就这样提醒我",true);save.setTextSize(16);save.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));save.setBackground(new RippleDrawable(ColorStateList.valueOf(0x22527a58),shape(0xff567e5d,10),null));confirmBar.addView(save,new LinearLayout.LayoutParams(-1,dp(50)));save.setOnClickListener(v->saveEditor(save));
         gap(confirmBar,6);TextView saveHint=text(editing?"只修改安排，不会标记完成":"确认后开始提醒，做完小事再领水滴",11,MUTED,false);saveHint.setGravity(Gravity.CENTER);confirmBar.addView(saveHint);
     }
@@ -1208,11 +1217,12 @@ public class MainActivity extends Activity {
         cancel.setOnClickListener(v->dialog.dismiss());apply.setOnClickListener(v->{if(selectedIndex[0]>=count){toast("请先选择一种重复方式");return;}dialog.dismiss();if(page==pageEpoch)choice.setSelection(selectedIndex[0]);});
     }
     private void addSowingHeading(){
-        boolean response=manualVisible&&!aiExpanded&&!editing;
+        boolean response=manualVisible;
         if(response){
-            body.addView(homeTitle("播下一件小事",23));gap(body,5);body.addView(text("好，我来帮你记着。",12,MUTED,false));
-            editorCompanion=new SeedCompanionView(this);editorCompanion.setHostActive(motionHostActive);editorCompanion.setPose(SeedCompanionView.Pose.SPEAK);
-            LinearLayout scene=row();scene.setGravity(Gravity.CENTER);LinearLayout.LayoutParams mascotLp=new LinearLayout.LayoutParams(dp(146),dp(154));mascotLp.topMargin=dp(7);scene.addView(editorCompanion,mascotLp);body.addView(scene);
+            LinearLayout scene=row(),copy=column();scene.setPadding(dp(16),0,dp(16),dp(8));scene.setMinimumHeight(dp(104));
+            copy.addView(homeTitle(editing?"照料这颗种子":"和念念说定一件事",21));gap(copy,6);copy.addView(text(editing?"调整提醒，按自己的节奏来":"你去忙，我来帮你记着。",12,MUTED,false));scene.addView(copy,new LinearLayout.LayoutParams(0,-2,1));
+            editorCompanion=new SeedCompanionView(this);editorCompanion.setHostActive(motionHostActive);editorCompanion.setPose(editing||aiExpanded?SeedCompanionView.Pose.LISTEN:SeedCompanionView.Pose.SPEAK);
+            scene.addView(editorCompanion,new LinearLayout.LayoutParams(dp(88),dp(96)));root.addView(scene,1,new LinearLayout.LayoutParams(-1,-2));
             if(editorCompanionEntrance!=null){editorCompanion.enterFrom(editorCompanionEntrance);editorCompanionEntrance=null;}
             return;
         }
@@ -1234,14 +1244,14 @@ public class MainActivity extends Activity {
         bounds.setText(note);bounds.setVisibility(note.isEmpty()?View.GONE:View.VISIBLE);
     }
     private void addArrangementNotes(LinearLayout parent){
-        gap(parent,10);LinearLayout notes=column();parent.addView(notes);
-        String first=aiWarning.split("\\n",2)[0].trim();TextView brief=text(first,12,MUTED,false);brief.setMaxLines(2);brief.setEllipsize(TextUtils.TruncateAt.END);notes.addView(brief);
+        LinearLayout notes=card(parent);notes.setPadding(dp(14),dp(12),dp(14),dp(4));notes.addView(text("为什么这样安排",13,INK,true));gap(notes,6);
+        String first=aiWarning.split("\\n",2)[0].trim();TextView brief=text(first,13,MUTED,false);brief.setMaxLines(3);brief.setEllipsize(TextUtils.TruncateAt.END);brief.setLineSpacing(dp(3),1f);notes.addView(brief);
         TextView full=text(aiWarning,13,INK,false);full.setLineSpacing(dp(4),1f);full.setVisibility(View.GONE);notes.addView(full);
         Button toggle=linkButton("查看安排依据与注意事项");toggle.setGravity(Gravity.START|Gravity.CENTER_VERTICAL);notes.addView(toggle);toggle.setOnClickListener(v->{boolean show=full.getVisibility()!=View.VISIBLE;full.setVisibility(show?View.VISIBLE:View.GONE);brief.setVisibility(show?View.GONE:View.VISIBLE);toggle.setText(show?"收起说明":"查看安排依据与注意事项");});
     }
     private void addCompactFlowerChoice(LinearLayout parent){
-        gap(parent,10);LinearLayout heading=row(),choices=column();ImageView thumbnail=art(selectedFlowerIndex<0?R.drawable.garden_seed_v3:GardenFlowers.resources()[selectedFlowerIndex],44);heading.addView(thumbnail);gapHorizontal(heading,10);
-        TextView label=text("",14,INK,false);heading.addView(label,new LinearLayout.LayoutParams(0,-2,1));Button change=linkButton("选花");heading.addView(change);parent.addView(heading);parent.addView(choices);choices.setVisibility(View.GONE);
+        gap(parent,6);LinearLayout heading=row(),choices=column();ImageView thumbnail=art(selectedFlowerIndex<0?R.drawable.garden_seed_v3:GardenFlowers.resources()[selectedFlowerIndex],44);heading.addView(thumbnail);gapHorizontal(heading,10);
+        TextView label=text("",14,INK,true);heading.addView(label,new LinearLayout.LayoutParams(0,-2,1));Button change=linkButton("选花");heading.addView(change);parent.addView(heading);parent.addView(choices);choices.setVisibility(View.GONE);
         Runnable refresh=()->{label.setText(selectedFlowerIndex<0?"这次种一朵什么花？":GardenFlowers.names()[selectedFlowerIndex]+" · 这次就种它");thumbnail.setImageBitmap(GardenArtCache.load(getResources(),selectedFlowerIndex<0?R.drawable.garden_seed_v3:GardenFlowers.resources()[selectedFlowerIndex]));};
         addFlowerPreview(choices,refresh);refresh.run();View.OnClickListener toggle=v->{boolean show=choices.getVisibility()!=View.VISIBLE;choices.setVisibility(show?View.VISIBLE:View.GONE);change.setText(show?"收起":"选花");};heading.setOnClickListener(toggle);change.setOnClickListener(toggle);
     }

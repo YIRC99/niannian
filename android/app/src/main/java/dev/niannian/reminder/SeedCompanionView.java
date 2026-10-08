@@ -48,16 +48,13 @@ final class SeedCompanionView extends View {
         if(previous==null||previous.isEmpty())return;
         post(()->{
             if(!isAttachedToWindow()||!hostActive||!ValueAnimator.areAnimatorsEnabled())return;
-            Rect current=screenBounds();
-            setTranslationX(previous.exactCenterX()-current.exactCenterX());
-            setTranslationY(previous.exactCenterY()-current.exactCenterY());
-            float scale=Math.max(.45f,Math.min(1.4f,previous.width()/(float)Math.max(1,getWidth())));
-            setScaleX(scale);setScaleY(scale);
-            animate().translationX(0).translationY(0).scaleX(1).scaleY(1).setDuration(560)
+            // The response now lives in a fixed header. Stay within its safe bounds.
+            setScaleX(.94f);setScaleY(.94f);setAlpha(.6f);
+            animate().alpha(1).scaleX(1).scaleY(1).setDuration(280)
                 .setInterpolator(new PathInterpolator(.16f,1f,.3f,1f)).start();
         });
     }
-    private void finishEntrance(){animate().cancel();setTranslationX(0);setTranslationY(0);setScaleX(1);setScaleY(1);}
+    private void finishEntrance(){animate().cancel();setTranslationX(0);setTranslationY(0);setScaleX(1);setScaleY(1);setAlpha(1);}
     private void stopMotion(){clock.cancel();phase=0f;}
     private void updateMotion(){
         boolean running=hostActive&&isAttachedToWindow()&&getWindowVisibility()==VISIBLE&&isShown()
