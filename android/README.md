@@ -1,5 +1,9 @@
 # 念念提醒 Android
 
+## 2.5.0 播种对话
+
+versionCode 31。庭院融合布局、新四表情种子、真实请求状态动画；时间和跟进改为自然语言，完整规则与渠道按需展开，原话可重说。保留 12 花种、精确截止和新建/编辑返回语义。`SowingDialogue` 仅负责呈现真实字段，`SeedCompanionView` 负责可见时动画，无后端或执行协议变更。验证范围见 [交付检查](../docs/VERIFICATION.md)。
+
 原生 Java + Android Views，Android 8.0 及以上，使用 AndroidX Core，无 WebView。应用内不包含 DeepSeek 或 SMTP 凭据。手机提醒通过 AlarmManager、通知、CalendarContract 和定期 JobScheduler 同步执行，不使用常驻前台服务；后台任务仍受系统省电和强行停止限制。
 
 ## 2.1.0 安排页与十二花种

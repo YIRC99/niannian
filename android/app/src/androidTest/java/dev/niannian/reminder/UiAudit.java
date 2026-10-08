@@ -79,7 +79,7 @@ public final class UiAudit extends Instrumentation {
         main(()->((Spinner)get("kindPicker")).performClick());capture("45");systemBack();
         main(()->((Spinner)get("modePicker")).performClick());capture("46");systemBack();click("20:30");capture("47");systemBack();
         main(()->{JSONObject suggested=UiFixtures.task("weekly","pending").put("title","散步");suggested.getJSONObject("rule").put("weekdays",new JSONArray().put(6)).put("times",new JSONArray().put("09:00"));set("draft",suggested);set("aiText","空气好的时候提醒我散步");set("editing",false);set("manualVisible",true);set("rulesExpanded",false);set("restoredForm",null);set("aiWarning","暂不支持自动判断空气质量。我先安排在每周六上午，出发前请你确认天气。保存前可以继续调整。");show("editor");});capture("52");
-        main(()->{set("rulesExpanded",true);set("aiWarning","");call("render",new Class[]{});for(CheckBox day:(CheckBox[])get("weekdays"))day.setChecked(false);});click("确认安排，播下种子");capture("53");assertText("请选择至少一个星期");
+        main(()->{set("rulesExpanded",true);set("aiWarning","");call("render",new Class[]{});for(CheckBox day:(CheckBox[])get("weekdays"))day.setChecked(false);});click("好，就这样提醒我");capture("53");assertText("请选择至少一个星期");
         fixtures.aiFailure=true;main(()->{call("openEditor",new Class[]{JSONObject.class},(Object)null);field("ai").setText("等会儿提醒我搞卫生");});click("帮我安排");SystemClock.sleep(600);syncUi();capture("54");assertText("重新安排");fixtures.aiFailure=false;
     }
     private void arrangementPages()throws Exception{
@@ -102,10 +102,10 @@ public final class UiAudit extends Instrumentation {
         click("返回，继续安排");awaitScreen("editor");assertNoDialog();
         main(()->field("ai").setText(request));click("帮我安排");
         awaitCondition("AI arrangement summary",()->!(Boolean)get("taskBusy")&&(Boolean)get("manualVisible")&&allNotes.equals(get("aiWarning")));
-        assertText("本次安排");assertText("确认后生效");assertText("查看安排依据与注意事项");assertText(firstNote);assertAbsent(allNotes);assertAbsent("念念可用的提醒方式  ›");
+        assertText("查看提醒细节");assertText(firstNote);assertAbsent(allNotes);assertAbsent("念念可用的提醒方式  ›");
         main(()->{if((Boolean)get("rulesExpanded"))throw new AssertionError("AI rules should start collapsed");});capture("arrangement-03-summary");
-        click("查看安排依据与注意事项");assertText(allNotes);assertAbsent(firstNote);click("收起说明");assertText(firstNote);assertAbsent(allNotes);
-        main(()->field("title").setText("收好阳台的衣服"));click("调整规则");main(()->field("repeat_minutes").setText("7"));click("收起规则");
+        click("查看提醒细节");assertText(firstNote);click("查看安排依据与注意事项");assertText(allNotes);assertAbsent(firstNote);click("收起说明");assertText(firstNote);assertAbsent(allNotes);
+        main(()->field("title").setText("收好阳台的衣服"));main(()->field("repeat_minutes").setText("7"));click("收起提醒细节");click("查看提醒细节");
         click("设置");awaitScreen("reminders");click("念念可用的提醒方式  ›");
         main(()->{
             for(String channel:new String[]{"手机通知","手机日历","闹钟提醒","邮件（可选）"}){
@@ -128,7 +128,7 @@ public final class UiAudit extends Instrumentation {
         // An accidental back press must neither create nor complete a task.
         main(()->activity.onBackPressed());awaitCondition("leave-editor confirmation",()->get("profileDialog")!=null);clickDialog("继续编辑");assertScreen("editor");assertWrites(0,0,0);
         fixtures.taskDelay=450;
-        main(()->{View save=findText(activity.getWindow().getDecorView(),"确认安排，播下种子");if(save==null)throw new AssertionError("New confirmation button absent");save.performClick();save.performClick();});
+        main(()->{View save=findText(activity.getWindow().getDecorView(),"好，就这样提醒我");if(save==null)throw new AssertionError("New confirmation button absent");save.performClick();save.performClick();});
         awaitScreen("home");fixtures.taskDelay=0;settle();assertWrites(1,0,0);
         if(fixtures.lastCreateBody==null||!"sunflower".equals(fixtures.lastCreateBody.optString("flower_type"))||fixtures.lastCreateBody.getJSONObject("rule").getInt("repeat_minutes")!=7)throw new AssertionError("Saved request lost the selected flower or edited interval");
         assertAbsent("这件事已完成");capture("arrangement-05-created-home");

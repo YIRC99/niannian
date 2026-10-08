@@ -1,5 +1,7 @@
 # 念念花园素材
 
+2.5.0 播种角色：`sowing_companion_sheet.png`，复用本轮内置 image_gen 生成并由用户确认的透明四表情原图。2×2 依次为倾听、思考、说话、开心；`SeedCompanionView` 用源矩形绘制，不改原图。源文件与完整提示词见 `UI设计/prototypes/sowing-2026-10-08/assets/niannian-expressions.png` 和同目录 `ip-prompt.txt`，文件 SHA256 相同。不是 GIF；原生动画对应真实请求和保存状态。旧种子资源保留供其他现有页面使用。
+
 2.1.0 新增八张独立透明花卉 PNG：向日葵（sunflower）、玫瑰（rose）、薰衣草（lavender）、波斯菊（cosmos）、百合（lily）、三色堇（pansy）、鸢尾（iris）、木槿（hibiscus）。内置 image_gen 分别生成，文件为 `android/app/src/main/res/drawable-nodpi/garden_flower_{type}.png`，完整提示词及来源见 [flowers-expansion-2.1.txt](../UI设计/prompts/flowers-expansion-2.1.txt)。用于选花预览与真实开花阶段，种子、幼芽、枝叶继续复用。原四花素材与编号保持不变。
 
 1.8.9 我的页新增 `profile_header.png`（2048×768、不透明），使用内置 image_gen 生成并复制入项目，左侧留白承载原生标题，右侧绣球和白栅栏；完整提示词见 [profile-implementation-assets.txt](../UI设计/prompts/profile-implementation-assets.txt)。底部花草、幼芽及木牌继续复用，木牌文本所需手写字库补齐至 64 字符。图片不承载账号信息、按钮或业务状态。
