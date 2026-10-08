@@ -86,3 +86,6 @@ Create one polished 2D ANIME CARTOON game inventory icon for a cozy growth-garde
 - `calendar_empty_journal.png`：空日历的书本与幼芽，透明 PNG。
 - `calendar_mail.png`：邮件记录的花叶信封，透明 PNG。
 - 均位于 `android/app/src/main/res/drawable-nodpi/`，使用内置 image_gen 生成，完整提示词见 `UI设计/prompts/calendar-implementation-assets.txt`。运行时沿用采样缓存，插画不表示真实完成记录或成长值；照片仍只读取服务端附件。
+# 2.5.2 思考动画补充
+
+新素材 `sowing_thinking_sheet.png` 源于内置 imagegen，以已批准 `sowing_companion_sheet.png` 为角色参照，完整生成图和提示词保存在 `UI设计/animations/seed-thinking/`。16 个连续动作帧保留原种子形象，经统一缩放及脚底对齐打包为 1024×1024 RGBA；同目录提供 16 帧 GIF 预览。未使用视频 API 或外部成品素材。

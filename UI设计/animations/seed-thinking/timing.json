@@ -1,0 +1,28 @@
+{
+  "grid": [
+    4,
+    4
+  ],
+  "cell": 256,
+  "durations_ms": [
+    360,
+    90,
+    90,
+    110,
+    140,
+    140,
+    180,
+    400,
+    90,
+    90,
+    140,
+    260,
+    140,
+    120,
+    140,
+    220
+  ],
+  "loop_ms": 2710,
+  "gif_background": "#fffcf5",
+  "android_atlas": "transparent RGBA"
+}
