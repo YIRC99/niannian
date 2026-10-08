@@ -40,7 +40,11 @@ func inputMessages(text string, now time.Time) []map[string]string {
 	decoder := json.NewDecoder(strings.NewReader(text))
 	decoder.DisallowUnknownFields()
 	if decoder.Decode(&conversation) == nil && decoder.Decode(new(any)) == io.EOF && conversation.Original != "" && len(conversation.Answers) > 0 && conversation.Reference != "" {
-		system += "\n原话提交时间：" + conversation.Reference + "。第一条用户消息里的今天/明天/后天相对这个原话时间计算，不能随续答变动；后续回答的相对日期按各条回答自己的发送时间。校验是否过期仍用当前时间。所有用户消息共同构成需求，最新明确改口优先。"
+		reference, err := time.Parse(time.RFC3339, conversation.Reference)
+		if err != nil {
+			return []map[string]string{{"role": "system", "content": system}, {"role": "user", "content": text}}
+		}
+		system += "\n原话提交时间：" + reference.Format(time.RFC3339) + "。第一条用户消息里的今天/明天/后天相对这个原话时间计算，不能随续答变动；后续回答的相对日期按各条回答自己的发送时间。校验是否过期仍用当前时间。所有用户消息共同构成需求，最新明确改口优先。"
 		anchor := datedMessage(conversation.Reference, now)
 		messages := []map[string]string{{"role": "system", "content": system}, {"role": "user", "content": anchor + conversation.Original}}
 		questionTime := conversation.Reference
