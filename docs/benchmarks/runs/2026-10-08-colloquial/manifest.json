@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-10-08T09:22:27.962Z",
+  "source_commit": "d11064571148fddbb71405fc033d5aaffba3cd6f",
+  "suite_sha256": "0dd88030f56d2b4f76894eb780990d2662ed259fbd9273a52f9bd658b3540a5b",
+  "round_totals": [
+    77,
+    76,
+    75
+  ],
+  "average_score": 76,
+  "case_averages": {
+    "RC-01": 9.666666666666666,
+    "RC-02": 10,
+    "RC-03": 9,
+    "RC-04": 9,
+    "RC-05": 8,
+    "RC-06": 9.333333333333334,
+    "RC-07": 10,
+    "RC-08": 1,
+    "RC-09": 3,
+    "RC-10": 7
+  },
+  "dimension_totals": {
+    "场景理解": 54,
+    "时间与节奏": 45,
+    "合理补全": 39,
+    "追问与建议": 48,
+    "诚实与可确认": 42
+  },
+  "http_success": 30,
+  "sample_count": 30,
+  "model_calls": 60,
+  "median_elapsed_ms": 1849,
+  "average_input_characters": {
+    "old": 95.2,
+    "colloquial": 15.4
+  },
+  "files": {
+    "round-1.json": "4ec1d037e4ace197a881e1fbd3ad88aac8662d6fbc974d15921b740342073916",
+    "round-2.json": "6e474d9df5771bc070aa70bb5883755cc3aa0f0ed2d818fab06a614a39948f69",
+    "round-3.json": "b7ec9a8c5229470574fbd7c438d2fce2c85150a39cf3aca71c7c3c1b5da95ee0",
+    "http-results.json": "60de084a34a3c59194b79694ff5877ee2051ab5d5f4edb8a0d0abff4621079ee",
+    "review.json": "d8e8b862fb45dface1f4e63b7938888ab606b7af6a11510a05e508351696e6d3",
+    "index.html": "d69a8ac270d8584026af52fc317b055f41de4ec21a04dca4e9e8f2964a579aa0"
+  },
+  "live_http": {
+    "success": 9,
+    "total": 10,
+    "version": "2.6.1",
+    "scored": false,
+    "cleanup": "temporary_account_deleted_verified_404",
+    "task_count_after": 0
+  }
+}

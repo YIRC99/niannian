@@ -1,0 +1,371 @@
+{
+  "lane": "running_backend_http",
+  "endpoint": "http://127.0.0.1:56507/api/v1/ai/parse",
+  "health": {
+    "status": "ok",
+    "version": "2.6.1"
+  },
+  "started_at": "2026-10-08T17:17:41.9046340+08:00",
+  "fixed_clock": false,
+  "source_commit": "d11064571148fddbb71405fc033d5aaffba3cd6f",
+  "cases": [
+    {
+      "id": "RC-01",
+      "request_started_at": "2026-10-08T17:17:42.1028794+08:00",
+      "response_received_at": "2026-10-08T17:17:43.9972767+08:00",
+      "http_status": 200,
+      "elapsed_ms": 1892,
+      "input": "十分钟后叫我收下衣服。",
+      "original_fixture_now": "2026-10-08T23:58:47+08:00",
+      "server_date": [
+        "Thu, 08 Oct 2026 09:17:43 GMT"
+      ],
+      "raw_response": "{\"title\":\"收衣服\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-08T17:27:42+08:00\",\"repeat_minutes\":5},\"summary\":\"2026-10-08 17:27:42 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒\",\"warnings\":[\"2026-10-08 17:27:42 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 17:27:42（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定首次时间、重复间隔，以上为暂定建议，可在草稿中调整。\"]}\n",
+      "response": {
+        "title": "收衣服",
+        "description": "",
+        "rule": {
+          "kind": "minute_interval",
+          "mode": "until_done",
+          "timezone": "Asia/Shanghai",
+          "times": [],
+          "start_date": "",
+          "end_date": "",
+          "weekdays": [],
+          "month_start": 0,
+          "month_end": 0,
+          "every_days": 0,
+          "max_reminders": 0,
+          "first_at": "2026-10-08T17:27:42+08:00",
+          "repeat_minutes": 5
+        },
+        "summary": "2026-10-08 17:27:42 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒",
+        "warnings": [
+          "2026-10-08 17:27:42 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 17:27:42（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定首次时间、重复间隔，以上为暂定建议，可在草稿中调整。"
+        ]
+      }
+    },
+    {
+      "id": "RC-02",
+      "request_started_at": "2026-10-08T17:17:53.1090233+08:00",
+      "response_received_at": "2026-10-08T17:17:54.8604044+08:00",
+      "http_status": 502,
+      "elapsed_ms": 1751,
+      "input": "材料五点就截止了，别让我忘了交。",
+      "original_fixture_now": "2026-10-08T14:37:20+08:00",
+      "server_date": [
+        "Thu, 08 Oct 2026 09:17:54 GMT"
+      ],
+      "raw_response": "{\"error\":\"这条规则没有未来的提醒时间，请调整日期或时间后重试\"}\n",
+      "response": {
+        "error": "这条规则没有未来的提醒时间，请调整日期或时间后重试"
+      }
+    },
+    {
+      "id": "RC-03",
+      "request_started_at": "2026-10-08T17:18:04.1193691+08:00",
+      "response_received_at": "2026-10-08T17:18:05.7405656+08:00",
+      "http_status": 200,
+      "elapsed_ms": 1621,
+      "input": "明早叫我拿快递，算了后天下午吧。",
+      "original_fixture_now": "2026-10-08T18:12:09+08:00",
+      "server_date": [
+        "Thu, 08 Oct 2026 09:18:05 GMT"
+      ],
+      "raw_response": "{\"title\":\"拿快递\",\"description\":\"\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"15:00\"],\"start_date\":\"2026-10-10\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"2026-10-10 15:00，每周期只提醒一次\",\"warnings\":[\"2026-10-10 15:00，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-10 15:00:00（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。\"]}\n",
+      "response": {
+        "title": "拿快递",
+        "description": "",
+        "rule": {
+          "kind": "once",
+          "mode": "notify_once",
+          "timezone": "Asia/Shanghai",
+          "times": [
+            "15:00"
+          ],
+          "start_date": "2026-10-10",
+          "end_date": "",
+          "weekdays": [],
+          "month_start": 0,
+          "month_end": 0,
+          "every_days": 0,
+          "max_reminders": 0
+        },
+        "summary": "2026-10-10 15:00，每周期只提醒一次",
+        "warnings": [
+          "2026-10-10 15:00，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-10 15:00:00（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。"
+        ]
+      }
+    },
+    {
+      "id": "RC-04",
+      "request_started_at": "2026-10-08T17:18:15.1420650+08:00",
+      "response_received_at": "2026-10-08T17:18:17.0173212+08:00",
+      "http_status": 200,
+      "elapsed_ms": 1875,
+      "input": "每个月月底记得催我交报表。",
+      "original_fixture_now": "2027-02-27T08:00:00+08:00",
+      "server_date": [
+        "Thu, 08 Oct 2026 09:18:17 GMT"
+      ],
+      "raw_response": "{\"title\":\"交报表\",\"description\":\"\",\"rule\":{\"kind\":\"monthly_window\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":28,\"month_end\":31,\"every_days\":0,\"max_reminders\":0},\"summary\":\"每月 28—31 日，每天 09:00，完成后停止本月提醒\",\"warnings\":[\"每月 28—31 日，每天 09:00，完成后停止本月提醒。按当前时间计算，下一个规则时间点是 2026-10-28 09:00:00（Asia/Shanghai）；确认后才会创建。\",\"短月按当月最后一天截断，不会顺延到下个月。\",\"你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。\"]}\n",
+      "response": {
+        "title": "交报表",
+        "description": "",
+        "rule": {
+          "kind": "monthly_window",
+          "mode": "until_done",
+          "timezone": "Asia/Shanghai",
+          "times": [
+            "09:00"
+          ],
+          "start_date": "",
+          "end_date": "",
+          "weekdays": [],
+          "month_start": 28,
+          "month_end": 31,
+          "every_days": 0,
+          "max_reminders": 0
+        },
+        "summary": "每月 28—31 日，每天 09:00，完成后停止本月提醒",
+        "warnings": [
+          "每月 28—31 日，每天 09:00，完成后停止本月提醒。按当前时间计算，下一个规则时间点是 2026-10-28 09:00:00（Asia/Shanghai）；确认后才会创建。",
+          "短月按当月最后一天截断，不会顺延到下个月。",
+          "你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。"
+        ]
+      }
+    },
+    {
+      "id": "RC-05",
+      "request_started_at": "2026-10-08T17:18:26.1529165+08:00",
+      "response_received_at": "2026-10-08T17:18:28.1043334+08:00",
+      "http_status": 200,
+      "elapsed_ms": 1951,
+      "input": "跨年那几天，每天提醒我量一下阳台温度。",
+      "original_fixture_now": "2026-12-30T22:00:00+08:00",
+      "server_date": [
+        "Thu, 08 Oct 2026 09:18:28 GMT"
+      ],
+      "raw_response": "{\"title\":\"量阳台温度\",\"description\":\"\",\"rule\":{\"kind\":\"date_range\",\"mode\":\"every_day\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"start_date\":\"2026-12-31\",\"end_date\":\"2027-01-02\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"2026-12-31 至 2027-01-02，每天 09:00，完成后停止当天提醒，下一提醒日重新开始\",\"warnings\":[\"2026-12-31 至 2027-01-02，每天 09:00，完成后停止当天提醒，下一提醒日重新开始。按当前时间计算，下一个规则时间点是 2026-12-31 09:00:00（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定首次时间、年份，以上为暂定建议，可在草稿中调整。\"]}\n",
+      "response": {
+        "title": "量阳台温度",
+        "description": "",
+        "rule": {
+          "kind": "date_range",
+          "mode": "every_day",
+          "timezone": "Asia/Shanghai",
+          "times": [
+            "09:00"
+          ],
+          "start_date": "2026-12-31",
+          "end_date": "2027-01-02",
+          "weekdays": [],
+          "month_start": 0,
+          "month_end": 0,
+          "every_days": 0,
+          "max_reminders": 0
+        },
+        "summary": "2026-12-31 至 2027-01-02，每天 09:00，完成后停止当天提醒，下一提醒日重新开始",
+        "warnings": [
+          "2026-12-31 至 2027-01-02，每天 09:00，完成后停止当天提醒，下一提醒日重新开始。按当前时间计算，下一个规则时间点是 2026-12-31 09:00:00（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定首次时间、年份，以上为暂定建议，可在草稿中调整。"
+        ]
+      }
+    },
+    {
+      "id": "RC-06",
+      "request_started_at": "2026-10-08T17:18:37.1542395+08:00",
+      "response_received_at": "2026-10-08T17:18:38.7256490+08:00",
+      "http_status": 200,
+      "elapsed_ms": 1571,
+      "input": "后面每天中午记得提醒我还相机。",
+      "original_fixture_now": "2026-10-08T11:20:00+08:00",
+      "server_date": [
+        "Thu, 08 Oct 2026 09:18:38 GMT"
+      ],
+      "raw_response": "{\"title\":\"还相机\",\"description\":\"\",\"rule\":{\"kind\":\"ongoing\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"12:00\"],\"start_date\":\"2026-10-09\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"从 2026-10-09 起，每天 12:00，完成后不再提醒\",\"warnings\":[\"从 2026-10-09 起，每天 12:00，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-09 12:00:00（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。\"]}\n",
+      "response": {
+        "title": "还相机",
+        "description": "",
+        "rule": {
+          "kind": "ongoing",
+          "mode": "until_done",
+          "timezone": "Asia/Shanghai",
+          "times": [
+            "12:00"
+          ],
+          "start_date": "2026-10-09",
+          "end_date": "",
+          "weekdays": [],
+          "month_start": 0,
+          "month_end": 0,
+          "every_days": 0,
+          "max_reminders": 0
+        },
+        "summary": "从 2026-10-09 起，每天 12:00，完成后不再提醒",
+        "warnings": [
+          "从 2026-10-09 起，每天 12:00，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-09 12:00:00（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定首次时间，以上为暂定建议，可在草稿中调整。"
+        ]
+      }
+    },
+    {
+      "id": "RC-07",
+      "request_started_at": "2026-10-08T17:18:48.1655857+08:00",
+      "response_received_at": "2026-10-08T17:18:50.4420294+08:00",
+      "http_status": 200,
+      "elapsed_ms": 2276,
+      "input": "衣服洗好了，等会儿叫我晾一下。",
+      "original_fixture_now": "2026-10-08T23:42:18+08:00",
+      "server_date": [
+        "Thu, 08 Oct 2026 09:18:50 GMT"
+      ],
+      "raw_response": "{\"title\":\"晾衣服\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-08T17:28:48+08:00\",\"repeat_minutes\":5},\"summary\":\"2026-10-08 17:28:48 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒\",\"warnings\":[\"2026-10-08 17:28:48 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 17:28:48（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定首次时间、重复间隔，以上为暂定建议，可在草稿中调整。\"]}\n",
+      "response": {
+        "title": "晾衣服",
+        "description": "",
+        "rule": {
+          "kind": "minute_interval",
+          "mode": "until_done",
+          "timezone": "Asia/Shanghai",
+          "times": [],
+          "start_date": "",
+          "end_date": "",
+          "weekdays": [],
+          "month_start": 0,
+          "month_end": 0,
+          "every_days": 0,
+          "max_reminders": 0,
+          "first_at": "2026-10-08T17:28:48+08:00",
+          "repeat_minutes": 5
+        },
+        "summary": "2026-10-08 17:28:48 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒",
+        "warnings": [
+          "2026-10-08 17:28:48 首次提醒，之后每 5 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-08 17:28:48（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定首次时间、重复间隔，以上为暂定建议，可在草稿中调整。"
+        ]
+      }
+    },
+    {
+      "id": "RC-08",
+      "request_started_at": "2026-10-08T17:18:59.1836816+08:00",
+      "response_received_at": "2026-10-08T17:19:00.5378084+08:00",
+      "http_status": 200,
+      "elapsed_ms": 1354,
+      "input": "纽约那个面试，提前半小时叫我。",
+      "original_fixture_now": "2026-10-08T20:00:00+08:00",
+      "server_date": [
+        "Thu, 08 Oct 2026 09:19:00 GMT"
+      ],
+      "raw_response": "{\"title\":\"纽约面试提醒\",\"description\":\"纽约面试，提前半小时提醒\",\"rule\":{\"kind\":\"once\",\"mode\":\"notify_once\",\"timezone\":\"America/New_York\",\"times\":[\"09:00\"],\"start_date\":\"2026-10-09\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"2026-10-09 09:00，每周期只提醒一次\",\"warnings\":[\"2026-10-09 09:00，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-09 09:00:00（America/New_York）；确认后才会创建。\",\"你没有明确指定首次时间、年份，以上为暂定建议，可在草稿中调整。\"]}\n",
+      "response": {
+        "title": "纽约面试提醒",
+        "description": "纽约面试，提前半小时提醒",
+        "rule": {
+          "kind": "once",
+          "mode": "notify_once",
+          "timezone": "America/New_York",
+          "times": [
+            "09:00"
+          ],
+          "start_date": "2026-10-09",
+          "end_date": "",
+          "weekdays": [],
+          "month_start": 0,
+          "month_end": 0,
+          "every_days": 0,
+          "max_reminders": 0
+        },
+        "summary": "2026-10-09 09:00，每周期只提醒一次",
+        "warnings": [
+          "2026-10-09 09:00，每周期只提醒一次。按当前时间计算，下一个规则时间点是 2026-10-09 09:00:00（America/New_York）；确认后才会创建。",
+          "你没有明确指定首次时间、年份，以上为暂定建议，可在草稿中调整。"
+        ]
+      }
+    },
+    {
+      "id": "RC-09",
+      "request_started_at": "2026-10-08T17:19:10.2000875+08:00",
+      "response_received_at": "2026-10-08T17:19:11.9880379+08:00",
+      "http_status": 200,
+      "elapsed_ms": 1787,
+      "input": "上班的下午隔会儿叫我起来走走。",
+      "original_fixture_now": "2026-10-08T13:10:00+08:00",
+      "server_date": [
+        "Thu, 08 Oct 2026 09:19:11 GMT"
+      ],
+      "raw_response": "{\"title\":\"起来走走\",\"description\":\"\",\"rule\":{\"kind\":\"minute_interval\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[],\"start_date\":\"\",\"end_date\":\"\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0,\"first_at\":\"2026-10-09T14:00:00+08:00\",\"repeat_minutes\":30},\"summary\":\"2026-10-09 14:00:00 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒\",\"warnings\":[\"2026-10-09 14:00:00 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-09 14:00:00（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定首次时间、重复间隔、年份，以上为暂定建议，可在草稿中调整。\",\"原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。\"]}\n",
+      "response": {
+        "title": "起来走走",
+        "description": "",
+        "rule": {
+          "kind": "minute_interval",
+          "mode": "until_done",
+          "timezone": "Asia/Shanghai",
+          "times": [],
+          "start_date": "",
+          "end_date": "",
+          "weekdays": [],
+          "month_start": 0,
+          "month_end": 0,
+          "every_days": 0,
+          "max_reminders": 0,
+          "first_at": "2026-10-09T14:00:00+08:00",
+          "repeat_minutes": 30
+        },
+        "summary": "2026-10-09 14:00:00 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒",
+        "warnings": [
+          "2026-10-09 14:00:00 首次提醒，之后每 30 分钟提醒一次，完成后不再提醒。按当前时间计算，下一个规则时间点是 2026-10-09 14:00:00（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定首次时间、重复间隔、年份，以上为暂定建议，可在草稿中调整。",
+          "原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮。请核对这些替代条件后再确认。"
+        ]
+      }
+    },
+    {
+      "id": "RC-10",
+      "request_started_at": "2026-10-08T17:19:21.2228468+08:00",
+      "response_received_at": "2026-10-08T17:19:23.0207017+08:00",
+      "http_status": 200,
+      "elapsed_ms": 1797,
+      "input": "月底到下月初催我对下账，放假就别催了。",
+      "original_fixture_now": "2026-10-24T10:00:00+08:00",
+      "server_date": [
+        "Thu, 08 Oct 2026 09:19:23 GMT"
+      ],
+      "raw_response": "{\"title\":\"对下账\",\"description\":\"\",\"rule\":{\"kind\":\"date_range\",\"mode\":\"until_done\",\"timezone\":\"Asia/Shanghai\",\"times\":[\"09:00\"],\"start_date\":\"2026-10-24\",\"end_date\":\"2026-11-03\",\"weekdays\":[],\"month_start\":0,\"month_end\":0,\"every_days\":0,\"max_reminders\":0},\"summary\":\"2026-10-24 至 2026-11-03，每天 09:00，完成后停止本轮提醒\",\"warnings\":[\"2026-10-24 至 2026-11-03，每天 09:00，完成后停止本轮提醒。按当前时间计算，下一个规则时间点是 2026-10-24 09:00:00（Asia/Shanghai）；确认后才会创建。\",\"你没有明确指定首次时间、重复间隔，以上为暂定建议，可在草稿中调整。\",\"原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮；本次按上述规则的日期执行，不能自动跳过法定节假日或识别调休。请核对这些替代条件后再确认。\"]}\n",
+      "response": {
+        "title": "对下账",
+        "description": "",
+        "rule": {
+          "kind": "date_range",
+          "mode": "until_done",
+          "timezone": "Asia/Shanghai",
+          "times": [
+            "09:00"
+          ],
+          "start_date": "2026-10-24",
+          "end_date": "2026-11-03",
+          "weekdays": [],
+          "month_start": 0,
+          "month_end": 0,
+          "every_days": 0,
+          "max_reminders": 0
+        },
+        "summary": "2026-10-24 至 2026-11-03，每天 09:00，完成后停止本轮提醒",
+        "warnings": [
+          "2026-10-24 至 2026-11-03，每天 09:00，完成后停止本轮提醒。按当前时间计算，下一个规则时间点是 2026-10-24 09:00:00（Asia/Shanghai）；确认后才会创建。",
+          "你没有明确指定首次时间、重复间隔，以上为暂定建议，可在草稿中调整。",
+          "原来的自动重复条件暂时不能完整表达，这次只安排上述这一轮，不会自动生成下一轮；本次按上述规则的日期执行，不能自动跳过法定节假日或识别调休。请核对这些替代条件后再确认。"
+        ]
+      }
+    }
+  ],
+  "cleanup": "temporary_account_deleted_verified_404",
+  "suite_file": "reminder-creation-colloquial-v2.json",
+  "suite_sha256": "0dd88030f56d2b4f76894eb780990d2662ed259fbd9273a52f9bd658b3540a5b",
+  "method": "Original inputs, real server clock; original fixed-time gold answers must not be used as-is. One temporary account, no task creation.",
+  "task_count_after": 0,
+  "finished_at": "2026-10-08T17:19:23.0257970+08:00"
+}

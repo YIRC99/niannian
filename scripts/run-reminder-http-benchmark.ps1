@@ -1,13 +1,15 @@
 param(
     [string]$BaseURL = 'http://127.0.0.1:56507',
     [string]$ConfigPath = '',
-    [string]$OutputPath = ''
+    [string]$OutputPath = '',
+    [string]$SuitePath = ''
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 if (!$ConfigPath) { $ConfigPath = Join-Path $root 'release/config.local.json' }
 if (!$OutputPath) { throw 'Specify OutputPath for this run.' }
-$suite = Get-Content (Join-Path $root 'docs/benchmarks/reminder-creation-v1.json') -Raw | ConvertFrom-Json -DateKind String
+if (!$SuitePath) { $SuitePath = Join-Path $root 'docs/benchmarks/reminder-creation-v1.json' }
+$suite = Get-Content -LiteralPath $SuitePath -Raw | ConvertFrom-Json -DateKind String
 $cfg = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
 if ($cfg.admin_key.Length -lt 32) { throw 'Configured admin key is required.' }
 $adminHeaders = @{ Authorization = 'Bearer ' + $cfg.admin_key }
@@ -19,6 +21,7 @@ $result = [ordered]@{
     lane = 'running_backend_http'; endpoint = "$base/api/v1/ai/parse"; health = $health
     started_at = [DateTimeOffset]::Now.ToString('o'); fixed_clock = $false
     source_commit = (git -C $root rev-parse HEAD); cases = @(); cleanup = 'pending'
+    suite_file = (Split-Path $SuitePath -Leaf); suite_sha256 = (Get-FileHash -LiteralPath $SuitePath -Algorithm SHA256).Hash.ToLower()
     method = 'Original inputs, real server clock; original fixed-time gold answers must not be used as-is. One temporary account, no task creation.'
 }
 $outDir = Split-Path $OutputPath -Parent
