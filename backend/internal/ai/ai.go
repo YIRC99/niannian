@@ -107,7 +107,7 @@ func draftReviewPrompt(d Draft, now time.Time) string {
 		}
 	}
 	b, _ := json.Marshal(facts)
-	return reviewInstructions + string(b) + "\n最后依据用户原始窗口核对first_at，而不是抄上面的下次候选：窗口进行中保留原起点，不改成now或下一个提醒点。生活待办等会儿且没截止用minute_interval，无end_date/end_at。只输出纯英文explanation标签，不附解释。"
+	return reviewInstructions + string(b) + "\n最后依据用户原始窗口核对first_at，而不是抄上面的下次候选：窗口进行中保留原起点，不改成now或下一个提醒点。生活待办等会儿且没截止用minute_interval，无end_date/end_at。原话明确几分钟后的生活待办必须minute_interval，first_at保留秒，不用once丢秒；只输出纯英文explanation标签，不附解释。"
 }
 
 func (c *Client) request(ctx context.Context, messages []map[string]string) (string, error) {
